@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Form, HTTPException, Header
+kfrom fastapi import FastAPI, Form, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 import tensorflow as tf
 import numpy as np
@@ -55,11 +55,4 @@ async def predict(value: float = Form(...), authorization: str = Header(None)):
         return {"prediction": prediction, "history": list(history)}
     except ValueError as ve:
         logger.error(f"ValueError: {ve}")
-        return {"error": "Invalid input", "detail": str(ve)}
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        return {"error": "Server error", "detail": str(e)}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+        return {"error": "Invali
