@@ -2,4 +2,5 @@ fastapi==0.110.3
 uvicorn==0.29.0
 tensorflow-cpu==2.16.2
 numpy==1.26.4
-python-multipart==0.0.12
+python-multipart==0.0.12 
+# Optimized at 03:54 CDT
