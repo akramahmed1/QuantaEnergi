@@ -9,7 +9,9 @@ import os
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 VALID_TOKEN = "a1009144b7a5520439407190f9064793"
-logging.basicConfig(level=logging.INFO, filename="logs/app.log", format="%(asctime)s - %(levelname)s - %(message)s - v6")
+log_dir = os.path.join(os.getcwd(), "logs")
+os.makedirs(log_dir, exist_ok=True)
+logging.basicConfig(level=logging.INFO, filename=os.path.join(log_dir, "app.log"), format="%(asctime)s - %(levelname)s - %(message)s - v6")
 
 interpreter = tf.lite.Interpreter(model_path="optimized_model.tflite")
 interpreter.allocate_tensors()
