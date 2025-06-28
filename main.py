@@ -5,7 +5,6 @@ import numpy as np
 from collections import deque
 import logging
 
-# Set up logging to console
 logger = logging.getLogger("uvicorn.error")
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
