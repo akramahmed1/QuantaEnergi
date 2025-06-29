@@ -25,8 +25,7 @@ def rate_limit_check(ip):
         requests, last_reset = rate_limits[ip]
         requests = [t for t in requests if current_time - t < WINDOW_SECONDS]
         if len(requests) >= MAX_REQUESTS:
-            del rate_limits[ip]  # Reset window on overflow
-            return False
+            return False  # No reset, just block
         requests.append(current_time)
         rate_limits[ip] = (requests, current_time)
     return True
