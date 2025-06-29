@@ -3,7 +3,6 @@ import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from collections import deque
 import time
 
 logging.basicConfig(level=logging.INFO, filename='app.log')
@@ -13,28 +12,22 @@ load_dotenv()
 api_key = os.getenv("API_KEY", "a1009144b7a5520439407190f9064793")
 app = FastAPI()
 
-# Token bucket rate limiter
-rate_limits = {}  # IP -> (tokens, last_refill_time)
-MAX_TOKENS = 100
-REFILL_RATE = 100 / 60  # 100 tokens per minute
+# Token bucket rate limiter with sliding window
+rate_limits = {}  # IP -> (requests, last_reset_time)
+MAX_REQUESTS = 100
 WINDOW_SECONDS = 60
 
-def refill_tokens(ip):
+def rate_limit_check(ip):
     current_time = time.time()
     if ip not in rate_limits:
-        rate_limits[ip] = [MAX_TOKENS, current_time]
+        rate_limits[ip] = ([current_time], current_time)
     else:
-        tokens, last_time = rate_limits[ip]
-        time_passed = current_time - last_time
-        new_tokens = time_passed * REFILL_RATE
-        rate_limits[ip] = [min(MAX_TOKENS, tokens + new_tokens), current_time]
-
-def rate_limit_check(ip):
-    refill_tokens(ip)
-    tokens, _ = rate_limits[ip]
-    if tokens < 1:
-        return False
-    rate_limits[ip][0] -= 1
+        requests, last_reset = rate_limits[ip]
+        requests = [t for t in requests if current_time - t < WINDOW_SECONDS]
+        if len(requests) >= MAX_REQUESTS:
+            return False
+        requests.append(current_time)
+        rate_limits[ip] = (requests, last_reset if len(requests) < MAX_REQUESTS else current_time)
     return True
 
 class Input(BaseModel):
