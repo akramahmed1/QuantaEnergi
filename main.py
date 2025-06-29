@@ -13,7 +13,7 @@ load_dotenv()
 api_key = os.getenv("API_KEY", "a1009144b7a5520439407190f9064793")
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
 try:
-    redis_client = redis.Redis.from_url(redis_url, ssl=True)  # Enable TLS for rediss://
+    redis_client = redis.Redis.from_url(redis_url, ssl=True if 'rediss://' in redis_url else False)
     redis_client.ping()
     logger.info("Connected to Redis successfully")
 except ConnectionError:
@@ -67,7 +67,7 @@ async def health(request: Request):
     return {"status": "healthy", "timestamp": str(os.times())}
 
 @app.post("/predict")
-async def predict(value: float = Form(...), request: Request):
+async def predict(request: Request, value: float = Form(...)):  # Fixed SyntaxError
     ip = request.headers.get("X-Forwarded-For", "127.0.0.1").split(",")[0]
     logger.info(f"Predict request from IP {ip} with value={value}")
     if not rate_limit_check(ip):
