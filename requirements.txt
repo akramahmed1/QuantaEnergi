@@ -12,13 +12,14 @@ click==8.2.1
 cryptography==42.0.5
 ecdsa==0.19.1
 fastapi==0.110.3
-fastapi-limiter==0.1.5
+# fastapi-limiter==0.1.6  # Removed
+# aioredis==2.0.0  # Removed
 flatbuffers==25.2.10
 gast==0.6.0
 google-pasta==0.2.0
 grpcio==1.73.1
 h11==0.16.0
-h5py==3.14.0  # Updated to latest compatible version
+h5py==3.14.0
 idna==3.10
 importlib-metadata==6.11.0
 itsdangerous==2.2.0
