@@ -1,1 +1,9 @@
 backup-energy-opti-v1.1/
+__pycache__
+*.pyc
+venv/
+temp_requirements.txt
+*.log
+env/
+obfuscated_main.py
+*.save
