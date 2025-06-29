@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from collections import defaultdict
+from collections import deque
 import time
 
 logging.basicConfig(level=logging.INFO, filename='app.log')
@@ -13,17 +13,28 @@ load_dotenv()
 api_key = os.getenv("API_KEY", "a1009144b7a5520439407190f9064793")
 app = FastAPI()
 
-# In-memory rate limiter
-request_counts = defaultdict(list)
-MAX_REQUESTS = 100
+# Token bucket rate limiter
+rate_limits = {}  # IP -> (tokens, last_refill_time)
+MAX_TOKENS = 100
+REFILL_RATE = 100 / 60  # 100 tokens per minute
 WINDOW_SECONDS = 60
 
-def rate_limit_check(ip):
+def refill_tokens(ip):
     current_time = time.time()
-    request_counts[ip] = [t for t in request_counts[ip] if current_time - t < WINDOW_SECONDS]
-    if len(request_counts[ip]) >= MAX_REQUESTS:
+    if ip not in rate_limits:
+        rate_limits[ip] = [MAX_TOKENS, current_time]
+    else:
+        tokens, last_time = rate_limits[ip]
+        time_passed = current_time - last_time
+        new_tokens = time_passed * REFILL_RATE
+        rate_limits[ip] = [min(MAX_TOKENS, tokens + new_tokens), current_time]
+
+def rate_limit_check(ip):
+    refill_tokens(ip)
+    tokens, _ = rate_limits[ip]
+    if tokens < 1:
         return False
-    request_counts[ip].append(current_time)
+    rate_limits[ip][0] -= 1
     return True
 
 class Input(BaseModel):
@@ -31,12 +42,16 @@ class Input(BaseModel):
 
 @app.get("/health")
 async def health():
-    logger.info("Health check requested")
+    ip = "127.0.0.1"  # Replace with request.client.host in production
+    logger.info(f"Health check requested from IP {ip}")
+    if not rate_limit_check(ip):
+        logger.warning(f"Rate limit exceeded for IP {ip}")
+        raise HTTPException(status_code=429, detail="Too many requests")
     return {"status": "healthy", "timestamp": str(os.times())}
 
 @app.post("/predict")
 async def predict(input_data: Input):
-    ip = "127.0.0.1"  # Replace with actual client IP in production
+    ip = "127.0.0.1"  # Replace with request.client.host in production
     logger.info(f"Predict request from IP {ip} with value={input_data.value}")
     if not rate_limit_check(ip):
         logger.warning(f"Rate limit exceeded for IP {ip}")

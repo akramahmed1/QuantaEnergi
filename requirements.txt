@@ -1,4 +1,4 @@
-absl-py==2.3.0
+kabsl-py==2.3.0
 anyio==4.9.0
 astunparse==1.6.3
 babel==2.17.0
