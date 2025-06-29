@@ -18,7 +18,7 @@ gast==0.6.0
 google-pasta==0.2.0
 grpcio==1.73.1
 h11==0.16.0
-h5py==3.12.3  # Matches local 3.12.3, compatible with 3.12.11
+h5py==3.14.0  # Updated to latest compatible version
 idna==3.10
 importlib-metadata==6.11.0
 itsdangerous==2.2.0
