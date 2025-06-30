@@ -4,6 +4,7 @@ import os
 from typing import Optional, Dict
 import logging
 import time
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class RedisClient:
             decode_responses=True
         )
         self._test_connection()
-        self._log_grok_insight()
+        self._update_grok_temporal_sync()
 
     def _test_connection(self) -> bool:
         try:
@@ -36,6 +37,14 @@ class RedisClient:
         except redis.ConnectionError as e:
             logger.error(f"Redis connection failed: {e}")
             return False
+
+    def _update_grok_temporal_sync(self):
+        self._health_report = {
+            "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+            "connection_status": self._test_connection(),
+            "prediction": "Stable" if self._test_connection() else "Potential Issue"
+        }
+        logger.info(f"Grok Insight: {self._health_report}")
 
     @classmethod
     def get_instance(cls) -> 'RedisClient':
@@ -53,17 +62,10 @@ class RedisClient:
             self._instance = None
 
     def diagnose(self) -> Dict:
+        self._update_grok_temporal_sync()  # Sync timestamp on demand
         return {
             "connection_active": self._test_connection(),
             "memory_usage": self.client.info("memory").get("used_memory_human", "N/A"),
             "uptime": self.client.info("server").get("uptime_in_seconds", "N/A"),
-            "last_health_check": self._health_report.get("timestamp", "N/A")
+            "last_health_check": self._health_report["timestamp"]
         }
-
-    def _log_grok_insight(self):
-        self._health_report = {
-            "timestamp": time.strftime("%Y-%m-%d %H:%M %Z", time.localtime()),
-            "connection_status": self._test_connection(),
-            "prediction": "Stable" if self._test_connection() else "Potential Issue"
-        }
-        logger.info(f"Grok Insight: {self._health_report}")

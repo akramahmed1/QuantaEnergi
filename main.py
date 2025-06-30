@@ -5,7 +5,7 @@ import os
 
 app = FastAPI()
 
-# Initialize Redis client with GORF
+# Initialize Redis client with GTS
 redis_client_instance = RedisClient.get_instance()
 redis_client = redis_client_instance.get_client()
 
@@ -38,8 +38,12 @@ async def grok_monitor():
         "redis_status": "Connected" if health["connection_active"] else "Disconnected",
         "timestamp": health["last_health_check"],
         "message": "Grok-enhanced monitoring active",
-        "grok_insight": redis_client_instance._health_report["prediction"]
+        "grok_insight": "Stable" if health["connection_active"] else "Potential Issue"
     }
+
+@app.get("/grok-diagnose")
+async def grok_diagnose():
+    return redis_client_instance.diagnose()
 
 @app.on_event("shutdown")
 def shutdown_event():
