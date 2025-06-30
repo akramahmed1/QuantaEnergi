@@ -12,12 +12,13 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 api_key = os.getenv("API_KEY", "a1009144b7a5520439407190f9064793")
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+redis_client = None  # Initialize outside try block to avoid unbinding
 try:
-    redis_client = redis.Redis.from_url(redis_url)  # Removed ssl=True, handled by rediss://
+    redis_client = redis.Redis.from_url(redis_url)  # Let rediss:// handle TLS
     redis_client.ping()
     logger.info("Connected to Redis successfully")
-except ConnectionError:
-    logger.error("Failed to connect to Redis, falling back to in-memory")
+except ConnectionError as e:
+    logger.error(f"Failed to connect to Redis: {e}, falling back to in-memory")
     redis_client = None
 
 app = FastAPI()
@@ -30,16 +31,20 @@ def rate_limit_check(ip):
     current_time = time.time()
     key = f"rate_limit:{ip}"
     if redis_client:
-        requests = [float(t) for t in redis_client.lrange(key, 0, -1)]
-        requests = [t for t in requests if current_time - t < WINDOW_SECONDS]
-        request_count = len(requests)
-        logger.info(f"IP {ip} - Requests: {request_count}, Current: {current_time}")
-        if request_count >= MAX_REQUESTS:
-            logger.warning(f"Rate limit exceeded for IP {ip}, count: {request_count}")
-            return False
-        redis_client.lpush(key, current_time)
-        redis_client.ltrim(key, 0, MAX_REQUESTS - 1)  # Keep only last 100
-    else:
+        try:
+            requests = [float(t) for t in redis_client.lrange(key, 0, -1)]
+            requests = [t for t in requests if current_time - t < WINDOW_SECONDS]
+            request_count = len(requests)
+            logger.info(f"IP {ip} - Requests: {request_count}, Current: {current_time}")
+            if request_count >= MAX_REQUESTS:
+                logger.warning(f"Rate limit exceeded for IP {ip}, count: {request_count}")
+                return False
+            redis_client.lpush(key, current_time)
+            redis_client.ltrim(key, 0, MAX_REQUESTS - 1)  # Keep only last 100
+        except Exception as e:
+            logger.error(f"Redis operation failed: {e}, falling back to in-memory")
+            redis_client = None
+    if not redis_client:
         if ip not in rate_limits:
             rate_limits[ip] = ([current_time], current_time)
             logger.info(f"New IP {ip} initialized with 1 request at {current_time}")
