@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class RedisClient:
     _instance = None
     _health_report = {}
+    _usage_pattern = {"request_count": 0, "stable_threshold": 10}
 
     def __init__(self, redis_url: Optional[str] = None):
         if not redis_url:
@@ -39,10 +40,13 @@ class RedisClient:
             return False
 
     def _update_grok_temporal_sync(self):
+        self._usage_pattern["request_count"] += 1
+        if self._usage_pattern["request_count"] > self._usage_pattern["stable_threshold"]:
+            self._usage_pattern["stable_threshold"] += 5  # Evolve threshold
         self._health_report = {
             "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
             "connection_status": self._test_connection(),
-            "prediction": "Stable" if self._test_connection() else "Potential Issue"
+            "prediction": "Stable" if self._test_connection() and self._usage_pattern["request_count"] < self._usage_pattern["stable_threshold"] else "Potential Issue"
         }
         logger.info(f"Grok Insight: {self._health_report}")
 
@@ -62,10 +66,11 @@ class RedisClient:
             self._instance = None
 
     def diagnose(self) -> Dict:
-        self._update_grok_temporal_sync()  # Sync timestamp on demand
+        self._update_grok_temporal_sync()  # Sync and evolve on demand
         return {
             "connection_active": self._test_connection(),
             "memory_usage": self.client.info("memory").get("used_memory_human", "N/A"),
             "uptime": self.client.info("server").get("uptime_in_seconds", "N/A"),
-            "last_health_check": self._health_report["timestamp"]
+            "last_health_check": self._health_report["timestamp"],
+            "evolved_threshold": self._usage_pattern["stable_threshold"]
         }
