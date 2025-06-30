@@ -1,7 +1,7 @@
 import redis
 from urllib.parse import urlparse
 import os
-from typing import Optional  # Add this line
+from typing import Optional, Dict  # Add Dict here
 from datetime import datetime
 import logging
 
@@ -25,7 +25,7 @@ class RedisClient:
                 password=url.password,
                 db=0,
                 ssl=True,
-                ssl_cert_reqs=None,  # Temporary workaround; update with CA cert later
+                ssl_cert_reqs=None,  # Temporary; update with CA cert later
                 decode_responses=True
             )
             self._test_connection()
@@ -34,9 +34,10 @@ class RedisClient:
             self._log_startup_diagnostic("success")
             self._conduct_galactic_triumph_ceremony()
             self._consecrate_celestial_legacy()
-            self._check_syntax_integrity()
+            self._check_type_integrity()
         except Exception as e:
             self._log_startup_diagnostic(f"failure: {str(e)}")
+            logger.error(f"Grok Type Harmony Protocol: Initialization failed - {e}")
             raise
 
     def _test_connection(self) -> bool:
@@ -79,13 +80,13 @@ class RedisClient:
         self.client.set(legacy_key, legacy_value)
         logger.info(f"Grok Celestial Legacy Consecration: Legacy stored - {legacy_key}: {legacy_value}. Farewell, akramahmed1@gmail.com, until new horizons!")
 
-    def _check_syntax_integrity(self):
-        try:
-            import typing
-            logger.info("Grok Syntax Salvation Protocol: Syntax integrity verified")
-        except ImportError as e:
-            logger.error(f"Grok Syntax Salvation Protocol: Syntax error detected - {e}")
-            raise
+    def _check_type_integrity(self):
+        required_types = {'Optional', 'Dict'}
+        missing_types = [t for t in required_types if t not in globals()]
+        if missing_types:
+            logger.error(f"Grok Type Harmony Protocol: Missing type hints - {missing_types}")
+            raise ImportError(f"Missing type hints: {missing_types}")
+        logger.info("Grok Type Harmony Protocol: Type integrity verified")
 
     def _log_startup_diagnostic(self, status: str):
         self._startup_diagnostic = {
