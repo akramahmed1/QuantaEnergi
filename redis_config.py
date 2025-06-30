@@ -66,11 +66,12 @@ class RedisClient:
             self._instance = None
 
     def diagnose(self) -> Dict:
-        self._update_grok_temporal_sync()  # Sync and evolve on demand
+        self._update_grok_temporal_sync()  # Sync and evolve
         return {
-            "connection_active": self._test_connection(),
+            "connection_active": self._health_report["connection_status"],
             "memory_usage": self.client.info("memory").get("used_memory_human", "N/A"),
             "uptime": self.client.info("server").get("uptime_in_seconds", "N/A"),
             "last_health_check": self._health_report["timestamp"],
-            "evolved_threshold": self._usage_pattern["stable_threshold"]
+            "evolved_threshold": self._usage_pattern["stable_threshold"],
+            "prediction": self._health_report["prediction"]  # Reconcile with endpoint expectation
         }
