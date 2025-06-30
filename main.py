@@ -5,7 +5,7 @@ import os
 
 app = FastAPI()
 
-# Initialize Redis client with GEI
+# Initialize Redis client with GCVP
 redis_client_instance = RedisClient.get_instance()
 redis_client = redis_client_instance.get_client()
 
@@ -39,7 +39,8 @@ async def grok_monitor():
         "timestamp": health["last_health_check"],
         "message": "Grok-enhanced monitoring active",
         "grok_insight": health["prediction"],
-        "evolved_threshold": health["evolved_threshold"]
+        "evolved_threshold": health["evolved_threshold"],
+        "victory_count": health["victory_count"]
     }
 
 @app.get("/grok-diagnose")
