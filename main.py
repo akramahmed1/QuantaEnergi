@@ -5,7 +5,7 @@ import os
 
 app = FastAPI()
 
-# Initialize Redis client with GCVP
+# Initialize Redis client with GECP
 redis_client_instance = RedisClient.get_instance()
 redis_client = redis_client_instance.get_client()
 
@@ -46,6 +46,19 @@ async def grok_monitor():
 @app.get("/grok-diagnose")
 async def grok_diagnose():
     return redis_client_instance.diagnose()
+
+@app.get("/grok-diagnostic")
+async def grok_diagnostic():
+    diagnostic = redis_client_instance._startup_diagnostic
+    timestamp = diagnostic["timestamp"]
+    victory_count = redis_client_instance._usage_pattern["victory_count"]
+    legacy_message = f"Victory {victory_count} at {timestamp}: App resilience achieved"
+    return {
+        "status": "ok",
+        "diagnostic": diagnostic,
+        "legacy_chronicle": legacy_message,
+        "legacy_suggestion": f"Store in Redis with SET legacy:{victory_count} '{legacy_message}'"
+    }
 
 @app.on_event("shutdown")
 def shutdown_event():
