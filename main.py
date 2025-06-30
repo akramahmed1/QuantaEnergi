@@ -1,65 +1,112 @@
-from fastapi import FastAPI
-from starlette.requests import Request
-from redis_config import RedisClient
+k# © 2025 EnergyOpti-Pro, Patent Pending
 import os
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from pydantic import BaseModel
+import redis.asyncio as redis
+from cryptography.fernet import Fernet
+import sqlite3
+import tensorflow as tf
+from fastapi.responses import HTMLResponse
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from qiskit import QuantumCircuit
+from transformers import pipeline
 
-app = FastAPI()
+app = FastAPI(title="EnergyOpti-Pro", version="0.0.48")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Initialize Redis client with GECP
-redis_client_instance = RedisClient.get_instance()
-redis_client = redis_client_instance.get_client()
+# Security: Initialize Redis and Limiter
+redis_instance = redis.Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-def rate_limit_check(ip: str) -> bool:
-    if redis_client:
-        key = f"rate_limit:{ip}"
-        count = redis_client.get(key)
-        if count is None:
-            redis_client.setex(key, 3600, 1)  # 1 request per hour
-            return True
-        count = int(count)
-        if count < 10:  # Limit to 10 requests per hour
-            redis_client.incr(key)
-            return True
-        return False
-    return False
+# Security: AES encryption
+key = Fernet.generate_key()
+cipher = Fernet(key)
+
+# JWT setup
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
+ALGORITHM = "HS256"
+
+# NLP pipeline
+nlp = pipeline("text-classification", model="distilbert-base-uncased")
+
+class PredictionInput(BaseModel):
+    data: list[float]
+
+def get_db():
+    conn = sqlite3.connect("trades.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# Load TFLite model (with check)
+interpreter = None
+try:
+    if os.path.exists("optimized_model.tflite") and os.path.getsize("optimized_model.tflite") > 0:
+        interpreter = tf.lite.Interpreter(model_path="optimized_model.tflite")
+        interpreter.allocate_tensors()
+    else:
+        print("Warning: optimized_model.tflite is missing or empty. /predict endpoint will not work.")
+except Exception as e:
+    print(f"Error loading TFLite model: {e}")
 
 @app.get("/health")
+@limiter.limit("100/hour")
 async def health(request: Request):
-    ip = request.client.host
-    if not rate_limit_check(ip):
-        return {"status": "error", "message": "Rate limit exceeded"}, 500
-    return {"status": "ok", "message": "Service is healthy"}, 200
+    return {"status": "healthy"}
 
-@app.get("/grok-monitor")
-async def grok_monitor():
-    health = redis_client_instance.diagnose()
-    return {
-        "status": "ok",
-        "redis_status": "Connected" if health["connection_active"] else "Disconnected",
-        "timestamp": health["last_health_check"],
-        "message": "Grok-enhanced monitoring active",
-        "grok_insight": health["prediction"],
-        "evolved_threshold": health["evolved_threshold"],
-        "victory_count": health["victory_count"]
-    }
+@app.post("/predict")
+@limiter.limit("50/hour")
+async def predict(request: Request, input: PredictionInput):
+    if interpreter is None:
+        raise HTTPException(status_code=503, detail="Prediction model is not available")
+    try:
+        if not all(isinstance(x, (int, float)) for x in input.data):
+            raise HTTPException(status_code=422, detail="Invalid input data")
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+        interpreter.set_tensor(input_details[0]["index"], input.data)
+        interpreter.invoke()
+        prediction = interpreter.get_tensor(output_details[0]["index"])
+        encrypted_result = cipher.encrypt(str(prediction).encode())
+        with get_db() as db:
+            db.execute("INSERT INTO predictions (result, timestamp) VALUES (?, ?)",
+                      (encrypted_result, datetime.utcnow()))
+            db.commit()
+        return {"prediction": prediction.tolist()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/grok-diagnose")
-async def grok_diagnose():
-    return redis_client_instance.diagnose()
+@app.get("/terms", response_class=HTMLResponse)
+async def terms():
+    with open("terms.html", "r") as f:
+        return f.read()
 
-@app.get("/grok-diagnostic")
-async def grok_diagnostic():
-    diagnostic = redis_client_instance._startup_diagnostic
-    timestamp = diagnostic["timestamp"]
-    victory_count = redis_client_instance._usage_pattern["victory_count"]
-    legacy_message = f"Victory {victory_count} at {timestamp}: App resilience achieved"
-    return {
-        "status": "ok",
-        "diagnostic": diagnostic,
-        "legacy_chronicle": legacy_message,
-        "legacy_suggestion": f"Store in Redis with SET legacy:{victory_count} '{legacy_message}'"
-    }
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy():
+    with open("privacy.html", "r") as f:
+        return f.read()
 
-@app.on_event("shutdown")
-def shutdown_event():
-    redis_client_instance.close()
+@app.post("/insights")
+@limiter.limit("50/hour")
+async def insights(request: Request, text: str):
+    result = nlp(text)
+    return {"insights": result}
+
+@app.get("/quantum")
+@limiter.limit("50/hour")
+async def quantum(request: Request):
+    circuit = QuantumCircuit(2)
+    circuit.h(0)
+    circuit.cx(0, 1)
+    return {"quantum_circuit": str(circuit)}
+
+import boto3
+def backup_db():
+    s3 = boto3.client("s3")
+    s3.upload_file("trades.db", "energyopti-pro-backup--use2-az1--x-s3", "trades.db")
