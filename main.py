@@ -1,4 +1,4 @@
-k# © 2025 EnergyOpti-Pro, Patent Pending
+# © 2025 EnergyOpti-Pro, Patent Pending
 import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
