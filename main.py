@@ -113,7 +113,8 @@ async def quantum(request: Request):
 
 import boto3
 def backup_db():
-    s3 = boto3.client("s3", region_name="us-east-2")
+    # Use S3 Express One Zone endpoint for us-east-1
+    s3 = boto3.client("s3", region_name="us-east-1", endpoint_url="https://s3express-use2-az1.us-east-1.amazonaws.com")
     db_file = "trades.db"
     # Create trades.db if it doesn't exist
     if not os.path.exists(db_file):
