@@ -1,12 +1,3 @@
-# Python virtual environment
-venv/
-.env
-
-# Python cache files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
 
 # Project-specific files
 trades.db
