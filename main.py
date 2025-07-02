@@ -111,3 +111,8 @@ import boto3
 def backup_db():
     s3 = boto3.client("s3")
     s3.upload_file("trades.db", "energyopti-pro-backup--use2-az1--x-s3", "trades.db")
+@app.get("/backup_db")
+
+async def trigger_backup():
+    backup_db()
+    return {"status": "backup completed"}
