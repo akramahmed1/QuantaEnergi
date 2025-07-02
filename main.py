@@ -76,6 +76,7 @@ async def predict(request: Request, input: PredictionInput):
         prediction = interpreter.get_tensor(output_details[0]["index"])
         encrypted_result = cipher.encrypt(str(prediction).encode())
         with get_db() as db:
+            db.execute("CREATE TABLE IF NOT EXISTS predictions (result BLOB, timestamp DATETIME)")
             db.execute("INSERT INTO predictions (result, timestamp) VALUES (?, ?)",
                       (encrypted_result, datetime.utcnow()))
             db.commit()
@@ -113,7 +114,19 @@ async def quantum(request: Request):
 import boto3
 def backup_db():
     s3 = boto3.client("s3")
-    s3.upload_file("trades.db", "energyopti-pro-backup--use2-az1--x-s3", "trades.db")
+    db_file = "trades.db"
+    # Create trades.db if it doesn't exist
+    if not os.path.exists(db_file):
+        conn = sqlite3.connect(db_file)
+        conn.execute("CREATE TABLE IF NOT EXISTS predictions (result BLOB, timestamp DATETIME)")
+        conn.commit()
+        conn.close()
+    # Upload to S3
+    try:
+        s3.upload_file(db_file, "energyopti-pro-backup--use2-az1--x-s3", "trades.db")
+    except Exception as e:
+        print(f"Error uploading to S3: {e}")
+        raise HTTPException(status_code=500, detail=f"S3 upload failed: {str(e)}")
 
 @app.get("/backup_db")
 async def trigger_backup():
