@@ -113,8 +113,8 @@ async def quantum(request: Request):
 
 import boto3
 def backup_db():
-    # Use standard s3 client for a standard S3 bucket
-    s3 = boto3.client("s3", region_name="us-east-1")
+    # Use standard s3 client for a standard S3 bucket in us-east-2
+    s3 = boto3.client("s3", region_name="us-east-2")
     db_file = "trades.db"
     # Create trades.db if it doesn't exist
     if not os.path.exists(db_file):
@@ -124,7 +124,7 @@ def backup_db():
         conn.close()
     # Upload to S3
     try:
-        s3.upload_file(db_file, "energyopti-pro-backup-us-east-1", "trades.db")
+        s3.upload_file(db_file, "energyopti-pro-backup-simple", "trades.db")
     except Exception as e:
         print(f"Error uploading to S3: {e}")
         raise HTTPException(status_code=500, detail=f"S3 upload failed: {str(e)}")
