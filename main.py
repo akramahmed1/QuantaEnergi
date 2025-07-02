@@ -34,8 +34,8 @@ cipher = Fernet(key)
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
 ALGORITHM = "HS256"
 
-# NLP pipeline
-nlp = pipeline("text-classification", model=hf_hub_download("distilbert-base-uncased-finetuned-sst-2-english"))
+# NLP pipeline (lazy-loaded in /insights)
+nlp = None
 
 class PredictionInput(BaseModel):
     data: list[float]
@@ -96,6 +96,9 @@ async def privacy():
 @app.post("/insights")
 @limiter.limit("50/hour")
 async def insights(request: Request, text: str):
+    global nlp
+    if nlp is None:
+        nlp = pipeline("text-classification", model=hf_hub_download("distilbert-base-uncased-finetuned-sst-2-english"))
     result = nlp(text)
     return {"insights": result}
 
@@ -111,8 +114,8 @@ import boto3
 def backup_db():
     s3 = boto3.client("s3")
     s3.upload_file("trades.db", "energyopti-pro-backup--use2-az1--x-s3", "trades.db")
-@app.get("/backup_db")
 
+@app.get("/backup_db")
 async def trigger_backup():
     backup_db()
     return {"status": "backup completed"}
