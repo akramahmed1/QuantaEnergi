@@ -1,14 +1,15 @@
 frontend/
-tests/
-*.tflite
-*.db
-*.log
-venv/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.bak
-*.tmp
-*.save
-*.save.*
+   tests/
+   docs/
+   *.tflite
+   *.db
+   *.log
+   venv/
+   __pycache__/
+   *.pyc
+   *.pyo
+   *.pyd
+   *.bak
+   *.tmp
+   *.save
+   *.save.*
