@@ -9,11 +9,12 @@ from pydantic import BaseModel
 import redis.asyncio as redis
 from cryptography.fernet import Fernet
 import sqlite3
-import tensorflow as tf
+import tflite_runtime.interpreter as tflite
 from fastapi.responses import HTMLResponse
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from qiskit import QuantumCircuit
+from huggingface_hub import hf_hub_download
 from transformers import pipeline
 
 app = FastAPI(title="EnergyOpti-Pro", version="0.0.48")
@@ -34,7 +35,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
 ALGORITHM = "HS256"
 
 # NLP pipeline
-nlp = pipeline("text-classification", model="distilbert-base-uncased")
+nlp = pipeline("text-classification", model=hf_hub_download("distilbert-base-uncased-finetuned-sst-2-english"))
 
 class PredictionInput(BaseModel):
     data: list[float]
@@ -48,7 +49,7 @@ def get_db():
 interpreter = None
 try:
     if os.path.exists("optimized_model.tflite") and os.path.getsize("optimized_model.tflite") > 0:
-        interpreter = tf.lite.Interpreter(model_path="optimized_model.tflite")
+        interpreter = tflite.Interpreter(model_path="optimized_model.tflite")
         interpreter.allocate_tensors()
     else:
         print("Warning: optimized_model.tflite is missing or empty. /predict endpoint will not work.")
