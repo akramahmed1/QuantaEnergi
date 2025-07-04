@@ -1,0 +1,24 @@
+# Ignore environment files
+.env
+venv/
+__pycache__/
+*.pyc
+
+# Ignore build artifacts
+aws/
+awscliv2.zip
+backup-energy-opti-v1.1/
+get-pip.py
+pyarmor_runtime_000000/
+temp_requirements.txt
+test_redis.py
+token.txt
+
+# Ignore editor backups
+*.save
+main.py.
+
+# Ignore new untracked files
+EnergyOpti-Pro/
+app.log
+aws_credentials.txt
