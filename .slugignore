@@ -1,0 +1,14 @@
+frontend/
+tests/
+docs/
+*.db
+*.log
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.bak
+*.tmp
+*.save
+*.save.*
