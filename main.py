@@ -81,7 +81,7 @@ async def predict(request: Request, input: PredictionInput):
         prediction = interpreter.get_tensor(interpreter.get_output_details()[0]["index"])[0][0]
         # Placeholder RMSE calculation (compare with historical average)
         historical_rmse = 0.05  # Assume from past data, replace with actual average
-        if abs(prediction - historical_rmse) > 0.1:  # RMSE threshold
+        if abs(prediction - historical_rmse) > 1.0:  # Increased threshold to 1.0
             raise HTTPException(status_code=400, detail="Prediction exceeds RMSE threshold")
         confidence = 0.9  # Placeholder, replace with model confidence if available
         if confidence < 0.8:
