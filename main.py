@@ -20,7 +20,6 @@ import boto3
 
 # Initialize FastAPI app
 app = FastAPI(title="EnergyOpti-Pro", version="0.0.48")
-app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/models", StaticFiles(directory="."), name="models")
 app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 
