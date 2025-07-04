@@ -20,8 +20,7 @@ import boto3
 
 # Initialize FastAPI app
 app = FastAPI(title="EnergyOpti-Pro", version="0.0.48")
-app.mount("/models", StaticFiles(directory="."), name="models")
-app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+app.mount("/public", StaticFiles(directory="public"), name="public")
 
 # Set up rate limiting
 redis_instance = redis.Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))
