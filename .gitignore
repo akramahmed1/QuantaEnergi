@@ -22,3 +22,41 @@ main.py.
 EnergyOpti-Pro/
 app.log
 aws_credentials.txt
+
+# Project-specific files (from remote)
+trades.db
+optimized_model.tflite
+aws_credentials.txt
+
+# Temporary and log files (from remote)
+*.log
+.DS_Store
+
+# Flutter/Dart specific (from remote)
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/.pub-cache/
+frontend/build/
+frontend/.idea/
+frontend/.metadata
+frontend/*.iml
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/ios/Flutter/App.framework
+frontend/ios/Flutter/Flutter.framework
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+frontend/ios/Runner.xcworkspace/contents.xcworkspacedata
+frontend/windows/flutter/generated_plugins.cmake
+frontend/linux/flutter/generated_plugins.cmake
+frontend/macos/Flutter/ephemeral/
+frontend/macos/Flutter/Flutter-Debug.xcconfig
+frontend/macos/Flutter/Flutter-Release.xcconfig
+
+# Miscellaneous (from remote)
+*.swp
+*.swo
+*.bak
+*.tmp

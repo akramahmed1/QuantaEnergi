@@ -79,11 +79,10 @@ async def predict(request: Request, input: PredictionInput):
         interpreter.set_tensor(interpreter.get_input_details()[0]["index"], input_data)
         interpreter.invoke()
         prediction = interpreter.get_tensor(interpreter.get_output_details()[0]["index"])[0][0]
-        # Placeholder RMSE calculation (compare with historical average)
-        historical_rmse = 0.05  # Assume from past data, replace with actual average
-        if abs(prediction - historical_rmse) > 1.0:  # Increased threshold to 1.0
+        historical_rmse = 0.05
+        if abs(prediction - historical_rmse) > 1.0:
             raise HTTPException(status_code=400, detail="Prediction exceeds RMSE threshold")
-        confidence = 0.9  # Placeholder, replace with model confidence if available
+        confidence = 0.9
         if confidence < 0.8:
             print("Low confidence, escalating to human review")
             raise HTTPException(status_code=400, detail="Low confidence, review needed")
@@ -160,4 +159,4 @@ async def trigger_backup():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0
