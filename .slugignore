@@ -28,7 +28,6 @@ frontend/macos/Flutter/Flutter-Release.xcconfig
 
 # Project-specific files (optional, if not needed in slug)
 trades.db
-optimized_model.tflite
 aws_credentials.txt
 
 # Temporary and log files
