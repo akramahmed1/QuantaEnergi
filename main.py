@@ -159,28 +159,4 @@ async def history():
         return [{"value": float(cipher.decrypt(row["result"]).decode()), "timestamp": row["timestamp"]} for row in rows]
 
 # Backup function
-def backup_db():
-    s3 = boto3.client("s3", region_name="us-east-2")
-    db_file = "trades.db"
-    if not os.path.exists(db_file):
-        conn = sqlite3.connect(db_file)
-        conn.execute("CREATE TABLE IF NOT EXISTS predictions (result BLOB, timestamp DATETIME)")
-        conn.commit()
-        conn.close()
-        print(f"Created new trades.db at {os.path.abspath(db_file)}")
-    try:
-        s3.upload_file(db_file, "energyopti-pro-backup-simple", "trades.db")
-        print(f"Successfully uploaded {db_file} to S3 at {datetime.utcnow()}")
-        return {"status": "backup completed"}
-    except Exception as e:
-        print(f"Error uploading to S3: {e}")
-        raise HTTPException(status_code=500, detail=f"S3 upload failed: {str(e)}")
-
-# Backup trigger
-@app.get("/backup_db")
-async def trigger_backup():
-    return backup_db()
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+def backup_db
