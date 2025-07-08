@@ -71,7 +71,7 @@ async def read_root():
             <p>API is running. Try the following endpoints:</p>
             <ul>
                 <li><a href="/health">/health</a></li>
-                <li><a href="/predict" onclick="alert('Use POST with {\"data\":[1.0]}')">/predict</a></li>
+                <li><a href="/predict" onclick="alert('Use POST with {\"data\":[1.0, 2.0]}')">/predict</a></li>
                 <li><a href="/insights" onclick="alert('Use POST with {\"text\":\"your text\"}')">/insights</a></li>
             </ul>
             <div id="chart">Chart will load here if /public/index.html exists</div>
@@ -99,7 +99,9 @@ async def predict(request: Request, input: PredictionInput):
     try:
         if not all(isinstance(x, (int, float)) for x in input.data):
             raise HTTPException(status_code=422, detail="Invalid input data")
-        input_data = np.array([input.data[0]], dtype=np.float32)  # Use first value to match model shape
+        if len(input.data) != 2:  # Expecting 2 values based on current model
+            raise HTTPException(status_code=400, detail="Input must contain exactly 2 values")
+        input_data = np.array([input.data], dtype=np.float32)  # Shape (1, 2)
         interpreter.set_tensor(interpreter.get_input_details()[0]["index"], input_data)
         interpreter.invoke()
         prediction = interpreter.get_tensor(interpreter.get_output_details()[0]["index"])[0][0]
@@ -162,25 +164,3 @@ async def history():
 def backup_db():
     s3 = boto3.client("s3", region_name="us-east-2")
     db_file = "trades.db"
-    if not os.path.exists(db_file):
-        conn = sqlite3.connect(db_file)
-        conn.execute("CREATE TABLE IF NOT EXISTS predictions (result BLOB, timestamp DATETIME)")
-        conn.commit()
-        conn.close()
-        print(f"Created new trades.db at {os.path.abspath(db_file)}")
-    try:
-        s3.upload_file(db_file, "energyopti-pro-backup-simple", "trades.db")
-        print(f"Successfully uploaded {db_file} to S3 at {datetime.utcnow()}")
-        return {"status": "backup completed"}
-    except Exception as e:
-        print(f"Error uploading to S3: {e}")
-        raise HTTPException(status_code=500, detail=f"S3 upload failed: {str(e)}")
-
-# Backup trigger
-@app.get("/backup_db")
-async def trigger_backup():
-    return backup_db()
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
