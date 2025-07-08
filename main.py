@@ -50,7 +50,7 @@ def get_db():
 # Load TFLite model
 interpreter = None
 try:
-    model_path = os.path.join(os.path.dirname(__file__), "optimized_model.tflite")
+    model_path = "optimized_model.tflite"  # Relative to /app root on Heroku
     if os.path.exists(model_path) and os.path.getsize(model_path) > 0:
         interpreter = tflite.Interpreter(model_path=model_path)
         interpreter.allocate_tensors()
@@ -59,6 +59,30 @@ try:
         print(f"Warning: {model_path} is missing or empty. /predict endpoint will not work.")
 except Exception as e:
     print(f"Error loading TFLite model: {e}")
+
+# Root route to fix 404
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    return """
+    <html>
+        <head><title>EnergyOpti-Pro</title></head>
+        <body>
+            <h1>Welcome to EnergyOpti-Pro</h1>
+            <p>API is running. Try the following endpoints:</p>
+            <ul>
+                <li><a href="/health">/health</a></li>
+                <li><a href="/predict" onclick="alert('Use POST with {\"data\":[1.0]}')">/predict</a></li>
+                <li><a href="/insights" onclick="alert('Use POST with {\"text\":\"your text\"}')">/insights</a></li>
+            </ul>
+            <div id="chart">Chart will load here if /public/index.html exists</div>
+            <script>
+                // Placeholder for chart (replace with your chart.js code if needed)
+                document.getElementById("chart").innerText = "Chart data loading...";
+                fetch('/history').then(r => r.json()).then(data => console.log(data));
+            </script>
+        </body>
+    </html>
+    """
 
 # Health check
 @app.get("/health")
@@ -75,7 +99,7 @@ async def predict(request: Request, input: PredictionInput):
     try:
         if not all(isinstance(x, (int, float)) for x in input.data):
             raise HTTPException(status_code=422, detail="Invalid input data")
-        input_data = np.array([input.data], dtype=np.float32)
+        input_data = np.array([input.data[0]], dtype=np.float32)  # Use first value to match model shape
         interpreter.set_tensor(interpreter.get_input_details()[0]["index"], input_data)
         interpreter.invoke()
         prediction = interpreter.get_tensor(interpreter.get_output_details()[0]["index"])[0][0]
