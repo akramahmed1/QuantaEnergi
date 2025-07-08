@@ -15,4 +15,3 @@ python-jose[cryptography]
 pytest
 shap
 oauthlib
-tensorflow==2.15.0  # Included for model generation
