@@ -47,18 +47,29 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Load TFLite model
+# Load TFLite model and detect input shape
 interpreter = None
+expected_input_length = None
 try:
     model_path = "optimized_model.tflite"  # Relative to /app root on Heroku
     if os.path.exists(model_path) and os.path.getsize(model_path) > 0:
         interpreter = tflite.Interpreter(model_path=model_path)
         interpreter.allocate_tensors()
-        print(f"TFLite model loaded from {model_path}")
+        input_details = interpreter.get_input_details()[0]
+        expected_input_length = input_details["shape"][1]  # Get the expected length of the input dimension
+        print(f"TFLite model loaded from {model_path} with expected input length: {expected_input_length}")
     else:
         print(f"Warning: {model_path} is missing or empty. /predict endpoint will not work.")
 except Exception as e:
     print(f"Error loading TFLite model: {e}")
+
+# Startup event to initialize database
+@app.on_event("startup")
+async def startup_event():
+    with get_db() as db:
+        db.execute("CREATE TABLE IF NOT EXISTS predictions (result BLOB, timestamp DATETIME)")
+        db.commit()
+        print("Initialized predictions table on startup")
 
 # Root route to fix 404
 @app.get("/", response_class=HTMLResponse)
@@ -71,7 +82,7 @@ async def read_root():
             <p>API is running. Try the following endpoints:</p>
             <ul>
                 <li><a href="/health">/health</a></li>
-                <li><a href="/predict" onclick="alert('Use POST with {\"data\":[1.0, 2.0]}')">/predict</a></li>
+                <li><a href="/predict" onclick="alert('Use POST with {\"data\":[value1, value2]}')">/predict</a></li>
                 <li><a href="/insights" onclick="alert('Use POST with {\"text\":\"your text\"}')">/insights</a></li>
             </ul>
             <div id="chart">Chart will load here if /public/index.html exists</div>
@@ -99,9 +110,9 @@ async def predict(request: Request, input: PredictionInput):
     try:
         if not all(isinstance(x, (int, float)) for x in input.data):
             raise HTTPException(status_code=422, detail="Invalid input data")
-        if len(input.data) != 2:  # Expecting 2 values based on current model
-            raise HTTPException(status_code=400, detail="Input must contain exactly 2 values")
-        input_data = np.array([input.data], dtype=np.float32)  # Shape (1, 2)
+        if len(input.data) != expected_input_length:
+            raise HTTPException(status_code=400, detail=f"Input must contain exactly {expected_input_length} value(s)")
+        input_data = np.array([input.data], dtype=np.float32)  # Shape (1, expected_length)
         interpreter.set_tensor(interpreter.get_input_details()[0]["index"], input_data)
         interpreter.invoke()
         prediction = interpreter.get_tensor(interpreter.get_output_details()[0]["index"])[0][0]
