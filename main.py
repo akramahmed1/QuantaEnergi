@@ -47,7 +47,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Load TFLite model and detect input shape
+# Load TFLite model and detect input shape (initialized on startup)
 interpreter = None
 expected_input_length = None
 try:
@@ -82,7 +82,7 @@ async def read_root():
             <p>API is running. Try the following endpoints:</p>
             <ul>
                 <li><a href="/health">/health</a></li>
-                <li><a href="/predict" onclick="alert('Use POST with {\"data\":[value1, value2]}')">/predict</a></li>
+                <li><a href="/predict" onclick="alert('Use POST with {\"data\":[value]}')">/predict</a></li>
                 <li><a href="/insights" onclick="alert('Use POST with {\"text\":\"your text\"}')">/insights</a></li>
             </ul>
             <div id="chart">Chart will load here if /public/index.html exists</div>
@@ -101,12 +101,24 @@ async def read_root():
 async def health(request: Request):
     return {"status": "healthy"}
 
-# Prediction endpoint with RMSE check
+# Prediction endpoint with RMSE check and model reinitialization
 @app.post("/predict")
 @limiter.limit("10/minute")
 async def predict(request: Request, input: PredictionInput):
+    global interpreter, expected_input_length
     if interpreter is None:
-        raise HTTPException(status_code=503, detail="Prediction model not available")
+        try:
+            model_path = "optimized_model.tflite"
+            if os.path.exists(model_path) and os.path.getsize(model_path) > 0:
+                interpreter = tflite.Interpreter(model_path=model_path)
+                interpreter.allocate_tensors()
+                input_details = interpreter.get_input_details()[0]
+                expected_input_length = input_details["shape"][1]
+                print(f"Reinitialized TFLite model with expected input length: {expected_input_length}")
+            else:
+                raise HTTPException(status_code=503, detail="Prediction model not available")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error reinitializing model: {str(e)}")
     try:
         if not all(isinstance(x, (int, float)) for x in input.data):
             raise HTTPException(status_code=422, detail="Invalid input data")
@@ -125,7 +137,6 @@ async def predict(request: Request, input: PredictionInput):
             raise HTTPException(status_code=400, detail="Low confidence, review needed")
         encrypted_result = cipher.encrypt(str(prediction).encode())
         with get_db() as db:
-            db.execute("CREATE TABLE IF NOT EXISTS predictions (result BLOB, timestamp DATETIME)")
             db.execute("INSERT INTO predictions (result, timestamp) VALUES (?, ?)",
                       (encrypted_result, datetime.utcnow()))
             db.commit()
