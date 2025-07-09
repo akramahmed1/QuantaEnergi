@@ -1,6 +1,6 @@
 fastapi==0.110.3
 uvicorn==0.29.0
-tflite-runtime==2.14.0
+tensorflow
 numpy
 redis==4.6.0
 cryptography==42.0.5
