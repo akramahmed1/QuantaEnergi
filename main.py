@@ -1,4 +1,5 @@
 # © 2025 EnergyOpti-Pro, Patent Pending
+import os
 import logging
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
