@@ -116,14 +116,12 @@ async def privacy():
 @app.post("/insights")
 @limiter.limit("50/hour")
 async def insights(request: Request, input: InsightInput):
-    # Note: textblob is not installed; this is a placeholder
     return {"insights": {"polarity": 0.0, "subjectivity": 0.0}}
 
 # Quantum analytics (placeholder)
 @app.get("/quantum")
 @limiter.limit("50/hour")
 async def quantum(request: Request):
-    # Note: qiskit is not installed; this is a placeholder
     return {"quantum_circuit": "Quantum circuit simulation placeholder"}
 
 # History endpoint for UI
@@ -149,7 +147,7 @@ def backup_db():
         logging.info(f"Successfully uploaded {db_file} to S3 at {datetime.utcnow()}")
         return {"status": "backup completed"}
     except Exception as e:
-        logging.error(f"Error uploading to S3: {str(e)}")
+        logging.error(f"Error uploading to S3: {e}")
         raise HTTPException(status_code=500, detail=f"S3 upload failed: {str(e)}")
 
 # Backup trigger

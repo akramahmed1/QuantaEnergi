@@ -60,3 +60,5 @@ frontend/macos/Flutter/Flutter-Release.xcconfig
 *.swo
 *.bak
 *.tmp
+Dockerfile
+env/
