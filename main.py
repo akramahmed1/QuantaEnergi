@@ -14,6 +14,7 @@ import sqlite3
 from tensorflow.lite.python.interpreter import Interpreter
 import boto3
 from datetime import datetime
+import numpy as np
 
 # Initialize FastAPI app
 app = FastAPI(title="EnergyOpti-Pro", version="0.0.48")
@@ -38,10 +39,12 @@ class PredictionInput(BaseModel):
 class InsightInput(BaseModel):
     text: str
 
-# Database connection
+# Database connection and initialization
 def get_db():
     conn = sqlite3.connect("trades.db")
     conn.row_factory = sqlite3.Row
+    # Create predictions table if it doesn't exist
+    conn.execute("CREATE TABLE IF NOT EXISTS predictions (result BLOB, timestamp DATETIME)")
     return conn
 
 # Load TFLite model
@@ -66,7 +69,7 @@ except Exception as e:
 async def health(request: Request):
     return {"status": "healthy"}
 
-# Prediction endpoint with RMSE check
+# Prediction endpoint with RMSE check and type correction
 @app.post("/predict")
 @limiter.limit("10/minute")
 async def predict(request: Request, input: PredictionInput):
@@ -78,7 +81,8 @@ async def predict(request: Request, input: PredictionInput):
             raise HTTPException(status_code=422, detail="Invalid input data")
         if len(input.data) != 1:
             raise HTTPException(status_code=400, detail="Input must contain exactly 1 value(s)")
-        input_data = [[input.data[0]]]  # Reshape to match [1, 1] input shape
+        # Convert input to FLOAT32 to match model expectation
+        input_data = np.array([[float(input.data[0])]], dtype=np.float32)
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
         prediction = interpreter.get_tensor(output_details[0]['index'])[0][0]
@@ -91,12 +95,13 @@ async def predict(request: Request, input: PredictionInput):
             raise HTTPException(status_code=400, detail="Low confidence, review needed")
         encrypted_result = cipher.encrypt(str(prediction).encode())
         with get_db() as db:
-            db.execute("CREATE TABLE IF NOT EXISTS predictions (result BLOB, timestamp DATETIME)")
             db.execute("INSERT INTO predictions (result, timestamp) VALUES (?, ?)",
                       (encrypted_result, datetime.utcnow()))
             db.commit()
         logging.info(f"Prediction result: {prediction}")
         return {"prediction": prediction.tolist()}
+    except HTTPException as e:
+        raise e
     except Exception as e:
         logging.error(f"Prediction error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
@@ -128,10 +133,14 @@ async def quantum(request: Request):
 # History endpoint for UI
 @app.get("/history")
 async def history():
-    with get_db() as db:
-        cursor = db.execute("SELECT result, timestamp FROM predictions")
-        rows = cursor.fetchall()
-        return [{"value": float(cipher.decrypt(row["result"]).decode()), "timestamp": row["timestamp"]} for row in rows]
+    try:
+        with get_db() as db:
+            cursor = db.execute("SELECT result, timestamp FROM predictions")
+            rows = cursor.fetchall()
+            return [{"value": float(cipher.decrypt(row["result"]).decode()), "timestamp": row["timestamp"]} for row in rows]
+    except Exception as e:
+        logging.error(f"History error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"History retrieval failed: {str(e)}")
 
 # Backup function
 def backup_db():
@@ -155,6 +164,11 @@ def backup_db():
 @app.get("/backup_db")
 async def trigger_backup():
     return backup_db()
+
+# Root endpoint with HTML response
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    return "<h1>Welcome to EnergyOpti-Pro</h1>"
 
 if __name__ == "__main__":
     import uvicorn
