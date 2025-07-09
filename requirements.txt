@@ -1,6 +1,6 @@
 fastapi==0.110.3
 uvicorn==0.29.0
-tensorflow
+tensorflow-cpu
 numpy
 redis==4.6.0
 cryptography==42.0.5
