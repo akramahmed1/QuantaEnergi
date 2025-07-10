@@ -1,12 +1,18 @@
 # EnergyOpti-Pro
+**Next-Generation SaaS for Energy Optimization**
 
-© 2025 EnergyOpti-Pro, Patent Pending. Version 0.0.48.
+EnergyOpti-Pro leverages AI, quantum computing, and advanced analytics to optimize energy usage, trading, and ESG compliance across renewables, oil/gas, and BESS. Our vision: Achieve a $1B valuation by 2028 and Mars-ready scalability by 2030.
 
-## Overview
-EnergyOpti-Pro is a consumer-focused energy optimization tool designed to disrupt oil/gas markets with AI, Quantum computing, NLP, and a Progressive Web App (PWA). It offers predictive diagnostics, crowdsourced model refinement, community energy bartering, and NLP insights, with multi-language support (English, Arabic, Spanish). Native apps are planned using Flutter.
+## Objectives
+- MVP Launch: July 14, 2025
+- 20% BESS cost reduction, 10% trading profit boost
+- GDPR/CCPA compliance, automated audits
+- Scalability: 1,000 req/s pre-launch, 1M post-launch
 
-## Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/akramahmed1/EnergyOpti-Pro.git
-   cd EnergyOpti-Pro
+## Features
+- Real-time predictions (/predict)
+- Quantum trading (/quantum)
+- Grid stability (/iot)
+- ESG analytics (/carbon, /metrics, /carboncredit)
+
+[Learn More](https://github.com/akramahmed1/EnergyOpti-Pro/blob/main/docs/PRD.md)
