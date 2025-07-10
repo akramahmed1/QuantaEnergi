@@ -17,14 +17,6 @@ async def test_token(client):
     )
     return response.json()["access_token"]
 
-@pytest.fixture
-def test_token():
-    # Get valid test token
-    response = client.post(
-        "/token",
-        data={"username": "energyuser", "password": "energypass"}
-    )
-    return response.json()["access_token"]
 
 async def test_predict_endpoint(client, test_token):
     # Test valid prediction request
@@ -59,7 +51,7 @@ async def test_predict_endpoint(client, test_token):
     )
     assert response.status_code == 422
 
-def test_invalid_prediction_request(test_token):
+async def test_invalid_prediction_request(client, test_token):
     # Test invalid input data
     invalid_data = {
         "capacity_kwh": -100,  # Invalid negative value
@@ -69,7 +61,7 @@ def test_invalid_prediction_request(test_token):
         "renewable_input": -10
     }
     
-    response = client.post(
+    response = await client.post(
         "/predict",
         json=invalid_data,
         headers={"Authorization": f"Bearer {test_token}"}
@@ -79,7 +71,7 @@ def test_invalid_prediction_request(test_token):
     errors = response.json()["detail"]
     assert any("greater than 0" in err["msg"] for err in errors)
 
-def test_quantum_trading_valid(test_token):
+async def test_quantum_trading_valid(client, test_token):
     # Test valid quantum trading request
     valid_trade = {
         "market": "Nordpool",
@@ -88,7 +80,7 @@ def test_quantum_trading_valid(test_token):
         "time_horizon": 4
     }
     
-    response = client.post(
+    response = await client.post(
         "/quantum",
         json=valid_trade,
         headers={"Authorization": f"Bearer {test_token}"}
@@ -100,7 +92,7 @@ def test_quantum_trading_valid(test_token):
     assert data["expected_return"] > 0
     assert 0 <= data["risk_assessment"] <= 1
 
-def test_quantum_invalid_market(test_token):
+async def test_quantum_invalid_market(client, test_token):
     # Test invalid market parameter
     invalid_trade = {
         "market": "InvalidMarket",
@@ -108,7 +100,7 @@ def test_quantum_invalid_market(test_token):
         "risk_tolerance": 0.5
     }
     
-    response = client.post(
+    response = await client.post(
         "/quantum",
         json=invalid_trade,
         headers={"Authorization": f"Bearer {test_token}"}
@@ -118,17 +110,17 @@ def test_quantum_invalid_market(test_token):
     errors = response.json()["detail"]
     assert any("market" in err["loc"] for err in errors)
 
-def test_unauthorized_access():
+async def test_unauthorized_access(client):
     # Test endpoints without authentication
-    response = client.post("/predict", json={})
+    response = await client.post("/predict", json={})
     assert response.status_code == 401
     
-    response = client.post("/quantum", json={})
+    response = await client.post("/quantum", json={})
     assert response.status_code == 401
 
-def test_role_based_access(test_token):
+async def test_role_based_access(client, test_token):
     # Test energy manager can't access quantum endpoint
-    response = client.post(
+    response = await client.post(
         "/quantum",
         json={"market": "Nordpool", "portfolio_size": 1e6, "risk_tolerance": 0.5},
         headers={"Authorization": f"Bearer {test_token}"}
