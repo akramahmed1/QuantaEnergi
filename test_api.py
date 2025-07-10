@@ -1,9 +1,21 @@
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from main import app
 import json
 import pytest
 
-client = TestClient(app)
+@pytest.fixture(scope="module")
+async def client():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
+
+@pytest.fixture
+async def test_token(client):
+    # Get valid test token
+    response = await client.post(
+        "/token",
+        data={"username": "energyuser", "password": "energypass"}
+    )
+    return response.json()["access_token"]
 
 @pytest.fixture
 def test_token():
@@ -14,7 +26,7 @@ def test_token():
     )
     return response.json()["access_token"]
 
-def test_predict_endpoint(test_token):
+async def test_predict_endpoint(client, test_token):
     # Test valid prediction request
     valid_data = {
         "capacity_kwh": 100.5,
@@ -24,7 +36,7 @@ def test_predict_endpoint(test_token):
         "renewable_input": 200.0
     }
     
-    response = client.post(
+    response = await client.post(
         "/predict",
         json=valid_data,
         headers={"Authorization": f"Bearer {test_token}"}
