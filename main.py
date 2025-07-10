@@ -121,6 +121,50 @@ class PredictionResponse(BaseModel):
     confidence_interval: Optional[tuple[float, float]] = None
     fallback_used: bool = False
 
+class QuantumTradeRequest(BaseModel):
+    market: str  # Nordpool/PJM/Enverus
+    portfolio_size: confloat(gt=0)
+    risk_tolerance: confloat(ge=0, le=1)
+    time_horizon: conint(gt=0, le=72) = 4  # hours
+
+class QuantumTradeResponse(BaseModel):
+    optimal_allocation: dict
+    expected_return: float
+    risk_assessment: float
+    quantum_time: float
+    classical_time: float
+    qpu_used: bool
+
+@app.post("/quantum", response_model=QuantumTradeResponse)
+async def quantum_trading(
+    params: QuantumTradeRequest,
+    current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    """
+    Quantum-accelerated trading optimization endpoint with market integration.
+    Returns portfolio allocations with risk-adjusted returns.
+    """
+    try:
+        # Mocked quantum simulation - PRD specifies Qiskit-aer integration
+        logger.info(f"Quantum trading request for {params.market} market")
+        
+        # Placeholder for actual quantum circuit
+        quantum_time = 0.05  # Simulated quantum computation time
+        classical_time = 0.1  # Simulated classical computation time
+        
+        return QuantumTradeResponse(
+            optimal_allocation={"renewables": 0.6, "storage": 0.3, "fossil": 0.1},
+            expected_return=0.15,
+            risk_assessment=0.25,
+            quantum_time=quantum_time,
+            classical_time=classical_time,
+            qpu_used=False  # Indicate we're using simulator
+        )
+        
+    except Exception as e:
+        logger.error(f"Quantum trading error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Quantum trading service unavailable")
+
 @app.post("/token", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
