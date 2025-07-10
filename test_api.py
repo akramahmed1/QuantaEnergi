@@ -102,3 +102,13 @@ def test_unauthorized_access():
     
     response = client.post("/quantum", json={})
     assert response.status_code == 401
+
+def test_role_based_access(test_token):
+    # Test energy manager can't access quantum endpoint
+    response = client.post(
+        "/quantum",
+        json={"market": "Nordpool", "portfolio_size": 1e6, "risk_tolerance": 0.5},
+        headers={"Authorization": f"Bearer {test_token}"}
+    )
+    assert response.status_code == 403
+    assert "Insufficient permissions" in response.json()["detail"]

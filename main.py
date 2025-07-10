@@ -40,6 +40,13 @@ fake_users_db = {
         "role": "energy_manager",
         "email": "user@energyopti.com",
         "disabled": False,
+    },
+    "traderuser": {
+        "username": "traderuser",
+        "hashed_password": pwd_context.hash("tradepass"),
+        "role": "trader",
+        "email": "trader@energyopti.com",
+        "disabled": False,
     }
 }
 
@@ -257,6 +264,11 @@ async def quantum_trading(
     params: QuantumTradeRequest,
     current_user: Annotated[User, Depends(get_current_active_user)]
 ):
+    if current_user.role != "trader":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions for quantum trading"
+        )
     """
     Quantum-accelerated trading optimization endpoint with market integration.
     Returns portfolio allocations with risk-adjusted returns.
