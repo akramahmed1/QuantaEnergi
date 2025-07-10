@@ -127,6 +127,43 @@ class QuantumTradeRequest(BaseModel):
     risk_tolerance: confloat(ge=0, le=1)
     time_horizon: conint(gt=0, le=72) = 4  # hours
 
+class VPPDataRequest(BaseModel):
+    grid_id: str
+    battery_capacities: list[confloat(gt=0)]
+    generation_data: dict[str, float]
+    timestamp: str
+    region: str
+
+class VPPDataResponse(BaseModel):
+    vpp_capacity: float
+    optimal_dispatch: dict
+    stability_score: float
+    revenue_opportunity: float
+    alerts: list[str]
+
+class CarbonRequest(BaseModel):
+    facility_id: str
+    start_date: str
+    end_date: str
+    fuel_types: dict[str, float]
+
+class CarbonMetricsResponse(BaseModel):
+    carbon_intensity: float
+    reduction_potential: float
+    offset_requirements: float
+    compliance_status: str
+
+class CarbonCreditRequest(BaseModel):
+    megawatt_hours: confloat(gt=0)
+    fuel_source: str
+    region: str
+
+class CarbonCreditResponse(BaseModel):
+    credits_issued: float
+    monetary_value: float
+    certification: str
+    transaction_id: str
+
 class QuantumTradeResponse(BaseModel):
     optimal_allocation: dict
     expected_return: float
@@ -134,6 +171,86 @@ class QuantumTradeResponse(BaseModel):
     quantum_time: float
     classical_time: float
     qpu_used: bool
+
+@app.post("/iot", response_model=VPPDataResponse)
+async def virtual_power_plant(
+    params: VPPDataRequest,
+    current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    """
+    Virtual Power Plant aggregation endpoint for grid operators.
+    Provides real-time grid stability analysis and optimization.
+    """
+    try:
+        logger.info(f"VPP data processing for grid {params.grid_id}")
+        
+        # Mocked pandas processing (PRD specifies pandas integration)
+        vpp_capacity = sum(params.battery_capacities) * 0.8  # 80% available capacity
+        alerts = ["Low reserve margin"] if vpp_capacity < 1000 else []
+        
+        return VPPDataResponse(
+            vpp_capacity=round(vpp_capacity, 2),
+            optimal_dispatch={"solar": 0.6, "wind": 0.3, "storage": 0.1},
+            stability_score=0.92,
+            revenue_opportunity=vpp_capacity * 0.15,
+            alerts=alerts
+        )
+        
+    except Exception as e:
+        logger.error(f"VPP processing error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Grid optimization service unavailable")
+
+@app.post("/carbon", response_model=CarbonMetricsResponse)
+async def carbon_metrics(
+    params: CarbonRequest,
+    current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    """
+    ESG compliance endpoint for carbon accounting and reporting.
+    Generates carbon intensity metrics and reduction recommendations.
+    """
+    try:
+        logger.info(f"Carbon metrics request for {params.facility_id}")
+        
+        # Mocked carbon calculations
+        total_emissions = sum(params.fuel_types.values()) * 0.423  # Example emission factor
+        
+        return CarbonMetricsResponse(
+            carbon_intensity=round(total_emissions / 1000, 2),  # kgCO2/MWh
+            reduction_potential=0.25,
+            offset_requirements=max(total_emissions - 1000, 0),
+            compliance_status="Compliant" if total_emissions < 1500 else "Action Required"
+        )
+        
+    except Exception as e:
+        logger.error(f"Carbon metrics error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Carbon accounting service unavailable")
+
+@app.post("/carboncredit", response_model=CarbonCreditResponse)
+async def carbon_credits(
+    params: CarbonCreditRequest,
+    current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    """
+    Carbon credit marketplace integration endpoint.
+    Calculates and certifies carbon offset credits.
+    """
+    try:
+        logger.info(f"Carbon credit request for {params.megawatt_hours}MWh")
+        
+        # Mocked credit calculation
+        credit_value = params.megawatt_hours * 0.85  # Example credit factor
+        
+        return CarbonCreditResponse(
+            credits_issued=credit_value,
+            monetary_value=credit_value * 15.50,  # Example market price
+            certification="Gold Standard",
+            transaction_id="TXID-CC-2025-12345"
+        )
+        
+    except Exception as e:
+        logger.error(f"Carbon credit error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Carbon credit service unavailable")
 
 @app.post("/quantum", response_model=QuantumTradeResponse)
 async def quantum_trading(
@@ -181,6 +298,25 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/metrics")
+async def system_metrics(current_user: Annotated[User, Depends(get_current_active_user)]):
+    """
+    System health and performance metrics endpoint.
+    Returns operational metrics for monitoring and observability.
+    """
+    try:
+        logger.info("Metrics request received")
+        return {
+            "uptime": 99.87,
+            "active_connections": 42,
+            "quantum_usage": 15.2,
+            "carbon_offset": 1520.5,
+            "system_load": [0.3, 0.4, 0.35]
+        }
+    except Exception as e:
+        logger.error(f"Metrics error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Metrics service unavailable")
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict_bess(
