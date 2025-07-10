@@ -1,1 +1,3 @@
-.aider*
+# Sensitive (keys—never commit)
+*.env
+Openrouterkey.env
