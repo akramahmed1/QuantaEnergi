@@ -34,7 +34,18 @@ def test_predict_endpoint(test_token):
     data = response.json()
     assert 0 <= data["optimal_soc"] <= 100
     assert data["cost_savings"] > 0
-    assert isinstance(data["recommended_action"], str)
+    assert isinstance(data["recommended_action"], str
+    assert data["fallback_used"] is True  # Verify fallback flag
+
+    # Test missing required field
+    invalid_data = valid_data.copy()
+    del invalid_data["capacity_kwh"]
+    response = client.post(
+        "/predict",
+        json=invalid_data,
+        headers={"Authorization": f"Bearer {test_token}"}
+    )
+    assert response.status_code == 422
 
 def test_invalid_prediction_request(test_token):
     # Test invalid input data
@@ -112,3 +123,11 @@ def test_role_based_access(test_token):
     )
     assert response.status_code == 403
     assert "Insufficient permissions" in response.json()["detail"]
+
+    # Test invalid token format
+    response = client.post(
+        "/predict",
+        json={},
+        headers={"Authorization": "InvalidToken"}
+    )
+    assert response.status_code == 401
