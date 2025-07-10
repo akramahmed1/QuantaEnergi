@@ -28,7 +28,7 @@ SECRET_KEY = "your-secret-key-keep-it-secret"  # In prod, use env variable
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Password hashing
+# Password hashing (requires bcrypt package)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
