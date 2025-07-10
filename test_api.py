@@ -34,7 +34,7 @@ def test_predict_endpoint(test_token):
     data = response.json()
     assert 0 <= data["optimal_soc"] <= 100
     assert data["cost_savings"] > 0
-    assert isinstance(data["recommended_action"], str
+    assert isinstance(data["recommended_action"], str)
     assert data["fallback_used"] is True  # Verify fallback flag
 
     # Test missing required field
