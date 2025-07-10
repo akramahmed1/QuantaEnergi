@@ -44,7 +44,7 @@ async def test_predict_endpoint(client, test_token):
     # Test missing required field
     invalid_data = valid_data.copy()
     del invalid_data["capacity_kwh"]
-    response = client.post(
+    response = await client.post(
         "/predict",
         json=invalid_data,
         headers={"Authorization": f"Bearer {test_token}"}
@@ -129,7 +129,7 @@ async def test_role_based_access(client, test_token):
     assert "Insufficient permissions" in response.json()["detail"]
 
     # Test invalid token format
-    response = client.post(
+    response = await client.post(
         "/predict",
         json={},
         headers={"Authorization": "InvalidToken"}

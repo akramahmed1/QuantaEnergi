@@ -282,7 +282,7 @@ async def quantum_trading(
         classical_time = 0.1  # Simulated classical computation time
         
         return QuantumTradeResponse(
-            optimal_allocation={"renewables": 0.6, "storage": 0.3, "fossil": 0.1},
+            optimal_allocation={"renewables": 0.6, "storage": 0.3, "conventional": 0.1},
             expected_return=0.15,
             risk_assessment=0.25,
             quantum_time=quantum_time,
