@@ -22,3 +22,4 @@ jobs:
     - name: Run tests
       run: |
         pytest test_api.py -v
+        # Trigger re-run 
