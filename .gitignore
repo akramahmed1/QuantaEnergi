@@ -20,10 +20,9 @@ token.txt
 
 # Ignore editor backups
 *.save
-main.py.
+*.bak
 
 # Ignore new untracked files
-EnergyOpti-Pro/
 app.log
 aws_credentials.txt
 trades.db
@@ -59,7 +58,11 @@ frontend/macos/Flutter/Flutter-Release.xcconfig
 # Miscellaneous
 *.swp
 *.swo
-*.bak
 *.tmp
 Dockerfile
 env/
+
+# Project-specific ignores
+.python-version
+.slugignore
+*.md  # Add if all .md files (e.g., compliance.md) are unused
