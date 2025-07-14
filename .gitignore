@@ -6,3 +6,6 @@ __pycache__/
 alembic/versions/*
 models/*
 data/*
+.aider*
+.vscode/
+*.env
