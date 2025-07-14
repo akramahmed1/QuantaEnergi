@@ -1,18 +1,13 @@
 # EnergyOpti-Pro
-**Next-Generation SaaS for Energy Optimization**
 
-EnergyOpti-Pro leverages AI, quantum computing, and advanced analytics to optimize energy usage, trading, and ESG compliance across renewables, oil/gas, and BESS. Our vision: Achieve a $1B valuation by 2028 and Mars-ready scalability by 2030.
+SaaS for energy optimization.
 
-## Objectives
-- MVP Launch: July 14, 2025
-- 20% BESS cost reduction, 10% trading profit boost
-- GDPR/CCPA compliance, automated audits
-- Scalability: 1,000 req/s pre-launch, 1M post-launch
-
-## Features
-- Real-time predictions (/predict)
-- Quantum trading (/quantum)
-- Grid stability (/iot)
-- ESG analytics (/carbon, /metrics, /carboncredit)
-
-[Learn More](https://github.com/akramahmed1/EnergyOpti-Pro/blob/main/docs/PRD.md)
+## Setup
+1. pip install -r requirements.txt
+2. Set .env
+3. Alembic: alembic init -t async alembic, edit env.py, revision & upgrade.
+4. Seed: python scripts/seed_initial_data.py
+5. Run: uvicorn main:app --reload
+6. Test: pytest tests/
+7. Quality: python scripts/run_quality_checks.py
+8. Deploy: docker-compose up -d

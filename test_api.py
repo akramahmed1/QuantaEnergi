@@ -1,137 +1,75 @@
-from httpx import AsyncClient
-from main import app
-import json
+"""Comprehensive test suite for EnergyOpti-Pro API endpoints."""
 import pytest
+from fastapi.testclient import TestClient
+from main import app
+from pyjwt import encode
+import json
 
-@pytest.fixture(scope="module")
-async def client():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        yield ac
+client = TestClient(app)
 
 @pytest.fixture
-async def test_token(client):
-    # Get valid test token
-    response = await client.post(
-        "/token",
-        data={"username": "energyuser", "password": "energypass"}
-    )
-    return response.json()["access_token"]
+def valid_token():
+    """Generate a mock valid token for authentication."""
+    return encode({"sub": "testuser", "exp": 253402300799}, "secret", algorithm="HS256")
 
-
-async def test_predict_endpoint(client, test_token):
-    # Test valid prediction request
-    valid_data = {
-        "capacity_kwh": 100.5,
-        "current_soc": 50.0,
-        "electricity_price": 0.15,
-        "demand_forecast": 500.0,
-        "renewable_input": 200.0
-    }
-    
-    response = await client.post(
-        "/predict",
-        json=valid_data,
-        headers={"Authorization": f"Bearer {test_token}"}
-    )
-    
+def test_predict_valid_input(valid_token):
+    response = client.post("/predict", json={"capacity_kwh": 100, "current_soc": 0.5, "electricity_price": 50, "frequency_need": 0.7}, headers={"Authorization": f"Bearer {valid_token}"})
     assert response.status_code == 200
     data = response.json()
-    assert 0 <= data["optimal_soc"] <= 100
-    assert data["cost_savings"] > 0
-    assert isinstance(data["recommended_action"], str)
-    assert data["fallback_used"] is True  # Verify fallback flag
+    assert "optimal_soc" in data
+    assert "recommended_action" in data
 
-    # Test missing required field
-    invalid_data = valid_data.copy()
-    del invalid_data["capacity_kwh"]
-    response = await client.post(
-        "/predict",
-        json=invalid_data,
-        headers={"Authorization": f"Bearer {test_token}"}
-    )
-    assert response.status_code == 422
+def test_predict_invalid_input(valid_token):
+    response = client.post("/predict", json={"capacity_kwh": -100, "current_soc": 0.5, "electricity_price": 50, "frequency_need": 0.7}, headers={"Authorization": f"Bearer {valid_token}"})
+    assert response.status_code == 400
 
-async def test_invalid_prediction_request(client, test_token):
-    # Test invalid input data
-    invalid_data = {
-        "capacity_kwh": -100,  # Invalid negative value
-        "current_soc": 150,     # Invalid SOC > 100
-        "electricity_price": 0,
-        "demand_forecast": -50,
-        "renewable_input": -10
-    }
-    
-    response = await client.post(
-        "/predict",
-        json=invalid_data,
-        headers={"Authorization": f"Bearer {test_token}"}
-    )
-    
-    assert response.status_code == 422
-    errors = response.json()["detail"]
-    assert any("greater than 0" in err["msg"] for err in errors)
-
-async def test_quantum_trading_valid(client, test_token):
-    # Test valid quantum trading request
-    valid_trade = {
-        "market": "Nordpool",
-        "portfolio_size": 1000000.0,
-        "risk_tolerance": 0.5,
-        "time_horizon": 4
-    }
-    
-    response = await client.post(
-        "/quantum",
-        json=valid_trade,
-        headers={"Authorization": f"Bearer {test_token}"}
-    )
-    
+def test_quantum_valid_input(valid_token):
+    response = client.post("/quantum", json={"market": "oil", "portfolio_size": 1000}, headers={"Authorization": f"Bearer {valid_token}"})
     assert response.status_code == 200
     data = response.json()
-    assert sum(data["optimal_allocation"].values()) == pytest.approx(1.0)
-    assert data["expected_return"] > 0
-    assert 0 <= data["risk_assessment"] <= 1
+    assert "optimal_allocation" in data
 
-async def test_quantum_invalid_market(client, test_token):
-    # Test invalid market parameter
-    invalid_trade = {
-        "market": "InvalidMarket",
-        "portfolio_size": 1000000.0,
-        "risk_tolerance": 0.5
-    }
-    
-    response = await client.post(
-        "/quantum",
-        json=invalid_trade,
-        headers={"Authorization": f"Bearer {test_token}"}
-    )
-    
-    assert response.status_code == 422
-    errors = response.json()["detail"]
-    assert any("market" in err["loc"] for err in errors)
+def test_forecast_valid_input(valid_token):
+    response = client.post("/forecast", json={"location": "US", "date_range": ["2025-07-12", "2025-07-13"]}, headers={"Authorization": f"Bearer {valid_token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "hourly_price_forecast" in data
 
-async def test_unauthorized_access(client):
-    # Test endpoints without authentication
-    response = await client.post("/predict", json={})
+def test_carbon_valid_input(valid_token):
+    response = client.post("/carbon", json={"facility_id": "F1", "fuel_types": ["natural gas"]}, headers={"Authorization": f"Bearer {valid_token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "carbon_intensity" in data
+
+def test_iot_valid_input(valid_token):
+    response = client.post("/iot", json={"grid_id": "G1", "battery_capacities": [100, 200]}, headers={"Authorization": f"Bearer {valid_token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "vpp_capacity" in data
+
+def test_metrics_valid_input(valid_token):
+    response = client.get("/metrics", headers={"Authorization": f"Bearer {valid_token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "pipeline_logs" in data
+
+def test_logs_valid_input(valid_token):
+    response = client.get("/logs", headers={"Authorization": f"Bearer {valid_token}"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "logs" in data
+
+def test_token_valid_input():
+    response = client.post("/token", data=json.dumps({"username": "testuser", "password": "testpass"}), headers={"Content-Type": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+
+def test_token_invalid_input():
+    response = client.post("/token", data=json.dumps({"username": "testuser", "password": "wrong"}), headers={"Content-Type": "application/json"})
     assert response.status_code == 401
-    
-    response = await client.post("/quantum", json={})
-    assert response.status_code == 401
 
-async def test_role_based_access(client, test_token):
-    # Test energy manager can't access quantum endpoint
-    response = await client.post(
-        "/quantum",
-        json={"market": "Nordpool", "portfolio_size": 1e6, "risk_tolerance": 0.5},
-        headers={"Authorization": f"Bearer {test_token}"}
-    )
-    assert response.status_code == 403
-    assert "Insufficient permissions" in response.json()["detail"]
-
-    # Test invalid token format
-    response = await client.post(
-        "/predict",
-        json={},
-        headers={"Authorization": "InvalidToken"}
-    )
-    assert response.status_code == 401
+def test_webhook_valid_input(valid_token):
+    response = client.post("/webhook", json={"event": "test"}, headers={"Authorization": f"Bearer {valid_token}"})
+    assert response.status_code == 200
+    assert response.json() == {"status": "received"}

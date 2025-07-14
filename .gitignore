@@ -1,68 +1,8 @@
-# Sensitive (keys—never commit)
-*.env
-Openrouterkey.env
-
-# Ignore environment files
-.env
 venv/
-
-# Ignore build artifacts
+.env
 __pycache__/
 *.pyc
-aws/
-awscliv2.zip
-backup-energy-opti-v1.1/
-get-pip.py
-pyarmor_runtime_000000/
-temp_requirements.txt
-test_redis.py
-token.txt
-
-# Ignore editor backups
-*.save
-*.bak
-
-# Ignore new untracked files
-app.log
-aws_credentials.txt
-trades.db
-optimized_model.tflite
-
-# Temporary and log files
 *.log
-.DS_Store
-
-# Flutter/Dart specific
-frontend/.dart_tool/
-frontend/.flutter-plugins
-frontend/.flutter-plugins-dependencies
-frontend/.packages
-frontend/.pub-cache/
-frontend/build/
-frontend/.idea/
-frontend/.metadata
-frontend/*.iml
-frontend/android/.gradle/
-frontend/android/app/build/
-frontend/ios/Flutter/App.framework
-frontend/ios/Flutter/Flutter.framework
-frontend/ios/Flutter/Generated.xcconfig
-frontend/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
-frontend/ios/Runner.xcworkspace/contents.xcworkspacedata
-frontend/windows/flutter/generated_plugins.cmake
-frontend/linux/flutter/generated_plugins.cmake
-frontend/macos/Flutter/ephemeral/
-frontend/macos/Flutter/Flutter-Debug.xcconfig
-frontend/macos/Flutter/Flutter-Release.xcconfig
-
-# Miscellaneous
-*.swp
-*.swo
-*.tmp
-Dockerfile
-env/
-
-# Project-specific ignores
-.python-version
-.slugignore
-*.md  # Add if all .md files (e.g., compliance.md) are unused
+alembic/versions/*
+models/*
+data/*
