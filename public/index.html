@@ -1,12 +1,1 @@
-<html>
-    <head><title>EnergyOpti-Pro Dashboard</title></head>
-    <body>
-        <h1>EnergyOpti-Pro Dashboard</h1>
-        <div id="chart">Chart will load here</div>
-        <script>
-            fetch('/history').then(r => r.json()).then(data => {
-                document.getElementById("chart").innerText = JSON.stringify(data);
-            });
-        </script>
-    </body>
-</html>
+﻿<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>EnergyOpti-Pro</title></head><body><h1>Welcome to EnergyOpti-Pro</h1><p>API at /api/prices. Check <a href="/api/prices?region=middle_east">here</a>.</p></body></html>
