@@ -1,4 +1,4 @@
-﻿app = "energyopti-pro"
+app = "energyopti-pro"
 kill_signal = "SIGINT"
 kill_timeout = 5
 [env]
@@ -9,11 +9,3 @@ force_https = true
 auto_stop_machines = true
 auto_start_machines = true
 min_machines_running = 1
-[[services]]
-protocol = "tcp"
-internal_port = 50052
-[[services.ports]]
-port = 50052
-[[services.regions]]
-region = "lax"
-
