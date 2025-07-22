@@ -1,4 +1,4 @@
-﻿app = "energyopti-pro"
+app = "energyopti-pro"
 kill_signal = "SIGINT"
 kill_timeout = 5
 [env]
