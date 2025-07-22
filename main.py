@@ -1,53 +1,45 @@
+import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from dotenv import load_dotenv
-from sqlalchemy.future import select
-
-from apis import router_predict, router_quantum, router_iot, router_carbon, router_forecast, router_metrics, router_logs, router_auth, router_webhook
-from utils import initialize_ml_model, initialize_rl_model, initialize_pqc_signature, configure_logging
-from database import engine
-
-load_dotenv()
-configure_logging()
-logger = logging.getLogger(__name__)
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core import config
+from app.core.security import initialize_pqc_system
+from app.api.v1.router import api_router
+from app.db.database import init_db, shutdown_db
+from app.services import ai_services
+from app.graphql.schema import graphql_app
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Startup...")
-    initialize_ml_model()
-    initialize_rl_model()
-    initialize_pqc_signature()
+    logging.basicConfig(level=config.LOG_LEVEL)
+    logger = logging.getLogger(__name__)
+    logger.info("Initializing EnergyOpti-Pro")
+    initialize_pqc_system()
+    await init_db()
+    await ai_services.load_core_models()
     yield
-    logger.info("Shutdown.")
+    logger.info("Shutting down EnergyOpti-Pro")
+    await shutdown_db()
 
-app = FastAPI(title="EnergyOpti-Pro", lifespan=lifespan)
+app = FastAPI(
+    title="EnergyOpti-Pro",
+    description="Next-Gen SaaS for Energy Optimization. Launch: July 20, 2025.",
+    version="2.3.0",
+    lifespan=lifespan,
+    docs_url="/explorer"
+)
 
-app.include_router(router_auth)
-app.include_router(router_predict, prefix="/predict")
-app.include_router(router_quantum, prefix="/quantum")
-app.include_router(router_iot, prefix="/iot")
-app.include_router(router_carbon, prefix="/carbon")
-app.include_router(router_forecast, prefix="/forecast")
-app.include_router(router_metrics, prefix="/metrics")
-app.include_router(router_logs, prefix="/logs")
-app.include_router(router_webhook, prefix="/webhook")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(graphql_app, prefix="/graphql")
 
-@app.get("/ready")
-async def readiness_check():
-    try:
-        async with engine.connect() as conn:
-            await conn.execute(select(1))
-        return {"status": "ready"}
-    except:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="DB not ready")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+@app.get("/")
+async def root():
+    return {"message": "Welcome to EnergyOpti-Pro"}

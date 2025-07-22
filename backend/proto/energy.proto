@@ -1,0 +1,13 @@
+﻿syntax = "proto3";
+
+service EnergyService {
+  rpc StreamEnergyData (EnergyRequest) returns (stream EnergyResponse);
+}
+
+message EnergyRequest {
+  string source = 1;
+}
+
+message EnergyResponse {
+  float price = 1;
+}

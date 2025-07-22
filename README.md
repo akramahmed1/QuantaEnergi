@@ -1,13 +1,17 @@
-# EnergyOpti-Pro
+# EnergyOpti-Pro: Integrated Next-Gen SaaS Platform
 
-SaaS for energy optimization.
+Zero-cost AI energy optimization prototype. Next-Generation SaaS for Energy Optimization using AI, quantum computing, and advanced analytics.
+
+## Core Features
+- Dual API (REST/GraphQL)
+- AI/ML for forecasting and RL optimization
+- Quantum simulations
+- PQC security
+- PostgreSQL/Redis DB
+- Docker/Fly.io deployment
 
 ## Setup
-1. pip install -r requirements.txt
-2. Set .env
-3. Alembic: alembic init -t async alembic, edit env.py, revision & upgrade.
-4. Seed: python scripts/seed_initial_data.py
-5. Run: uvicorn main:app --reload
-6. Test: pytest tests/
-7. Quality: python scripts/run_quality_checks.py
-8. Deploy: docker-compose up -d
+See instructions in the file. For xAI API integration, visit https://x.ai/api.
+
+## PRD
+See docs/PRD.md for full requirements.

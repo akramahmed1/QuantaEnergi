@@ -1,8 +1,19 @@
-version: '3.8'
-
 services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
   db:
-    image: postgres:15-alpine
+    image: postgres:16
     environment:
       POSTGRES_DB: energyoptipro_db
       POSTGRES_USER: energyuser
@@ -11,37 +22,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthchecks:
-      test: ["CMD-SHELL", "pg_isready -U energyuser -d energyoptipro_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: redis:7
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthchecks:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
-  app:
-    build: .
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    command: > 
-      sh -c "alembic upgrade head && python scripts/seed_initial_data.py && gunicorn -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000 main:app"
 volumes:
   postgres_data:
-  redis_data:

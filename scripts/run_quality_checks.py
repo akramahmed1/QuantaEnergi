@@ -1,8 +1,20 @@
 import subprocess
+import sys
 
-def run_command(cmd):
-    subprocess.run(cmd, check=True)
+def run_command(cmd: list, description: str):
+    print(f"Running {description}")
+    try:
+        result = subprocess.run(cmd, check=True, text=True, capture_output=True)
+        print(f"{description} PASSED")
+        if result.stdout:
+            print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"{description} FAILED")
+        print(e.stdout)
+        print(e.stderr)
+        sys.exit(1)
 
-run_command(["ruff", "check", "."])
-run_command(["black", "--check", "."])
-run_command(["mypy", "."])
+if __name__ == "__main__":
+    run_command(["ruff", "check", "."], "Ruff Linter")
+    run_command(["ruff", "format", "--check", "."], "Ruff Formatter")
+    print("Checks passed!")

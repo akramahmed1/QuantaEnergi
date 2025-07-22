@@ -1,0 +1,62 @@
+2025-07-21 20:24:02 - Fetched mock prices for global
+2025-07-21 20:24:04 - Secure endpoint accessed
+2025-07-21 20:24:06 - Mock transparency data fetched
+2025-07-21 20:24:08 - Mock oilfield data fetched
+2025-07-21 20:24:10 - Mock tariff impact data fetched
+2025-07-21 20:24:12 - Mock renewables data fetched
+2025-07-21 20:24:14 - Mock retention data fetched
+2025-07-21 20:24:17 - Mock onboarding guide fetched for trader
+2025-07-21 20:24:19 - Mock health check passed
+2025-07-21 20:24:21 - Audit logged with mock compliance: {'test': 'audit'}
+2025-07-21 20:24:23 - Mock engagement logged: {'action': 'feedback'}, DAU: 2025-07-21
+2025-07-21 20:24:25 - Fetched mock prices for global
+2025-07-21 20:24:25 - Audit logged with mock compliance: {'template': 'EU_Methane', 'test': 'final_audit'}
+2025-07-21 20:24:25 - Secure endpoint accessed
+2025-07-21 20:26:24 - Fetched mock prices for global
+2025-07-21 20:26:26 - Secure endpoint accessed
+2025-07-21 20:26:28 - Mock transparency data fetched
+2025-07-21 20:26:30 - Mock oilfield data fetched
+2025-07-21 20:26:32 - Mock tariff impact data fetched
+2025-07-21 20:26:34 - Mock renewables data fetched
+2025-07-21 20:26:36 - Mock retention data fetched
+2025-07-21 20:26:38 - Mock onboarding guide fetched for trader
+2025-07-21 20:26:40 - Mock health check passed
+2025-07-21 20:26:42 - Audit logged with mock compliance: {'test': 'audit'}
+2025-07-21 20:26:44 - Mock engagement logged: {'action': 'feedback'}, DAU: 2025-07-21
+2025-07-21 20:26:46 - Fetched mock prices for global
+2025-07-21 20:26:46 - Fetched mock prices v1 for middle_east
+2025-07-21 20:26:46 - Audit logged with mock compliance: {'template': 'EU_Methane', 'test': 'final_audit'}
+2025-07-21 20:26:46 - Secure endpoint accessed
+2025-07-21 20:26:46 - Mock transparency data fetched
+2025-07-21 20:26:46 - Mock oilfield data fetched
+2025-07-21 20:26:46 - Mock tariff impact data fetched
+2025-07-21 20:26:46 - Mock renewables data fetched
+2025-07-21 20:26:46 - Mock retention data fetched
+2025-07-21 20:26:47 - Mock onboarding guide fetched for trader
+2025-07-21 20:26:47 - Mock health check passed
+2025-07-21 20:26:52 - Mock engagement logged: {'action': 'feedback'}, DAU: 2025-07-21
+2025-07-21 20:33:02 - Error loading real data: 'price'
+2025-07-21 20:33:14 - Fetched real prices for middle_east
+2025-07-21 20:33:16 - Fetched real prices v1 for middle_east
+2025-07-21 20:33:18 - Secure endpoint accessed
+2025-07-21 20:33:20 - Mock transparency data fetched
+2025-07-21 20:33:22 - Fetched real oilfield data
+2025-07-21 20:33:24 - Mock tariff impact data fetched
+2025-07-21 20:33:26 - Mock renewables data fetched
+2025-07-21 20:33:28 - Mock retention data fetched
+2025-07-21 20:33:30 - Mock onboarding guide fetched for trader
+2025-07-21 20:33:32 - Mock health check passed
+2025-07-21 20:33:34 - Audit logged with mock compliance: {'test': 'audit'}
+2025-07-21 20:33:36 - Mock engagement logged: {'action': 'feedback'}, DAU: 2025-07-21
+2025-07-21 20:33:38 - Fetched real prices for global
+2025-07-21 20:33:38 - Fetched real prices v1 for middle_east
+2025-07-21 20:33:39 - Audit logged with mock compliance: {'template': 'EU_Methane', 'test': 'final_audit'}
+2025-07-21 20:33:39 - Secure endpoint accessed
+2025-07-21 20:33:39 - Mock transparency data fetched
+2025-07-21 20:33:39 - Fetched real oilfield data
+2025-07-21 20:33:39 - Mock tariff impact data fetched
+2025-07-21 20:33:39 - Mock renewables data fetched
+2025-07-21 20:33:39 - Mock retention data fetched
+2025-07-21 20:33:39 - Mock onboarding guide fetched for trader
+2025-07-21 20:33:39 - Mock health check passed
+2025-07-21 20:36:33 - Mock engagement logged: {'action': 'feedback'}, DAU: 2025-07-21

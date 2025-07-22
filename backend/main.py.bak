@@ -1,0 +1,66 @@
+﻿# -*- coding: utf-8 -*-
+import redis.asyncio as redis
+from fastapi import FastAPI, Depends
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
+import pandas as pd
+import requests
+from planet import api
+
+class TradeData(BaseModel):
+    asset: str
+    price: float
+    volume: int
+
+class PriceData(BaseModel):
+    price: float
+
+app = FastAPI()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+
+@app.get('/api/prices')
+async def get_prices():
+    r = await redis.from_url('redis://localhost:6379')
+    cached = await r.get('prices')
+    if cached:
+        return {'source': 'cache', 'data': cached.decode()}
+    data = 'mock_prices'
+    await r.set('prices', data, ex=60)
+    return {'source': 'db', 'data': data}
+
+@app.post('/api/trade')
+async def submit_trade(trade: TradeData):
+    return {'status': 'submitted', 'trade': trade.dict()}
+
+@app.get('/api/secure')
+async def secure_endpoint(token: str = Depends(oauth2_scheme)):
+    return {'message': 'Authenticated'}
+
+@app.post('/api/audit')
+async def log_audit(data: dict):
+    with open('audit.log', 'a') as f:
+        f.write(str(data) + '\n')
+    return {'status': 'logged'}
+
+@app.get('/api/demo-credentials')
+async def get_credentials():
+    return {'users': [{'username': f'demo{i}', 'token': f'token{i}'} for i in range(10)]}
+
+def etl_cme_data():
+    data = requests.get('https://api.cmegroup.com/v1/quotes/WTI').json()
+    df = pd.DataFrame(data)
+    df['price'] = df['price'].astype(float)
+    return df.to_json()
+
+@app.get('/api/etl')
+async def get_etl():
+    return etl_cme_data()
+
+def satellite_data():
+    client = api.ClientV1(api_key='your_planet_api_key')
+    data = client.get_scenes(bbox={'type': 'Point', 'coordinates': [55.3, 25.2]})
+    return data.get()
+
+@app.get('/api/satellite')
+async def get_satellite():
+    return satellite_data()
