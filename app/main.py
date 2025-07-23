@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI\nfrom fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="EnergyOpti-Pro API", version="1.0.0")
 
@@ -9,3 +9,4 @@ async def get_prices():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
