@@ -1,17 +1,17 @@
-# EnergyOpti-Pro: Integrated Next-Gen SaaS Platform
+# EnergyOpti-Pro: Integrated SaaS Platform
 
-Zero-cost AI energy optimization prototype. Next-Generation SaaS for Energy Optimization using AI, quantum computing, and advanced analytics.
+Energy optimization prototype for modern infrastructure. Designed for flexibility, analytics, and security.
 
 ## Core Features
 - Dual API (REST/GraphQL)
-- AI/ML for forecasting and RL optimization
+- Forecasting and optimization modules
 - Quantum simulations
 - PQC security
 - PostgreSQL/Redis DB
-- Docker/Fly.io deployment
+- Containerized deployment (Docker, Fly.io, etc.)
 
 ## Setup
-See instructions in the file. For xAI API integration, visit https://x.ai/api.
+See instructions in the file. For API integration, visit the relevant provider documentation.
 
 ## PRD
 See docs/PRD.md for full requirements.
