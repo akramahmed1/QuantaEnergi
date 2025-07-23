@@ -3,3 +3,4 @@ node_modules/
 build/
 *.db
 audit.log
+.aider.input.history
