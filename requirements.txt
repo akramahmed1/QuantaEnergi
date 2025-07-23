@@ -2,5 +2,5 @@
 pydantic-settings
 pandas
 fastapi
-uvicorn[standard]
 gunicorn
+uvicorn[standard]
