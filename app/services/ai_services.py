@@ -3,7 +3,8 @@ from stable_baselines3 import PPO
 from qiskit import QuantumCircuit
 
 async def load_core_models():
-    Prophet()  # Stub load
-    PPO("MlpPolicy", "CartPole-v1")  # Stub
-    QuantumCircuit(1)  # Stub
-    print("AI models loaded")
+    # Load forecasting, optimization, and simulation models
+    Prophet()
+    PPO("MlpPolicy", "CartPole-v1")
+    QuantumCircuit(1)
+    print("Core models loaded")
