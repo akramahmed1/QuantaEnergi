@@ -1,0 +1,1669 @@
+{
+  "statistics": {
+    "detectionDate": "2025-08-20T23:59:54.802Z",
+    "formats": {
+      "python": {
+        "sources": {
+          "./src/energyopti_pro/api/v1/endpoints/us_market_data.py": {
+            "lines": 668,
+            "tokens": 5706,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 40,
+            "duplicatedTokens": 326,
+            "percentage": 5.99,
+            "percentageTokens": 5.71,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/endpoints/quantum.py": {
+            "lines": 29,
+            "tokens": 381,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/endpoints/predict.py": {
+            "lines": 23,
+            "tokens": 288,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/endpoints/iot.py": {
+            "lines": 28,
+            "tokens": 376,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/endpoints/forecast.py": {
+            "lines": 35,
+            "tokens": 471,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/endpoints/etrm.py": {
+            "lines": 429,
+            "tokens": 3421,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 12,
+            "duplicatedTokens": 160,
+            "percentage": 2.8,
+            "percentageTokens": 4.68,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/endpoints/esg.py": {
+            "lines": 20,
+            "tokens": 235,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/endpoints/auth.py": {
+            "lines": 24,
+            "tokens": 385,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/endpoints/arabic_i18n.py": {
+            "lines": 419,
+            "tokens": 3239,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 32,
+            "duplicatedTokens": 260,
+            "percentage": 7.64,
+            "percentageTokens": 8.03,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/market_data/utils.py": {
+            "lines": 482,
+            "tokens": 2707,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/market_data/rec_service.py": {
+            "lines": 664,
+            "tokens": 5971,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 8,
+            "duplicatedTokens": 82,
+            "percentage": 1.2,
+            "percentageTokens": 1.37,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/market_data/pjm_service.py": {
+            "lines": 469,
+            "tokens": 3332,
+            "sources": 1,
+            "clones": 7,
+            "duplicatedLines": 42,
+            "duplicatedTokens": 444,
+            "percentage": 8.96,
+            "percentageTokens": 13.33,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/market_data/henry_hub_service.py": {
+            "lines": 659,
+            "tokens": 5412,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 32,
+            "duplicatedTokens": 330,
+            "percentage": 4.86,
+            "percentageTokens": 6.1,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/market_data/base_service.py": {
+            "lines": 437,
+            "tokens": 2765,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/islamic_finance/base_service.py": {
+            "lines": 603,
+            "tokens": 4418,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 30,
+            "duplicatedTokens": 228,
+            "percentage": 4.98,
+            "percentageTokens": 5.16,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/v1/router.py": {
+            "lines": 23,
+            "tokens": 246,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/trading_service.py": {
+            "lines": 483,
+            "tokens": 4569,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/settlement_service.py": {
+            "lines": 399,
+            "tokens": 3397,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 52,
+            "percentage": 3.51,
+            "percentageTokens": 1.53,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/risk_management.py": {
+            "lines": 546,
+            "tokens": 4745,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/real_time_market_service.py": {
+            "lines": 647,
+            "tokens": 5206,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/payment_processing_service.py": {
+            "lines": 788,
+            "tokens": 6360,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 122,
+            "percentage": 1.78,
+            "percentageTokens": 1.92,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/islamic_finance_service.py": {
+            "lines": 426,
+            "tokens": 2839,
+            "sources": 1,
+            "clones": 5,
+            "duplicatedLines": 71,
+            "duplicatedTokens": 468,
+            "percentage": 16.67,
+            "percentageTokens": 16.48,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/islamic_compliance.py": {
+            "lines": 434,
+            "tokens": 3319,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 57,
+            "duplicatedTokens": 416,
+            "percentage": 13.13,
+            "percentageTokens": 12.53,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/enhanced_rbac.py": {
+            "lines": 543,
+            "tokens": 5297,
+            "sources": 1,
+            "clones": 8,
+            "duplicatedLines": 68,
+            "duplicatedTokens": 892,
+            "percentage": 12.52,
+            "percentageTokens": 16.84,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/enhanced_iot_service.py": {
+            "lines": 444,
+            "tokens": 3892,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/data_etl.py": {
+            "lines": 5,
+            "tokens": 44,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/compliance_service.py": {
+            "lines": 566,
+            "tokens": 4346,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 154,
+            "percentage": 2.47,
+            "percentageTokens": 3.54,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/services/ai_services.py": {
+            "lines": 8,
+            "tokens": 72,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/graphql/schemas.py": {
+            "lines": 13,
+            "tokens": 133,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/endpoints/auth.py": {
+            "lines": 25,
+            "tokens": 403,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/db/tenant_session.py": {
+            "lines": 208,
+            "tokens": 1342,
+            "sources": 1,
+            "clones": 6,
+            "duplicatedLines": 34,
+            "duplicatedTokens": 386,
+            "percentage": 16.35,
+            "percentageTokens": 28.76,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/db/schemas.py": {
+            "lines": 35,
+            "tokens": 225,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/db/models.py": {
+            "lines": 216,
+            "tokens": 2429,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/db/database.py": {
+            "lines": 33,
+            "tokens": 207,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/core/security.py": {
+            "lines": 28,
+            "tokens": 323,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/core/redis_config.py": {
+            "lines": 125,
+            "tokens": 1265,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/core/rbac.py": {
+            "lines": 395,
+            "tokens": 2565,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 74,
+            "duplicatedTokens": 608,
+            "percentage": 18.73,
+            "percentageTokens": 23.7,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/core/logging.py": {
+            "lines": 123,
+            "tokens": 797,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/core/i18n.py": {
+            "lines": 306,
+            "tokens": 2707,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/core/config_new.py": {
+            "lines": 19,
+            "tokens": 125,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/core/config.py": {
+            "lines": 283,
+            "tokens": 2931,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 10,
+            "duplicatedTokens": 170,
+            "percentage": 3.53,
+            "percentageTokens": 5.8,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/api/dependencies.py": {
+            "lines": 211,
+            "tokens": 1064,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./src/energyopti_pro/main.py": {
+            "lines": 325,
+            "tokens": 1892,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 18,
+            "duplicatedTokens": 98,
+            "percentage": 5.54,
+            "percentageTokens": 5.18,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 12646,
+          "tokens": 101847,
+          "sources": 43,
+          "clones": 31,
+          "duplicatedLines": 285,
+          "duplicatedTokens": 2598,
+          "percentage": 2.25,
+          "percentageTokens": 2.55,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      }
+    },
+    "total": {
+      "lines": 12646,
+      "tokens": 101847,
+      "sources": 43,
+      "clones": 31,
+      "duplicatedLines": 285,
+      "duplicatedTokens": 2598,
+      "percentage": 2.25,
+      "percentageTokens": 2.55,
+      "newDuplicatedLines": 0,
+      "newClones": 0
+    }
+  },
+  "duplicates": [
+    {
+      "format": "python",
+      "lines": 9,
+      "fragment": "})\r\n            \r\n            return {\r\n                \"success\": True,\r\n                \"data\": serialized_data,\r\n                \"count\": len(serialized_data),\r\n                \"start_time\": start_time.isoformat(),\r\n                \"end_time\": end_time.isoformat()\r\n            }",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\us_market_data.py",
+        "start": 159,
+        "end": 167,
+        "startLoc": {
+          "line": 159,
+          "column": 17,
+          "position": 1394
+        },
+        "endLoc": {
+          "line": 167,
+          "column": 2,
+          "position": 1457
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\us_market_data.py",
+        "start": 109,
+        "end": 116,
+        "startLoc": {
+          "line": 109,
+          "column": 17,
+          "position": 927
+        },
+        "endLoc": {
+          "line": 116,
+          "column": 2,
+          "position": 987
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 13,
+      "fragment": "})\r\n            \r\n            return {\r\n                \"success\": True,\r\n                \"data\": serialized_data,\r\n                \"count\": len(serialized_data),\r\n                \"start_time\": start_time.isoformat(),\r\n                \"end_time\": end_time.isoformat(),\r\n                \"market_type\": market_type\r\n            }\r\n            \r\n    except Exception as e:\r\n        raise HTTPException(status_code=500, detail=f\"Failed to get PJM schedule data: {str(e)}\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\us_market_data.py",
+        "start": 209,
+        "end": 221,
+        "startLoc": {
+          "line": 209,
+          "column": 17,
+          "position": 1838
+        },
+        "endLoc": {
+          "line": 221,
+          "column": 44,
+          "position": 1938
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\us_market_data.py",
+        "start": 109,
+        "end": 121,
+        "startLoc": {
+          "line": 109,
+          "column": 17,
+          "position": 927
+        },
+        "endLoc": {
+          "line": 121,
+          "column": 39,
+          "position": 1027
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 7,
+      "fragment": ": Optional[str] = Query(None),\n    status: Optional[str] = Query(None),\n    region: Optional[str] = Query(None),\n    current_user: User = Depends(require_trader),\n    db: AsyncSession = Depends(get_tenant_session)\n):\n    \"\"\"Get trades with automatic company scoping\"\"\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\etrm.py",
+        "start": 207,
+        "end": 213,
+        "startLoc": {
+          "line": 207,
+          "column": 5,
+          "position": 1598
+        },
+        "endLoc": {
+          "line": 213,
+          "column": 48,
+          "position": 1678
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\etrm.py",
+        "start": 121,
+        "end": 127,
+        "startLoc": {
+          "line": 121,
+          "column": 14,
+          "position": 885
+        },
+        "endLoc": {
+          "line": 127,
+          "column": 51,
+          "position": 965
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 8,
+      "fragment": "if request.language not in [\"en\", \"ar\"]:\r\n        return {\r\n            \"success\": False,\r\n            \"message\": \"Unsupported language\",\r\n            \"supported_languages\": [\"en\", \"ar\"]\r\n        }\r\n    \r\n    try",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\arabic_i18n.py",
+        "start": 113,
+        "end": 120,
+        "startLoc": {
+          "line": 113,
+          "column": 5,
+          "position": 863
+        },
+        "endLoc": {
+          "line": 120,
+          "column": 4,
+          "position": 923
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\arabic_i18n.py",
+        "start": 57,
+        "end": 64,
+        "startLoc": {
+          "line": 57,
+          "column": 5,
+          "position": 404
+        },
+        "endLoc": {
+          "line": 64,
+          "column": 72,
+          "position": 464
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 10,
+      "fragment": "language not in [\"en\", \"ar\"]:\r\n        return {\r\n            \"success\": False,\r\n            \"message\": \"Unsupported language\",\r\n            \"supported_languages\": [\"en\", \"ar\"]\r\n        }\r\n    \r\n    try:\r\n        localized_text = get_text(\r\n            request",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\arabic_i18n.py",
+        "start": 113,
+        "end": 122,
+        "startLoc": {
+          "line": 113,
+          "column": 2,
+          "position": 867
+        },
+        "endLoc": {
+          "line": 122,
+          "column": 8,
+          "position": 937
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\api\\v1\\endpoints\\arabic_i18n.py",
+        "start": 82,
+        "end": 90,
+        "startLoc": {
+          "line": 82,
+          "column": 2,
+          "position": 622
+        },
+        "endLoc": {
+          "line": 90,
+          "column": 9,
+          "position": 689
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 9,
+      "fragment": "# Validate time range using shared utility\r\n        validate_time_range(start_time, end_time)\r\n        \r\n        endpoint = \"/inst_load\"\r\n        \r\n        params = {\r\n            \"start\": start_time.strftime(\"%Y-%m-%dT%H:%M:%S\"),\r\n            \"end\": end_time.strftime(\"%Y-%m-%dT%H:%M:%S\"),\r\n            \"market\": market_type.value,",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\pjm_service.py",
+        "start": 271,
+        "end": 279,
+        "startLoc": {
+          "line": 271,
+          "column": 9,
+          "position": 1783
+        },
+        "endLoc": {
+          "line": 279,
+          "column": 2,
+          "position": 1849
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\pjm_service.py",
+        "start": 157,
+        "end": 166,
+        "startLoc": {
+          "line": 157,
+          "column": 9,
+          "position": 926
+        },
+        "endLoc": {
+          "line": 166,
+          "column": 2,
+          "position": 995
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 6,
+      "fragment": "start_time: datetime,\r\n    end_time: datetime,\r\n    nodes: Optional[List[str]] = None,\r\n    market_type: PJMMarketType = PJMMarketType.REAL_TIME\r\n) -> List[PJMLMPData]:\r\n    \"\"\"Get PJM LMP data using default service.\"\"\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\pjm_service.py",
+        "start": 448,
+        "end": 453,
+        "startLoc": {
+          "line": 448,
+          "column": 5,
+          "position": 3063
+        },
+        "endLoc": {
+          "line": 453,
+          "column": 46,
+          "position": 3122
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\pjm_service.py",
+        "start": 140,
+        "end": 156,
+        "startLoc": {
+          "line": 140,
+          "column": 9,
+          "position": 862
+        },
+        "endLoc": {
+          "line": 156,
+          "column": 12,
+          "position": 922
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 6,
+      "fragment": "start_time: datetime,\r\n    end_time: datetime,\r\n    source_nodes: Optional[List[str]] = None,\r\n    sink_nodes: Optional[List[str]] = None\r\n) -> List[PJMFTRData]:\r\n    \"\"\"Get PJM FTR data using default service.\"\"\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\pjm_service.py",
+        "start": 458,
+        "end": 463,
+        "startLoc": {
+          "line": 458,
+          "column": 5,
+          "position": 3173
+        },
+        "endLoc": {
+          "line": 463,
+          "column": 46,
+          "position": 3236
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\pjm_service.py",
+        "start": 197,
+        "end": 213,
+        "startLoc": {
+          "line": 197,
+          "column": 9,
+          "position": 1296
+        },
+        "endLoc": {
+          "line": 213,
+          "column": 12,
+          "position": 1360
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 7,
+      "fragment": "import asyncio\r\nimport pandas as pd\r\nfrom datetime import datetime, timedelta, date\r\nfrom typing import Dict, List, Optional, Any, Union\r\nfrom dataclasses import dataclass\r\nfrom enum import Enum\r\nimport",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\henry_hub_service.py",
+        "start": 12,
+        "end": 18,
+        "startLoc": {
+          "line": 12,
+          "column": 1,
+          "position": 5
+        },
+        "endLoc": {
+          "line": 18,
+          "column": 7,
+          "position": 73
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\pjm_service.py",
+        "start": 12,
+        "end": 19,
+        "startLoc": {
+          "line": 12,
+          "column": 1,
+          "position": 5
+        },
+        "endLoc": {
+          "line": 19,
+          "column": 5,
+          "position": 75
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 9,
+      "fragment": "from typing import Dict, List, Optional, Any, Union\r\nfrom dataclasses import dataclass\r\nfrom enum import Enum\r\nimport uuid\r\nimport json\r\n\r\nfrom ...core.config import settings\r\nfrom ...core.logging import get_logger\r\nfrom .base_service",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\henry_hub_service.py",
+        "start": 15,
+        "end": 23,
+        "startLoc": {
+          "line": 15,
+          "column": 1,
+          "position": 34
+        },
+        "endLoc": {
+          "line": 23,
+          "column": 13,
+          "position": 116
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\rec_service.py",
+        "start": 14,
+        "end": 22,
+        "startLoc": {
+          "line": 14,
+          "column": 1,
+          "position": 25
+        },
+        "endLoc": {
+          "line": 22,
+          "column": 2,
+          "position": 107
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 10,
+      "fragment": "future_date = datetime.now() + timedelta(days=30*i)\r\n            month_code = self._get_month_code(future_date.month)\r\n            year = future_date.year\r\n            \r\n            if contract_month and month_code != contract_month:\r\n                continue\r\n            if contract_year and year != contract_year:\r\n                continue\r\n            \r\n            # Calculate basis based on hub characteristics",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\henry_hub_service.py",
+        "start": 312,
+        "end": 321,
+        "startLoc": {
+          "line": 312,
+          "column": 13,
+          "position": 2383
+        },
+        "endLoc": {
+          "line": 321,
+          "column": 47,
+          "position": 2473
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\market_data\\henry_hub_service.py",
+        "start": 258,
+        "end": 267,
+        "startLoc": {
+          "line": 258,
+          "column": 13,
+          "position": 1910
+        },
+        "endLoc": {
+          "line": 267,
+          "column": 40,
+          "position": 2000
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 8,
+      "fragment": ",\r\n            status=status,\r\n            details=details,\r\n            recommendations=recommendations,\r\n            timestamp=datetime.now(),\r\n            checker_id=self.__class__.__name__,\r\n            metadata={\r\n                \"uncertainty_level\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance\\base_service.py",
+        "start": 300,
+        "end": 307,
+        "startLoc": {
+          "line": 300,
+          "column": 20,
+          "position": 2128
+        },
+        "endLoc": {
+          "line": 307,
+          "column": 20,
+          "position": 2181
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance\\base_service.py",
+        "start": 228,
+        "end": 235,
+        "startLoc": {
+          "line": 228,
+          "column": 18,
+          "position": 1578
+        },
+        "endLoc": {
+          "line": 235,
+          "column": 13,
+          "position": 1631
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 9,
+      "fragment": ",\r\n            status=status,\r\n            details=details,\r\n            recommendations=recommendations,\r\n            timestamp=datetime.now(),\r\n            checker_id=self.__class__.__name__,\r\n            metadata={\r\n                \"violations\": violations,\r\n                \"activity_type\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance\\base_service.py",
+        "start": 355,
+        "end": 363,
+        "startLoc": {
+          "line": 355,
+          "column": 20,
+          "position": 2508
+        },
+        "endLoc": {
+          "line": 363,
+          "column": 16,
+          "position": 2569
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance\\base_service.py",
+        "start": 228,
+        "end": 236,
+        "startLoc": {
+          "line": 228,
+          "column": 18,
+          "position": 1578
+        },
+        "endLoc": {
+          "line": 236,
+          "column": 20,
+          "position": 1639
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 8,
+      "fragment": "(\r\n        self,\r\n        amount: Decimal,\r\n        currency: str,\r\n        from_account: Dict[str, Any],\r\n        to_account: Dict[str, Any],\r\n        description: str,\r\n        banking_system",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\payment_processing_service.py",
+        "start": 654,
+        "end": 661,
+        "startLoc": {
+          "line": 654,
+          "column": 23,
+          "position": 5351
+        },
+        "endLoc": {
+          "line": 661,
+          "column": 15,
+          "position": 5412
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\payment_processing_service.py",
+        "start": 195,
+        "end": 202,
+        "startLoc": {
+          "line": 195,
+          "column": 22,
+          "position": 1550
+        },
+        "endLoc": {
+          "line": 202,
+          "column": 7,
+          "position": 1611
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 15,
+      "fragment": ": str,\r\n        start_date: Optional[datetime] = None,\r\n        end_date: Optional[datetime] = None\r\n    ) -> Dict[str, Any]:\r\n        \"\"\"\r\n        Generate comprehensive compliance report.\r\n        \r\n        Args:\r\n            entity_id: Entity identifier\r\n            start_date: Report start date\r\n            end_date: Report end date\r\n            \r\n        Returns:\r\n            Compliance report\r\n        \"\"\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance_service.py",
+        "start": 356,
+        "end": 370,
+        "startLoc": {
+          "line": 356,
+          "column": 10,
+          "position": 2277
+        },
+        "endLoc": {
+          "line": 370,
+          "column": 12,
+          "position": 2329
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\settlement_service.py",
+        "start": 232,
+        "end": 236,
+        "startLoc": {
+          "line": 232,
+          "column": 7,
+          "position": 1798
+        },
+        "endLoc": {
+          "line": 236,
+          "column": 58,
+          "position": 1850
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 10,
+      "fragment": "),\r\n            \"compliance_rules\": self.compliance_rules,\r\n            \"zakat_rates\": self.zakat_rates\r\n        }\r\n    \r\n    def get_compliance_history(self, entity_id: str) -> List[IslamicComplianceCheck]:\r\n        \"\"\"Get compliance history for an entity.\"\"\"\r\n        return self.compliance_history.get(entity_id, [])\r\n    \r\n    async def check_trade_compliance",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_compliance.py",
+        "start": 107,
+        "end": 116,
+        "startLoc": {
+          "line": 107,
+          "column": 18,
+          "position": 820
+        },
+        "endLoc": {
+          "line": 116,
+          "column": 23,
+          "position": 901
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance_service.py",
+        "start": 119,
+        "end": 128,
+        "startLoc": {
+          "line": 119,
+          "column": 25,
+          "position": 909
+        },
+        "endLoc": {
+          "line": 128,
+          "column": 25,
+          "position": 990
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 6,
+      "fragment": ".get(\"entity_id\", \"unknown\")\r\n        if entity_id not in self.compliance_history:\r\n            self.compliance_history[entity_id] = []\r\n        self.compliance_history[entity_id].extend(checks)\r\n        \r\n        # Generate summary",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_compliance.py",
+        "start": 139,
+        "end": 144,
+        "startLoc": {
+          "line": 139,
+          "column": 11,
+          "position": 1024
+        },
+        "endLoc": {
+          "line": 144,
+          "column": 19,
+          "position": 1080
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance_service.py",
+        "start": 281,
+        "end": 286,
+        "startLoc": {
+          "line": 281,
+          "column": 10,
+          "position": 1819
+        },
+        "endLoc": {
+          "line": 286,
+          "column": 7,
+          "position": 1875
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 36,
+      "fragment": "}\r\n    \r\n    async def get_compliance_report(\r\n        self, \r\n        entity_id: str, \r\n        start_date: Optional[datetime] = None,\r\n        end_date: Optional[datetime] = None\r\n    ) -> Dict[str, Any]:\r\n        \"\"\"\r\n        Generate comprehensive compliance report.\r\n        \r\n        Args:\r\n            entity_id: Entity identifier\r\n            start_date: Report start date\r\n            end_date: Report end date\r\n            \r\n        Returns:\r\n            Compliance report\r\n        \"\"\"\r\n        self.logger.info(f\"Generating compliance report for entity: {entity_id}\")\r\n        \r\n        # Get compliance history\r\n        history = self.get_compliance_history(entity_id)\r\n        \r\n        if not start_date:\r\n            start_date = datetime.now() - timedelta(days=365)\r\n        if not end_date:\r\n            end_date = datetime.now()\r\n        \r\n        # Filter by date range\r\n        filtered_history = [\r\n            check for check in history\r\n            if start_date <= check.timestamp <= end_date\r\n        ]\r\n        \r\n        # Generate summary",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_compliance.py",
+        "start": 326,
+        "end": 361,
+        "startLoc": {
+          "line": 326,
+          "column": 13,
+          "position": 2383
+        },
+        "endLoc": {
+          "line": 361,
+          "column": 19,
+          "position": 2592
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance_service.py",
+        "start": 352,
+        "end": 387,
+        "startLoc": {
+          "line": 352,
+          "column": 9,
+          "position": 2256
+        },
+        "endLoc": {
+          "line": 387,
+          "column": 43,
+          "position": 2465
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 9,
+      "fragment": "report = {\r\n            \"entity_id\": entity_id,\r\n            \"report_period\": {\r\n                \"start_date\": start_date.isoformat(),\r\n                \"end_date\": end_date.isoformat()\r\n            },\r\n            \"compliance_summary\": summary,\r\n            \"total_checks\": len(filtered_history),\r\n            \"compliance_trend\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_compliance.py",
+        "start": 365,
+        "end": 373,
+        "startLoc": {
+          "line": 365,
+          "column": 9,
+          "position": 2615
+        },
+        "endLoc": {
+          "line": 373,
+          "column": 19,
+          "position": 2685
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\islamic_finance_service.py",
+        "start": 391,
+        "end": 399,
+        "startLoc": {
+          "line": 391,
+          "column": 9,
+          "position": 2488
+        },
+        "endLoc": {
+          "line": 399,
+          "column": 15,
+          "position": 2558
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 6,
+      "fragment": ".value],\r\n            ResourceType.SYSTEM.value: [PermissionLevel.READ.value],\r\n            ResourceType.AUDIT.value: [PermissionLevel.READ.value]\r\n        }\r\n    \r\n    def _get_analyst_permissions",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\enhanced_rbac.py",
+        "start": 390,
+        "end": 395,
+        "startLoc": {
+          "line": 390,
+          "column": 5,
+          "position": 3602
+        },
+        "endLoc": {
+          "line": 395,
+          "column": 25,
+          "position": 3652
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\enhanced_rbac.py",
+        "start": 362,
+        "end": 381,
+        "startLoc": {
+          "line": 362,
+          "column": 6,
+          "position": 3183
+        },
+        "endLoc": {
+          "line": 381,
+          "column": 24,
+          "position": 3453
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 12,
+      "fragment": "return {\r\n            ResourceType.USER.value: [PermissionLevel.READ.value],\r\n            ResourceType.TRADE.value: [PermissionLevel.READ.value],\r\n            ResourceType.CONTRACT.value: [PermissionLevel.READ.value],\r\n            ResourceType.RISK.value: [PermissionLevel.READ.value],\r\n            ResourceType.COMPLIANCE.value: [PermissionLevel.READ.value],\r\n            ResourceType.REPORT.value: [PermissionLevel.READ.value, PermissionLevel.WRITE.value],\r\n            ResourceType.SYSTEM.value: [PermissionLevel.READ.value],\r\n            ResourceType.AUDIT.value: [PermissionLevel.READ.value]\r\n        }\r\n    \r\n    def _get_viewer_permissions",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\enhanced_rbac.py",
+        "start": 398,
+        "end": 409,
+        "startLoc": {
+          "line": 398,
+          "column": 9,
+          "position": 3680
+        },
+        "endLoc": {
+          "line": 409,
+          "column": 24,
+          "position": 3844
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\enhanced_rbac.py",
+        "start": 356,
+        "end": 381,
+        "startLoc": {
+          "line": 356,
+          "column": 9,
+          "position": 3048
+        },
+        "endLoc": {
+          "line": 381,
+          "column": 24,
+          "position": 3453
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 12,
+      "fragment": "return {\r\n            ResourceType.USER.value: [PermissionLevel.READ.value],\r\n            ResourceType.TRADE.value: [PermissionLevel.READ.value],\r\n            ResourceType.CONTRACT.value: [PermissionLevel.READ.value],\r\n            ResourceType.RISK.value: [PermissionLevel.READ.value],\r\n            ResourceType.COMPLIANCE.value: [PermissionLevel.READ.value],\r\n            ResourceType.REPORT.value: [PermissionLevel.READ.value],\r\n            ResourceType.SYSTEM.value: [PermissionLevel.READ.value],\r\n            ResourceType.AUDIT.value: [PermissionLevel.READ.value]\r\n        }\r\n    \r\n    def _get_user_permissions",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\enhanced_rbac.py",
+        "start": 412,
+        "end": 423,
+        "startLoc": {
+          "line": 412,
+          "column": 9,
+          "position": 3872
+        },
+        "endLoc": {
+          "line": 423,
+          "column": 22,
+          "position": 4029
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\enhanced_rbac.py",
+        "start": 356,
+        "end": 381,
+        "startLoc": {
+          "line": 356,
+          "column": 9,
+          "position": 3048
+        },
+        "endLoc": {
+          "line": 381,
+          "column": 24,
+          "position": 3453
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 8,
+      "fragment": "user_permissions = await self._get_user_permissions_by_id(user_id)\r\n        if not user_permissions:\r\n            return False\r\n        \r\n        role = user_permissions.get(\"role\", \"\")\r\n        role_config = self.predefined_roles.get(role, {})\r\n        \r\n        return role_config.get(\"can_manage_roles\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\enhanced_rbac.py",
+        "start": 469,
+        "end": 476,
+        "startLoc": {
+          "line": 469,
+          "column": 9,
+          "position": 4458
+        },
+        "endLoc": {
+          "line": 476,
+          "column": 19,
+          "position": 4533
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\enhanced_rbac.py",
+        "start": 457,
+        "end": 464,
+        "startLoc": {
+          "line": 457,
+          "column": 9,
+          "position": 4344
+        },
+        "endLoc": {
+          "line": 464,
+          "column": 19,
+          "position": 4419
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 8,
+      "fragment": "if region not in self.compliance_frameworks:\r\n            return {\"error\": f\"Unsupported region: {region}\"}\r\n        \r\n        if regulation not in self.compliance_frameworks[region]:\r\n            return {\"error\": f\"Unsupported regulation: {regulation}\"}\r\n        \r\n        framework = self.compliance_frameworks[region][regulation]\r\n        validation_results",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\services\\compliance_service.py",
+        "start": 351,
+        "end": 358,
+        "startLoc": {
+          "line": 351,
+          "column": 9,
+          "position": 2558
+        },
+        "endLoc": {
+          "line": 358,
+          "column": 19,
+          "position": 2635
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\services\\compliance_service.py",
+        "start": 261,
+        "end": 269,
+        "startLoc": {
+          "line": 261,
+          "column": 9,
+          "position": 1755
+        },
+        "endLoc": {
+          "line": 269,
+          "column": 33,
+          "position": 1834
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 6,
+      "fragment": "if isinstance(instance, CompanyScopedModel):\r\n            # Ensure company_id is set\r\n            if not hasattr(instance, 'company_id') or instance.company_id is None:\r\n                instance.company_id = self.company_id\r\n        \r\n        return",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\db\\tenant_session.py",
+        "start": 116,
+        "end": 121,
+        "startLoc": {
+          "line": 116,
+          "column": 9,
+          "position": 742
+        },
+        "endLoc": {
+          "line": 121,
+          "column": 7,
+          "position": 798
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\db\\tenant_session.py",
+        "start": 98,
+        "end": 103,
+        "startLoc": {
+          "line": 98,
+          "column": 9,
+          "position": 638
+        },
+        "endLoc": {
+          "line": 103,
+          "column": 6,
+          "position": 694
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 6,
+      "fragment": ".froms:\r\n                if hasattr(from_clause, 'entity_namespace'):\r\n                    entity_class = from_clause.entity_namespace.class_\r\n                    if (isinstance(entity_class, type) and \r\n                        issubclass(entity_class, CompanyScopedModel)):\r\n                        # Add company_id filter if not present",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\db\\tenant_session.py",
+        "start": 154,
+        "end": 159,
+        "startLoc": {
+          "line": 154,
+          "column": 10,
+          "position": 942
+        },
+        "endLoc": {
+          "line": 159,
+          "column": 39,
+          "position": 1000
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\db\\tenant_session.py",
+        "start": 46,
+        "end": 51,
+        "startLoc": {
+          "line": 46,
+          "column": 17,
+          "position": 247
+        },
+        "endLoc": {
+          "line": 51,
+          "column": 44,
+          "position": 305
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 8,
+      "fragment": "where_clause = statement.whereclause\r\n            if hasattr(where_clause, 'left') and hasattr(where_clause, 'right'):\r\n                if (hasattr(where_clause.left, 'name') and \r\n                    where_clause.left.name == 'company_id'):\r\n                    return True\r\n        return False\r\n\r\ndef create_tenant_session_factory",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\db\\tenant_session.py",
+        "start": 174,
+        "end": 181,
+        "startLoc": {
+          "line": 174,
+          "column": 13,
+          "position": 1150
+        },
+        "endLoc": {
+          "line": 181,
+          "column": 30,
+          "position": 1229
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\db\\tenant_session.py",
+        "start": 64,
+        "end": 71,
+        "startLoc": {
+          "line": 64,
+          "column": 13,
+          "position": 417
+        },
+        "endLoc": {
+          "line": 71,
+          "column": 6,
+          "position": 497
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 19,
+      "fragment": "def decorator(func: Callable) -> Callable:\r\n        @wraps(func)\r\n        async def wrapper(*args, **kwargs):\r\n            # Get current user from dependencies\r\n            current_user = kwargs.get('current_user')\r\n            if not current_user:\r\n                # Try to get from function parameters\r\n                for arg in args:\r\n                    if hasattr(arg, 'role'):\r\n                        current_user = arg\r\n                        break\r\n            \r\n            if not current_user:\r\n                raise HTTPException(\r\n                    status_code=status.HTTP_401_UNAUTHORIZED,\r\n                    detail=\"User not authenticated\"\r\n                )\r\n            \r\n            user_role",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\core\\rbac.py",
+        "start": 223,
+        "end": 241,
+        "startLoc": {
+          "line": 223,
+          "column": 5,
+          "position": 1462
+        },
+        "endLoc": {
+          "line": 241,
+          "column": 10,
+          "position": 1609
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\core\\rbac.py",
+        "start": 163,
+        "end": 181,
+        "startLoc": {
+          "line": 163,
+          "column": 5,
+          "position": 1062
+        },
+        "endLoc": {
+          "line": 181,
+          "column": 34,
+          "position": 1209
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 20,
+      "fragment": "def decorator(func: Callable) -> Callable:\r\n        @wraps(func)\r\n        async def wrapper(*args, **kwargs):\r\n            # Get current user from dependencies\r\n            current_user = kwargs.get('current_user')\r\n            if not current_user:\r\n                # Try to get from function parameters\r\n                for arg in args:\r\n                    if hasattr(arg, 'role'):\r\n                        current_user = arg\r\n                        break\r\n            \r\n            if not current_user:\r\n                raise HTTPException(\r\n                    status_code=status.HTTP_401_UNAUTHORIZED,\r\n                    detail=\"User not authenticated\"\r\n                )\r\n            \r\n            user_role = current_user.role\r\n            feature_config",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\core\\rbac.py",
+        "start": 268,
+        "end": 287,
+        "startLoc": {
+          "line": 268,
+          "column": 5,
+          "position": 1760
+        },
+        "endLoc": {
+          "line": 287,
+          "column": 15,
+          "position": 1917
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\core\\rbac.py",
+        "start": 163,
+        "end": 242,
+        "startLoc": {
+          "line": 163,
+          "column": 5,
+          "position": 1062
+        },
+        "endLoc": {
+          "line": 242,
+          "column": 17,
+          "position": 1619
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 6,
+      "fragment": ")\n    rate_limit_delay: float = Field(default=0.1, ge=0.01)\n    timeout: int = Field(default=30, ge=1)\n    max_retries: int = Field(default=3, ge=0)\n    cache_duration: int = Field(default=300, ge=1)  # 5 minutes\n    default_hub",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\core\\config.py",
+        "start": 136,
+        "end": 141,
+        "startLoc": {
+          "line": 136,
+          "column": 30,
+          "position": 1408
+        },
+        "endLoc": {
+          "line": 141,
+          "column": 12,
+          "position": 1493
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\core\\config.py",
+        "start": 108,
+        "end": 114,
+        "startLoc": {
+          "line": 108,
+          "column": 29,
+          "position": 1063
+        },
+        "endLoc": {
+          "line": 114,
+          "column": 6,
+          "position": 1148
+        }
+      }
+    },
+    {
+      "format": "python",
+      "lines": 10,
+      "fragment": ",\n                duration=duration,\n                correlation_id=correlation_id,\n            )\n            \n            # Update metrics\n            REQUEST_COUNT.labels(\n                method=request.method,\n                endpoint=request.url.path,\n                status=500",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\energyopti_pro\\main.py",
+        "start": 201,
+        "end": 210,
+        "startLoc": {
+          "line": 201,
+          "column": 2,
+          "position": 1155
+        },
+        "endLoc": {
+          "line": 210,
+          "column": 4,
+          "position": 1204
+        }
+      },
+      "secondFile": {
+        "name": "src\\energyopti_pro\\main.py",
+        "start": 172,
+        "end": 181,
+        "startLoc": {
+          "line": 172,
+          "column": 12,
+          "position": 972
+        },
+        "endLoc": {
+          "line": 181,
+          "column": 9,
+          "position": 1021
+        }
+      }
+    }
+  ]
+}

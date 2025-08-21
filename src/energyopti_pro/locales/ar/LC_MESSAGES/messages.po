@@ -1,0 +1,625 @@
+# Arabic translations for EnergyOpti-Pro
+# Copyright (C) 2024 EnergyOpti-Pro
+# This file is distributed under the same license as the EnergyOpti-Pro package.
+msgid ""
+msgstr ""
+"Project-Id-Version: EnergyOpti-Pro 1.0\n"
+"Report-Msgid-Bugs-To: support@energyopti-pro.com\n"
+"POT-Creation-Date: 2024-01-01 12:00+0000\n"
+"PO-Revision-Date: 2024-01-01 12:00+0000\n"
+"Last-Translator: EnergyOpti-Pro Team\n"
+"Language: ar\n"
+"Language-Team: Arabic\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Platform General
+msgid "EnergyOpti-Pro"
+msgstr "إينرجي أوبتي برو"
+
+msgid "Energy Trading and Risk Management Platform"
+msgstr "منصة تداول الطاقة وإدارة المخاطر"
+
+msgid "Welcome"
+msgstr "مرحباً"
+
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+msgid "Settings"
+msgstr "الإعدادات"
+
+msgid "Profile"
+msgstr "الملف الشخصي"
+
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+msgid "Login"
+msgstr "تسجيل الدخول"
+
+msgid "Register"
+msgstr "التسجيل"
+
+# Navigation
+msgid "Trading"
+msgstr "التداول"
+
+msgid "Contracts"
+msgstr "العقود"
+
+msgid "Positions"
+msgstr "المراكز"
+
+msgid "Risk Management"
+msgstr "إدارة المخاطر"
+
+msgid "Compliance"
+msgstr "الامتثال"
+
+msgid "Reports"
+msgstr "التقارير"
+
+msgid "Analytics"
+msgstr "التحليلات"
+
+# Trading Operations
+msgid "Create Contract"
+msgstr "إنشاء عقد"
+
+msgid "Execute Trade"
+msgstr "تنفيذ صفقة"
+
+msgid "Trade History"
+msgstr "تاريخ الصفقات"
+
+msgid "Active Contracts"
+msgstr "العقود النشطة"
+
+msgid "Contract Type"
+msgstr "نوع العقد"
+
+msgid "Counterparty"
+msgstr "الطرف المقابل"
+
+msgid "Commodity"
+msgstr "السلعة"
+
+msgid "Quantity"
+msgstr "الكمية"
+
+msgid "Price"
+msgstr "السعر"
+
+msgid "Currency"
+msgstr "العملة"
+
+msgid "Delivery Location"
+msgstr "موقع التسليم"
+
+msgid "Delivery Period"
+msgstr "فترة التسليم"
+
+msgid "Status"
+msgstr "الحالة"
+
+# Contract Types
+msgid "Power Purchase Agreement"
+msgstr "اتفاقية شراء الطاقة"
+
+msgid "Forward Contract"
+msgstr "العقد الآجل"
+
+msgid "Futures Contract"
+msgstr "عقد المستقبليات"
+
+msgid "Spot Contract"
+msgstr "العقد الفوري"
+
+msgid "OTC Contract"
+msgstr "العقد خارج البورصة"
+
+# Commodities
+msgid "Electricity"
+msgstr "الكهرباء"
+
+msgid "Natural Gas"
+msgstr "الغاز الطبيعي"
+
+msgid "Oil"
+msgstr "النفط"
+
+msgid "Carbon Credits"
+msgstr "رصيد الكربون"
+
+msgid "Renewable Energy"
+msgstr "الطاقة المتجددة"
+
+# Trading Actions
+msgid "Buy"
+msgstr "شراء"
+
+msgid "Sell"
+msgstr "بيع"
+
+msgid "Execute"
+msgstr "تنفيذ"
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Modify"
+msgstr "تعديل"
+
+msgid "Confirm"
+msgstr "تأكيد"
+
+# Risk Management
+msgid "Value at Risk"
+msgstr "القيمة المعرضة للمخاطر"
+
+msgid "Risk Limits"
+msgstr "حدود المخاطر"
+
+msgid "Stress Testing"
+msgstr "اختبار الضغط"
+
+msgid "Portfolio Risk"
+msgstr "مخاطر المحفظة"
+
+msgid "Correlation Analysis"
+msgstr "تحليل الارتباط"
+
+msgid "Risk Metrics"
+msgstr "مقاييس المخاطر"
+
+# Compliance
+msgid "Regulatory Compliance"
+msgstr "الامتثال التنظيمي"
+
+msgid "Compliance Status"
+msgstr "حالة الامتثال"
+
+msgid "Compliance Report"
+msgstr "تقرير الامتثال"
+
+msgid "Audit Trail"
+msgstr "مسار التدقيق"
+
+msgid "Regulations"
+msgstr "اللوائح"
+
+msgid "Requirements"
+msgstr "المتطلبات"
+
+# Market Data
+msgid "Market Prices"
+msgstr "أسعار السوق"
+
+msgid "Real-time Data"
+msgstr "البيانات في الوقت الفعلي"
+
+msgid "Historical Data"
+msgstr "البيانات التاريخية"
+
+msgid "Market Depth"
+msgstr "عمق السوق"
+
+msgid "Order Book"
+msgstr "دفتر الأوامر"
+
+msgid "Price Charts"
+msgstr "مخططات الأسعار"
+
+# Islamic Finance
+msgid "Sharia Compliance"
+msgstr "الامتثال للشريعة"
+
+msgid "Islamic Contracts"
+msgstr "العقود الإسلامية"
+
+msgid "Sukuk"
+msgstr "الصكوك"
+
+msgid "Murabaha"
+msgstr "المرابحة"
+
+msgid "Ijara"
+msgstr "الإجارة"
+
+msgid "Musharaka"
+msgstr "المشاركة"
+
+msgid "Zakat"
+msgstr "الزكاة"
+
+msgid "Halal Investment"
+msgstr "الاستثمار الحلال"
+
+# Islamic Calendar
+msgid "Hijri Calendar"
+msgstr "التقويم الهجري"
+
+msgid "Ramadan"
+msgstr "رمضان"
+
+msgid "Eid al-Fitr"
+msgstr "عيد الفطر"
+
+msgid "Eid al-Adha"
+msgstr "عيد الأضحى"
+
+msgid "Islamic New Year"
+msgstr "رأس السنة الهجرية"
+
+msgid "Prophet's Birthday"
+msgstr "مولد النبي"
+
+# Status Messages
+msgid "Success"
+msgstr "نجح"
+
+msgid "Error"
+msgstr "خطأ"
+
+msgid "Warning"
+msgstr "تحذير"
+
+msgid "Info"
+msgstr "معلومات"
+
+msgid "Loading"
+msgstr "جاري التحميل"
+
+msgid "Processing"
+msgstr "جاري المعالجة"
+
+msgid "Completed"
+msgstr "مكتمل"
+
+msgid "Failed"
+msgstr "فشل"
+
+msgid "Pending"
+msgstr "قيد الانتظار"
+
+msgid "Active"
+msgstr "نشط"
+
+msgid "Inactive"
+msgstr "غير نشط"
+
+# Form Labels
+msgid "Username"
+msgstr "اسم المستخدم"
+
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+msgid "Password"
+msgstr "كلمة المرور"
+
+msgid "Confirm Password"
+msgstr "تأكيد كلمة المرور"
+
+msgid "First Name"
+msgstr "الاسم الأول"
+
+msgid "Last Name"
+msgstr "اسم العائلة"
+
+msgid "Company Name"
+msgstr "اسم الشركة"
+
+msgid "Phone Number"
+msgstr "رقم الهاتف"
+
+msgid "Address"
+msgstr "العنوان"
+
+msgid "Country"
+msgstr "البلد"
+
+msgid "Region"
+msgstr "المنطقة"
+
+# Buttons
+msgid "Submit"
+msgstr "إرسال"
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Update"
+msgstr "تحديث"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "Edit"
+msgstr "تعديل"
+
+msgid "View"
+msgstr "عرض"
+
+msgid "Download"
+msgstr "تحميل"
+
+msgid "Upload"
+msgstr "رفع"
+
+msgid "Search"
+msgstr "بحث"
+
+msgid "Filter"
+msgstr "تصفية"
+
+msgid "Sort"
+msgstr "ترتيب"
+
+# Messages
+msgid "Operation completed successfully"
+msgstr "تم إكمال العملية بنجاح"
+
+msgid "An error occurred while processing your request"
+msgstr "حدث خطأ أثناء معالجة طلبك"
+
+msgid "Please check your input and try again"
+msgstr "يرجى التحقق من إدخالك والمحاولة مرة أخرى"
+
+msgid "Data saved successfully"
+msgstr "تم حفظ البيانات بنجاح"
+
+msgid "Data updated successfully"
+msgstr "تم تحديث البيانات بنجاح"
+
+msgid "Data deleted successfully"
+msgstr "تم حذف البيانات بنجاح"
+
+msgid "No data found"
+msgstr "لم يتم العثور على بيانات"
+
+msgid "Access denied"
+msgstr "تم رفض الوصول"
+
+msgid "Session expired"
+msgstr "انتهت صلاحية الجلسة"
+
+msgid "Please login again"
+msgstr "يرجى تسجيل الدخول مرة أخرى"
+
+# Time and Date
+msgid "Today"
+msgstr "اليوم"
+
+msgid "Yesterday"
+msgstr "أمس"
+
+msgid "This Week"
+msgstr "هذا الأسبوع"
+
+msgid "Last Week"
+msgstr "الأسبوع الماضي"
+
+msgid "This Month"
+msgstr "هذا الشهر"
+
+msgid "Last Month"
+msgstr "الشهر الماضي"
+
+msgid "This Year"
+msgstr "هذا العام"
+
+msgid "Last Year"
+msgstr "العام الماضي"
+
+# Numbers and Currency
+msgid "Total"
+msgstr "المجموع"
+
+msgid "Average"
+msgstr "المتوسط"
+
+msgid "Minimum"
+msgstr "الحد الأدنى"
+
+msgid "Maximum"
+msgstr "الحد الأقصى"
+
+msgid "Count"
+msgstr "العدد"
+
+msgid "Percentage"
+msgstr "النسبة المئوية"
+
+msgid "Amount"
+msgstr "المبلغ"
+
+msgid "Rate"
+msgstr "المعدل"
+
+msgid "Volume"
+msgstr "الحجم"
+
+# Charts and Analytics
+msgid "Chart"
+msgstr "الرسم البياني"
+
+msgid "Graph"
+msgstr "الرسم البياني"
+
+msgid "Trend"
+msgstr "الاتجاه"
+
+msgid "Analysis"
+msgstr "التحليل"
+
+msgid "Statistics"
+msgstr "الإحصائيات"
+
+msgid "Performance"
+msgstr "الأداء"
+
+msgid "Growth"
+msgstr "النمو"
+
+msgid "Decline"
+msgstr "الانخفاض"
+
+msgid "Stable"
+msgstr "مستقر"
+
+msgid "Volatile"
+msgstr "متقلب"
+
+# Notifications
+msgid "Notification"
+msgstr "إشعار"
+
+msgid "Alert"
+msgstr "تنبيه"
+
+msgid "Message"
+msgstr "رسالة"
+
+msgid "Reminder"
+msgstr "تذكير"
+
+msgid "Update Available"
+msgstr "تحديث متاح"
+
+msgid "System Maintenance"
+msgstr "صيانة النظام"
+
+msgid "New Feature"
+msgstr "ميزة جديدة"
+
+# Help and Support
+msgid "Help"
+msgstr "المساعدة"
+
+msgid "Support"
+msgstr "الدعم"
+
+msgid "Documentation"
+msgstr "الوثائق"
+
+msgid "FAQ"
+msgstr "الأسئلة الشائعة"
+
+msgid "Contact Us"
+msgstr "اتصل بنا"
+
+msgid "Feedback"
+msgstr "التعليقات"
+
+msgid "Report Issue"
+msgstr "الإبلاغ عن مشكلة"
+
+msgid "Feature Request"
+msgstr "طلب ميزة"
+
+# Settings and Configuration
+msgid "Language"
+msgstr "اللغة"
+
+msgid "Theme"
+msgstr "المظهر"
+
+msgid "Notifications"
+msgstr "الإشعارات"
+
+msgid "Privacy"
+msgstr "الخصوصية"
+
+msgid "Security"
+msgstr "الأمان"
+
+msgid "API Keys"
+msgstr "مفاتيح API"
+
+msgid "Webhooks"
+msgstr "Webhooks"
+
+msgid "Integrations"
+msgstr "التكاملات"
+
+# Error Messages
+msgid "Invalid input"
+msgstr "إدخال غير صحيح"
+
+msgid "Required field"
+msgstr "حقل مطلوب"
+
+msgid "Invalid format"
+msgstr "تنسيق غير صحيح"
+
+msgid "File too large"
+msgstr "الملف كبير جداً"
+
+msgid "Invalid file type"
+msgstr "نوع ملف غير صحيح"
+
+msgid "Connection failed"
+msgstr "فشل الاتصال"
+
+msgid "Server error"
+msgstr "خطأ في الخادم"
+
+msgid "Network error"
+msgstr "خطأ في الشبكة"
+
+msgid "Timeout"
+msgstr "انتهت المهلة الزمنية"
+
+# Success Messages
+msgid "Welcome to EnergyOpti-Pro"
+msgstr "مرحباً بك في إينرجي أوبتي برو"
+
+msgid "Your account has been created successfully"
+msgstr "تم إنشاء حسابك بنجاح"
+
+msgid "Your profile has been updated"
+msgstr "تم تحديث ملفك الشخصي"
+
+msgid "Password changed successfully"
+msgstr "تم تغيير كلمة المرور بنجاح"
+
+msgid "Settings saved successfully"
+msgstr "تم حفظ الإعدادات بنجاح"
+
+msgid "Contract created successfully"
+msgstr "تم إنشاء العقد بنجاح"
+
+msgid "Trade executed successfully"
+msgstr "تم تنفيذ الصفقة بنجاح"
+
+msgid "Report generated successfully"
+msgstr "تم إنشاء التقرير بنجاح"
+
+# Validation Messages
+msgid "Please enter a valid email address"
+msgstr "يرجى إدخال عنوان بريد إلكتروني صحيح"
+
+msgid "Password must be at least 8 characters long"
+msgstr "يجب أن تكون كلمة المرور 8 أحرف على الأقل"
+
+msgid "Passwords do not match"
+msgstr "كلمات المرور غير متطابقة"
+
+msgid "Username already exists"
+msgstr "اسم المستخدم موجود بالفعل"
+
+msgid "Email already registered"
+msgstr "البريد الإلكتروني مسجل بالفعل"
+
+msgid "Invalid credentials"
+msgstr "بيانات الاعتماد غير صحيحة"
+
+msgid "Account locked"
+msgstr "الحساب مقفل"
+
+msgid "Too many login attempts"
+msgstr "محاولات تسجيل دخول كثيرة جداً" 

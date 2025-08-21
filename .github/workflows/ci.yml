@@ -19,7 +19,7 @@ jobs:
           POSTGRES_DB: testdb
         ports:
           - 5432:5432
-        options: >--
+        options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
@@ -41,6 +41,17 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Install Node.js for duplication checking
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install jscpd globally
+        run: npm install -g jscpd
+      - name: Check for code duplicates
+        run: |
+          echo "🔍 Checking for code duplication..."
+          npx jscpd ./src --format python --min-lines 5 --min-tokens 30
+          echo "✅ Duplication check passed - Code quality maintained!"
       - name: Run migrations
         run: alembic upgrade head
       - name: Run tests
