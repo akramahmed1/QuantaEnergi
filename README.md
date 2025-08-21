@@ -1,8 +1,9 @@
-# EnergyOpti-Pro: Integrated Next-Gen SaaS Platform
+# EnergyOpti-Pro: Integrated SaaS Platform
 
-Zero-cost AI energy optimization prototype. Next-Generation SaaS for Energy Optimization using AI, quantum computing, and advanced analytics.
+Energy optimization prototype for modern infrastructure. Designed for flexibility, analytics, and security.
 
 ## Core Features
+<<<<<<< HEAD
 - **Dual API (REST/GraphQL)** - Comprehensive API ecosystem
 - **AI/ML for forecasting and RL optimization** - Prophet, Stable-Baselines3, Qiskit
 - **Quantum simulations** - Quantum-enhanced trading algorithms
@@ -40,12 +41,21 @@ Zero-cost AI energy optimization prototype. Next-Generation SaaS for Energy Opti
 - **Credit Risk**: Counterparty exposure, credit limits, concentration risk
 - **Liquidity Risk**: Market depth analysis, position size optimization
 - **Regulatory Compliance**: Automated compliance checking, violation alerts
+=======
+- Dual API (REST/GraphQL)
+- Forecasting and optimization modules
+- Quantum simulations
+- PQC security
+- PostgreSQL/Redis DB
+- Containerized deployment (Docker, Fly.io, etc.)
+>>>>>>> cb24edf5ed231794dfb8e91a602e206061bb00b2
 
 ## Setup
-See instructions in the file. For xAI API integration, visit https://x.ai/api.
+See instructions in the file. For API integration, visit the relevant provider documentation.
 
 ## PRD
 See docs/PRD.md for full requirements.
+<<<<<<< HEAD
 
 ## ETRM/CTRM Documentation
 See docs/ETRM_CTRM_Features.md for comprehensive ETRM/CTRM features and capabilities.
@@ -118,3 +128,5 @@ See docs/ETRM_CTRM_Features.md for comprehensive ETRM/CTRM features and capabili
 
 ## Contact & Support
 For more information about the ETRM/CTRM platform and implementation support, please refer to the comprehensive documentation in the `docs/` folder.
+=======
+>>>>>>> cb24edf5ed231794dfb8e91a602e206061bb00b2

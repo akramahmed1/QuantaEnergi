@@ -8,14 +8,14 @@ Patent-pending SaaS for energy optimization. Launch: July 20, 2025.
 - Quantum trading simulations
 - ESG carbon tracking
 - IoT VPP aggregation
-- AI forecasting with Prophet
+- Forecasting with Prophet
 - Dual APIs: REST and GraphQL
 - PQC security with Kyber
 - RBAC for roles (trader, engineer, etc.)
 
 ## Technical Blueprint
 - Backend: FastAPI, PostgreSQL, Redis
-- AI: Stable-Baselines3, Qiskit-aer, Prophet
+- ML/AI: Stable-Baselines3, Qiskit-aer, Prophet
 - DevOps: Docker, Fly.io, GitHub Actions
 
 ## Pilot
