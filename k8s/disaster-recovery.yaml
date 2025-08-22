@@ -1,0 +1,550 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: energyopti-pro-dr
+  labels:
+    app: energyopti-pro
+    environment: disaster-recovery
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dr-config
+  namespace: energyopti-pro-dr
+data:
+  primary_region: "uae"
+  backup_regions: "us,eu,uk"
+  failover_threshold: "15"
+  rpo_target: "5"
+  rto_target: "15"
+  health_check_interval: "30"
+  auto_failover: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dr-controller
+  namespace: energyopti-pro-dr
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dr-controller
+  template:
+    metadata:
+      labels:
+        app: dr-controller
+    spec:
+      containers:
+      - name: dr-controller
+        image: energyopti-pro/dr-controller:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PRIMARY_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: dr-config
+              key: primary_region
+        - name: BACKUP_REGIONS
+          valueFrom:
+            configMapKeyRef:
+              name: dr-config
+              key: backup_regions
+        - name: FAILOVER_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: dr-config
+              key: failover_threshold
+        - name: RPO_TARGET
+          valueFrom:
+            configMapKeyRef:
+              name: dr-config
+              key: rpo_target
+        - name: RTO_TARGET
+          valueFrom:
+            configMapKeyRef:
+              name: dr-config
+              key: rto_target
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dr-controller-service
+  namespace: energyopti-pro-dr
+spec:
+  selector:
+    app: dr-controller
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dr-database-replica
+  namespace: energyopti-pro-dr
+spec:
+  serviceName: dr-database-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: dr-database
+  template:
+    metadata:
+      labels:
+        app: dr-database
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "energyopti_pro_dr"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: dr-database-secret
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dr-database-secret
+              key: password
+        - name: POSTGRES_INITDB_ARGS
+          value: "--wal-level=replica --max-wal-senders=3 --max-replication-slots=3"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-config
+          mountPath: /etc/postgresql/postgresql.conf
+          subPath: postgresql.conf
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-config
+        configMap:
+          name: postgres-config
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: energyopti-pro-dr
+data:
+  postgresql.conf: |
+    # Disaster Recovery Configuration
+    listen_addresses = '*'
+    port = 5432
+    max_connections = 200
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    maintenance_work_mem = 64MB
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    work_mem = 4MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    max_worker_processes = 8
+    max_parallel_workers_per_gather = 4
+    max_parallel_workers = 8
+    max_parallel_maintenance_workers = 4
+    
+    # Replication Settings
+    wal_level = replica
+    max_wal_senders = 3
+    max_replication_slots = 3
+    hot_standby = on
+    hot_standby_feedback = on
+    wal_receiver_timeout = 60s
+    max_standby_archive_delay = 30s
+    max_standby_streaming_delay = 30s
+    
+    # Logging
+    log_destination = 'stderr'
+    logging_collector = on
+    log_directory = 'log'
+    log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+    log_rotation_age = 1d
+    log_rotation_size = 100MB
+    log_min_duration_statement = 1000
+    log_checkpoints = on
+    log_connections = on
+    log_disconnections = on
+    log_lock_waits = on
+    log_temp_files = 0
+    log_autovacuum_min_duration = 0
+    log_error_verbosity = verbose
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dr-database-secret
+  namespace: energyopti-pro-dr
+type: Opaque
+data:
+  username: cG9zdGdyZXM=  # postgres
+  password: ZHJfcGFzc3dvcmQxMjM=  # dr_password123
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dr-database-service
+  namespace: energyopti-pro-dr
+spec:
+  selector:
+    app: dr-database
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dr-monitoring
+  namespace: energyopti-pro-dr
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dr-monitoring
+  template:
+    metadata:
+      labels:
+        app: dr-monitoring
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus
+        - name: prometheus-data
+          mountPath: /prometheus
+        command:
+        - /bin/prometheus
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --web.console.libraries=/etc/prometheus/console_libraries
+        - --web.console.templates=/etc/prometheus/consoles
+        - --storage.tsdb.retention.time=90d
+        - --web.enable-lifecycle
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dr-grafana-secret
+              key: admin-password
+        volumeMounts:
+        - name: grafana-data
+          mountPath: /var/lib/grafana
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config
+      - name: prometheus-data
+        emptyDir: {}
+      - name: grafana-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: energyopti-pro-dr
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'energyopti-pro-dr'
+        region: 'multi-region'
+    
+    rule_files:
+      - "dr-rules.yml"
+    
+    scrape_configs:
+      - job_name: 'dr-controller'
+        static_configs:
+          - targets: ['dr-controller-service:80']
+        metrics_path: /metrics
+        scrape_interval: 10s
+        
+      - job_name: 'dr-database'
+        static_configs:
+          - targets: ['dr-database-service:5432']
+        metrics_path: /metrics
+        scrape_interval: 15s
+        
+      - job_name: 'dr-monitoring'
+        static_configs:
+          - targets: ['localhost:9090']
+        metrics_path: /metrics
+        scrape_interval: 15s
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dr-grafana-secret
+  namespace: energyopti-pro-dr
+type: Opaque
+data:
+  admin-password: Z3JhZmFuYV9wYXNzd29yZA==  # grafana_password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dr-monitoring-service
+  namespace: energyopti-pro-dr
+spec:
+  selector:
+    app: dr-monitoring
+  ports:
+  - name: prometheus
+    protocol: TCP
+    port: 9090
+    targetPort: 9090
+  - name: grafana
+    protocol: TCP
+    port: 3000
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dr-monitoring-ingress
+  namespace: energyopti-pro-dr
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: dr-monitoring.energyopti-pro.com
+    http:
+      paths:
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: dr-monitoring-service
+            port:
+              number: 9090
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: dr-monitoring-service
+            port:
+              number: 3000
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dr-health-check
+  namespace: energyopti-pro-dr
+spec:
+  schedule: "*/5 * * * *"  # Every 5 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: health-check
+            image: energyopti-pro/dr-health-check:latest
+            env:
+            - name: PRIMARY_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: dr-config
+                  key: primary_region
+            - name: BACKUP_REGIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: dr-config
+                  key: backup_regions
+            - name: FAILOVER_THRESHOLD
+              valueFrom:
+                configMapKeyRef:
+                  name: dr-config
+                  key: failover_threshold
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dr-backup-sync
+  namespace: energyopti-pro-dr
+spec:
+  schedule: "*/5 * * * *"  # Every 5 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup-sync
+            image: energyopti-pro/dr-backup-sync:latest
+            env:
+            - name: RPO_TARGET
+              valueFrom:
+                configMapKeyRef:
+                  name: dr-config
+                  key: rpo_target
+            - name: BACKUP_REGIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: dr-config
+                  key: backup_regions
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "200m"
+              limits:
+                memory: "512Mi"
+                cpu: "400m"
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dr-alerts
+  namespace: energyopti-pro-dr
+data:
+  dr-rules.yml: |
+    groups:
+    - name: disaster-recovery
+      rules:
+      - alert: DRPrimaryRegionDown
+        expr: up{job="dr-controller"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: disaster-recovery
+        annotations:
+          summary: "Primary region is down"
+          description: "Primary region {{ $labels.instance }} has been down for more than 2 minutes"
+          
+      - alert: DRBackupRegionUnavailable
+        expr: up{job="dr-database"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          category: disaster-recovery
+        annotations:
+          summary: "Backup region database unavailable"
+          description: "Backup region database {{ $labels.instance }} is not responding"
+          
+      - alert: DRFailoverRequired
+        expr: dr_health_score < 0.5
+        for: 5m
+        labels:
+          severity: critical
+          category: disaster-recovery
+        annotations:
+          summary: "Failover required"
+          description: "Disaster recovery health score is below threshold, failover may be required"
+          
+      - alert: DRRPOViolation
+        expr: dr_rpo_seconds > 300
+        for: 2m
+        labels:
+          severity: warning
+          category: disaster-recovery
+        annotations:
+          summary: "RPO violation detected"
+          description: "Recovery Point Objective violation: {{ $value }} seconds"
+          
+      - alert: DRRTOViolation
+        expr: dr_rto_seconds > 900
+        for: 2m
+        labels:
+          severity: critical
+          category: disaster-recovery
+        annotations:
+          summary: "RTO violation detected"
+          description: "Recovery Time Objective violation: {{ $value }} seconds"

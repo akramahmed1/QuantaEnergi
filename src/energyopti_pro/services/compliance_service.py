@@ -1,567 +1,666 @@
-import json
-from typing import Dict, List, Optional, Any
-from datetime import datetime, date, timedelta
-from decimal import Decimal
+"""
+Compliance Service for EnergyOpti-Pro.
+
+Handles multi-region regulatory compliance, Islamic finance rules, and automated compliance checking.
+"""
+
 import asyncio
+from typing import Dict, Any, Optional, List
+from datetime import datetime, timezone, timedelta
+from decimal import Decimal
+import structlog
+from dataclasses import dataclass
+from enum import Enum
+
+logger = structlog.get_logger()
+
+class ComplianceRegion(Enum):
+    """Compliance region enumeration."""
+    MIDDLE_EAST = "middle_east"
+    UNITED_STATES = "united_states"
+    UNITED_KINGDOM = "united_kingdom"
+    EUROPEAN_UNION = "european_union"
+    GUYANA = "guyana"
+
+class ComplianceStatus(Enum):
+    """Compliance status enumeration."""
+    COMPLIANT = "compliant"
+    NON_COMPLIANT = "non_compliant"
+    PENDING_REVIEW = "pending_review"
+    EXEMPT = "exempt"
+
+@dataclass
+class ComplianceRule:
+    """Compliance rule definition."""
+    rule_id: str
+    region: ComplianceRegion
+    rule_type: str
+    description: str
+    requirements: List[str]
+    severity: str  # low, medium, high, critical
+    active: bool = True
+    created_at: datetime = None
+    
+    def __post_init__(self):
+        if self.created_at is None:
+            self.created_at = datetime.now(timezone.utc)
+
+@dataclass
+class ComplianceCheck:
+    """Compliance check result."""
+    rule_id: str
+    status: ComplianceStatus
+    details: str
+    violations: List[str]
+    recommendations: List[str]
+    timestamp: datetime = None
+    
+    def __post_init__(self):
+        if self.timestamp is None:
+            self.timestamp = datetime.now(timezone.utc)
 
 class ComplianceService:
-    """Multi-region compliance service for ETRM/CTRM"""
+    """Multi-region compliance service with Islamic finance support."""
     
     def __init__(self):
-        # Regional compliance frameworks
-        self.compliance_frameworks = {
-            "ME": {
-                "ADNOC": {
-                    "reporting_frequency": "monthly",
-                    "key_requirements": [
-                        "Carbon footprint reporting",
-                        "Energy efficiency metrics",
-                        "Local content requirements",
-                        "Emirates Energy Strategy 2050 compliance"
-                    ],
-                    "penalties": {
-                        "late_reporting": 50000,
-                        "non_compliance": 200000,
-                        "false_reporting": 500000
-                    }
-                },
-                "UAE_Energy_Law": {
-                    "reporting_frequency": "quarterly",
-                    "key_requirements": [
-                        "Energy consumption reporting",
-                        "Renewable energy targets",
-                        "Carbon reduction initiatives"
-                    ]
-                },
-                "Saudi_Vision_2030": {
-                    "reporting_frequency": "annually",
-                    "key_requirements": [
-                        "Renewable energy integration",
-                        "Carbon neutrality progress",
-                        "Local manufacturing support"
-                    ]
-                }
-            },
-            "US": {
-                "FERC": {
-                    "reporting_frequency": "daily",
-                    "key_requirements": [
-                        "Position reporting (Form 552)",
-                        "Market manipulation prevention",
-                        "Transparency requirements",
-                        "Real-time market data"
-                    ],
-                    "penalties": {
-                        "late_reporting": 100000,
-                        "non_compliance": 1000000,
-                        "market_manipulation": 10000000
-                    }
-                },
-                "CFTC": {
-                    "reporting_frequency": "daily",
-                    "key_requirements": [
-                        "Large trader reporting",
-                        "Swap data reporting",
-                        "Position limits compliance"
-                    ]
-                },
-                "EPA": {
-                    "reporting_frequency": "quarterly",
-                    "key_requirements": [
-                        "Greenhouse gas reporting",
-                        "Environmental compliance",
-                        "Carbon emission tracking"
-                    ]
-                }
-            },
-            "UK": {
-                "UK_ETS": {
-                    "reporting_frequency": "weekly",
-                    "key_requirements": [
-                        "Carbon allowance reporting",
-                        "Emissions verification",
-                        "Market participant registration"
-                    ],
-                    "penalties": {
-                        "late_reporting": 75000,
-                        "non_compliance": 500000,
-                        "false_reporting": 1000000
-                    }
-                },
-                "Ofgem": {
-                    "reporting_frequency": "monthly",
-                    "key_requirements": [
-                        "Energy market compliance",
-                        "Consumer protection",
-                        "Network security standards"
-                    ]
-                },
-                "FCA": {
-                    "reporting_frequency": "daily",
-                    "key_requirements": [
-                        "Market abuse prevention",
-                        "Transaction reporting",
-                        "Conduct risk management"
-                    ]
-                }
-            },
-            "EU": {
-                "EU_ETS": {
-                    "reporting_frequency": "daily",
-                    "key_requirements": [
-                        "Carbon allowance trading",
-                        "Emissions monitoring",
-                        "Verification and reporting"
-                    ],
-                    "penalties": {
-                        "late_reporting": 100000,
-                        "non_compliance": 1000000,
-                        "false_reporting": 2000000
-                    }
-                },
-                "REMIT": {
-                    "reporting_frequency": "daily",
-                    "key_requirements": [
-                        "Market transparency",
-                        "Inside information disclosure",
-                        "Transaction reporting"
-                    ]
-                },
-                "MiFID_II": {
-                    "reporting_frequency": "daily",
-                    "key_requirements": [
-                        "Transaction reporting",
-                        "Market structure compliance",
-                        "Investor protection"
-                    ]
-                },
-                "GDPR": {
-                    "reporting_frequency": "on_demand",
-                    "key_requirements": [
-                        "Data protection compliance",
-                        "Privacy impact assessments",
-                        "Breach notification"
-                    ]
-                }
-            },
-            "GUYANA": {
-                "Guyana_Energy_Law": {
-                    "reporting_frequency": "monthly",
-                    "key_requirements": [
-                        "Local content requirements",
-                        "Environmental impact assessment",
-                        "Community development reporting"
-                    ],
-                    "penalties": {
-                        "late_reporting": 25000,
-                        "non_compliance": 100000,
-                        "environmental_violation": 500000
-                    }
-                },
-                "Local_Content": {
-                    "reporting_frequency": "quarterly",
-                    "key_requirements": [
-                        "Local workforce utilization",
-                        "Local supplier engagement",
-                        "Technology transfer reporting"
-                    ]
-                },
-                "Environmental_Protection": {
-                    "reporting_frequency": "monthly",
-                    "key_requirements": [
-                        "Carbon footprint monitoring",
-                        "Biodiversity impact assessment",
-                        "Waste management reporting"
-                    ]
-                }
-            }
-        }
+        self.compliance_rules: Dict[str, ComplianceRule] = {}
+        self.compliance_checks: List[ComplianceCheck] = []
+        self.islamic_finance_rules: Dict[str, Any] = {}
         
-        # Reporting templates by region
-        self.reporting_templates = {
-            "ME": {
-                "monthly": "ADNOC_Monthly_Report_Template",
-                "quarterly": "UAE_Quarterly_Report_Template",
-                "annually": "Saudi_Annual_Report_Template"
-            },
-            "US": {
-                "daily": "FERC_Daily_Report_Template",
-                "quarterly": "EPA_Quarterly_Report_Template",
-                "annually": "CFTC_Annual_Report_Template"
-            },
-            "UK": {
-                "weekly": "UK_ETS_Weekly_Report_Template",
-                "monthly": "Ofgem_Monthly_Report_Template",
-                "quarterly": "FCA_Quarterly_Report_Template"
-            },
-            "EU": {
-                "daily": "EU_ETS_Daily_Report_Template",
-                "monthly": "REMIT_Monthly_Report_Template",
-                "quarterly": "MiFID_Quarterly_Report_Template"
-            },
-            "GUYANA": {
-                "monthly": "Guyana_Monthly_Report_Template",
-                "quarterly": "Local_Content_Quarterly_Template",
-                "annually": "Environmental_Annual_Template"
-            }
-        }
+        # Initialize compliance rules
+        self._initialize_compliance_rules()
+        self._initialize_islamic_finance_rules()
     
-    async def check_compliance_status(
-        self, 
-        company_id: int, 
-        region: str,
-        regulation: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Check compliance status for a company in a specific region"""
+    def _initialize_compliance_rules(self):
+        """Initialize compliance rules for all regions."""
+        # Middle East Compliance Rules
+        me_rules = [
+            ComplianceRule(
+                rule_id="ME_001",
+                region=ComplianceRegion.MIDDLE_EAST,
+                rule_type="ADNOC_Compliance",
+                description="ADNOC trading and reporting requirements",
+                requirements=["Daily position reporting", "Monthly compliance review", "ADNOC certification"],
+                severity="high"
+            ),
+            ComplianceRule(
+                rule_id="ME_002",
+                region=ComplianceRegion.MIDDLE_EAST,
+                rule_type="Saudi_Vision_2030",
+                description="Saudi Vision 2030 energy sector compliance",
+                requirements=["Local content requirements", "Technology transfer", "Saudi employment targets"],
+                severity="high"
+            ),
+            ComplianceRule(
+                rule_id="ME_003",
+                region=ComplianceRegion.MIDDLE_EAST,
+                rule_type="UAE_Energy_Law",
+                description="UAE energy law compliance",
+                requirements=["Energy efficiency standards", "Renewable energy targets", "Carbon reduction"],
+                severity="medium"
+            )
+        ]
         
-        if region not in self.compliance_frameworks:
-            return {"error": f"Unsupported region: {region}"}
+        # US Compliance Rules
+        us_rules = [
+            ComplianceRule(
+                rule_id="US_001",
+                region=ComplianceRegion.UNITED_STATES,
+                rule_type="FERC_Compliance",
+                description="Federal Energy Regulatory Commission compliance",
+                requirements=["Market manipulation prevention", "Transparency reporting", "Fair access"],
+                severity="critical"
+            ),
+            ComplianceRule(
+                rule_id="US_002",
+                region=ComplianceRegion.UNITED_STATES,
+                rule_type="CFTC_Compliance",
+                description="Commodity Futures Trading Commission compliance",
+                requirements=["Position limits", "Reporting requirements", "Anti-fraud measures"],
+                severity="critical"
+            ),
+            ComplianceRule(
+                rule_id="US_003",
+                region=ComplianceRegion.UNITED_STATES,
+                rule_type="EPA_Compliance",
+                description="Environmental Protection Agency compliance",
+                requirements=["Emissions reporting", "Environmental impact assessment", "Clean energy standards"],
+                severity="high"
+            )
+        ]
         
-        frameworks = self.compliance_frameworks[region]
+        # UK Compliance Rules
+        uk_rules = [
+            ComplianceRule(
+                rule_id="UK_001",
+                region=ComplianceRegion.UNITED_KINGDOM,
+                rule_type="UK_ETS_Compliance",
+                description="UK Emissions Trading Scheme compliance",
+                requirements=["Carbon allowance management", "Emissions reporting", "Compliance verification"],
+                severity="high"
+            ),
+            ComplianceRule(
+                rule_id="UK_002",
+                region=ComplianceRegion.UNITED_KINGDOM,
+                rule_type="Ofgem_Compliance",
+                description="Office of Gas and Electricity Markets compliance",
+                requirements=["Market conduct rules", "Consumer protection", "Grid access"],
+                severity="high"
+            ),
+            ComplianceRule(
+                rule_id="UK_003",
+                region=ComplianceRegion.UNITED_KINGDOM,
+                rule_type="FCA_Compliance",
+                description="Financial Conduct Authority compliance",
+                requirements=["Financial services regulation", "Market abuse prevention", "Client money protection"],
+                severity="critical"
+            )
+        ]
         
-        if regulation and regulation not in frameworks:
-            return {"error": f"Unsupported regulation: {regulation}"}
+        # EU Compliance Rules
+        eu_rules = [
+            ComplianceRule(
+                rule_id="EU_001",
+                region=ComplianceRegion.EUROPEAN_UNION,
+                rule_type="EU_ETS_Compliance",
+                description="EU Emissions Trading Scheme compliance",
+                requirements=["Carbon market participation", "Emissions monitoring", "Compliance reporting"],
+                severity="high"
+            ),
+            ComplianceRule(
+                rule_id="EU_002",
+                region=ComplianceRegion.EUROPEAN_UNION,
+                rule_type="REMIT_Compliance",
+                description="Regulation on Energy Market Integrity and Transparency",
+                requirements=["Market abuse prevention", "Inside information disclosure", "Transaction reporting"],
+                severity="critical"
+            ),
+            ComplianceRule(
+                rule_id="EU_003",
+                region=ComplianceRegion.EUROPEAN_UNION,
+                rule_type="MiFID_II_Compliance",
+                description="Markets in Financial Instruments Directive II compliance",
+                requirements=["Client categorization", "Best execution", "Transaction reporting"],
+                severity="critical"
+            ),
+            ComplianceRule(
+                rule_id="EU_004",
+                region=ComplianceRegion.EUROPEAN_UNION,
+                rule_type="GDPR_Compliance",
+                description="General Data Protection Regulation compliance",
+                requirements=["Data protection", "Privacy by design", "Data subject rights"],
+                severity="high"
+            )
+        ]
         
-        # Mock compliance check - in production, query database
-        compliance_status = {}
+        # Guyana Compliance Rules
+        guyana_rules = [
+            ComplianceRule(
+                rule_id="GY_001",
+                region=ComplianceRegion.GUYANA,
+                rule_type="Local_Content_Compliance",
+                description="Guyana local content requirements",
+                requirements=["Local employment", "Local procurement", "Technology transfer"],
+                severity="medium"
+            ),
+            ComplianceRule(
+                rule_id="GY_002",
+                region=ComplianceRegion.GUYANA,
+                rule_type="Environmental_Protection",
+                description="Environmental protection compliance",
+                requirements=["Environmental impact assessment", "Biodiversity protection", "Waste management"],
+                severity="high"
+            ),
+            ComplianceRule(
+                rule_id="GY_003",
+                region=ComplianceRegion.GUYANA,
+                rule_type="Community_Development",
+                description="Community development requirements",
+                requirements=["Community consultation", "Infrastructure development", "Social programs"],
+                severity="medium"
+            )
+        ]
         
-        for reg_name, reg_details in frameworks.items():
-            if regulation and reg_name != regulation:
-                continue
-                
-            # Simulate compliance check
-            compliance_status[reg_name] = {
-                "status": "compliant",  # Mock status
-                "last_report_date": (datetime.now() - timedelta(days=30)).isoformat(),
-                "next_report_date": (datetime.now() + timedelta(days=5)).isoformat(),
-                "requirements_met": len(reg_details["key_requirements"]),
-                "total_requirements": len(reg_details["key_requirements"]),
-                "reporting_frequency": reg_details["reporting_frequency"],
-                "penalties": reg_details.get("penalties", {})
-            }
-        
-        return {
-            "company_id": company_id,
-            "region": region,
-            "compliance_status": compliance_status,
-            "overall_status": "compliant" if all(c["status"] == "compliant" for c in compliance_status.values()) else "non_compliant",
-            "check_date": datetime.now().isoformat()
-        }
+        # Add all rules
+        all_rules = me_rules + us_rules + uk_rules + eu_rules + guyana_rules
+        for rule in all_rules:
+            self.compliance_rules[rule.rule_id] = rule
     
-    async def generate_compliance_report(
-        self, 
-        company_id: int,
-        region: str,
-        regulation: str,
-        report_period: str,
-        data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Generate compliance report for specific regulation"""
-        
-        if region not in self.compliance_frameworks:
-            return {"error": f"Unsupported region: {region}"}
-        
-        if regulation not in self.compliance_frameworks[region]:
-            return {"error": f"Unsupported regulation: {regulation}"}
-        
-        framework = self.compliance_frameworks[region][regulation]
-        
-        # Generate report using template
-        template = self._get_report_template(region, framework["reporting_frequency"])
-        
-        report = {
-            "report_id": f"COMP-{region}-{regulation}-{datetime.now().strftime('%Y%m%d')}-{company_id}",
-            "company_id": company_id,
-            "region": region,
-            "regulation": regulation,
-            "report_period": report_period,
-            "generation_date": datetime.now().isoformat(),
-            "template_used": template,
-            "compliance_data": data,
-            "requirements_checklist": self._generate_requirements_checklist(framework, data),
-            "next_reporting_deadline": self._calculate_next_deadline(framework["reporting_frequency"]),
-            "penalties": framework.get("penalties", {})
-        }
-        
-        return report
-    
-    async def submit_compliance_report(
-        self, 
-        report: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Submit compliance report to regulatory body"""
-        
-        # Mock submission - in production, integrate with regulatory APIs
-        submission_id = f"SUB-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        # Simulate processing time
-        await asyncio.sleep(1)
-        
-        return {
-            "status": "submitted",
-            "submission_id": submission_id,
-            "report_id": report["report_id"],
-            "submission_date": datetime.now().isoformat(),
-            "processing_status": "received",
-            "estimated_processing_time": "2-3 business days",
-            "confirmation_number": f"CONF-{submission_id}"
-        }
-    
-    async def get_compliance_deadlines(
-        self, 
-        company_id: int,
-        region: str
-    ) -> Dict[str, Any]:
-        """Get upcoming compliance deadlines for a company"""
-        
-        if region not in self.compliance_frameworks:
-            return {"error": f"Unsupported region: {region}"}
-        
-        frameworks = self.compliance_frameworks[region]
-        deadlines = {}
-        
-        for reg_name, reg_details in frameworks.items():
-            next_deadline = self._calculate_next_deadline(reg_details["reporting_frequency"])
-            days_until_deadline = (next_deadline - datetime.now()).days
-            
-            deadlines[reg_name] = {
-                "regulation": reg_name,
-                "next_deadline": next_deadline.isoformat(),
-                "days_until_deadline": days_until_deadline,
-                "urgency": "critical" if days_until_deadline <= 7 else "high" if days_until_deadline <= 30 else "normal",
-                "reporting_frequency": reg_details["reporting_frequency"]
-            }
-        
-        return {
-            "company_id": company_id,
-            "region": region,
-            "deadlines": deadlines,
-            "critical_deadlines": [d for d in deadlines.values() if d["urgency"] == "critical"],
-            "as_of_date": datetime.now().isoformat()
-        }
-    
-    async def validate_compliance_data(
-        self, 
-        region: str,
-        regulation: str,
-        data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Validate compliance data before submission"""
-        
-        if region not in self.compliance_frameworks:
-            return {"error": f"Unsupported region: {region}"}
-        
-        if regulation not in self.compliance_frameworks[region]:
-            return {"error": f"Unsupported regulation: {regulation}"}
-        
-        framework = self.compliance_frameworks[region][regulation]
-        validation_results = {}
-        errors = []
-        warnings = []
-        
-        # Validate required fields based on regulation
-        for requirement in framework["key_requirements"]:
-            if requirement.lower() in str(data).lower():
-                validation_results[requirement] = "present"
-            else:
-                validation_results[requirement] = "missing"
-                errors.append(f"Missing requirement: {requirement}")
-        
-        # Data quality checks
-        if not data:
-            errors.append("No data provided")
-        elif len(str(data)) < 100:
-            warnings.append("Data seems minimal - consider adding more detail")
-        
-        # Format validation
-        if "date" in data and not self._is_valid_date(data["date"]):
-            errors.append("Invalid date format")
-        
-        return {
-            "validation_status": "valid" if not errors else "invalid",
-            "validation_results": validation_results,
-            "errors": errors,
-            "warnings": warnings,
-            "data_quality_score": self._calculate_data_quality_score(data),
-            "recommendations": self._generate_validation_recommendations(errors, warnings)
-        }
-    
-    async def get_regulatory_updates(
-        self, 
-        region: str,
-        regulation: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get latest regulatory updates and changes"""
-        
-        # Mock regulatory updates - in production, integrate with regulatory news feeds
-        updates = {
-            "ME": {
-                "ADNOC": [
-                    {
-                        "date": "2024-01-15",
-                        "title": "Updated Carbon Reporting Requirements",
-                        "description": "New mandatory carbon footprint reporting for all energy companies",
-                        "effective_date": "2024-04-01",
-                        "impact": "high"
-                    }
+    def _initialize_islamic_finance_rules(self):
+        """Initialize Islamic finance compliance rules."""
+        self.islamic_finance_rules = {
+            "riba_prohibition": {
+                "description": "Prohibition of interest (riba)",
+                "requirements": [
+                    "No interest-based transactions",
+                    "Profit-sharing instead of fixed returns",
+                    "Asset-backed financing"
                 ],
-                "UAE_Energy_Law": [
-                    {
-                        "date": "2024-01-10",
-                        "title": "Renewable Energy Targets Increased",
-                        "description": "UAE increases renewable energy target to 50% by 2050",
-                        "effective_date": "2024-07-01",
-                        "impact": "medium"
-                    }
-                ]
+                "severity": "critical"
             },
-            "US": {
-                "FERC": [
-                    {
-                        "date": "2024-01-20",
-                        "title": "Enhanced Position Reporting Requirements",
-                        "description": "New daily position reporting requirements for energy traders",
-                        "effective_date": "2024-06-01",
-                        "impact": "high"
-                    }
-                ]
+            "gharar_prohibition": {
+                "description": "Prohibition of excessive uncertainty (gharar)",
+                "requirements": [
+                    "Clear contract terms",
+                    "Transparent pricing",
+                    "Avoidance of speculative contracts"
+                ],
+                "severity": "high"
             },
-            "UK": {
-                "UK_ETS": [
-                    {
-                        "date": "2024-01-18",
-                        "title": "Carbon Price Floor Adjustment",
-                        "description": "Updated carbon price floor for 2024-2025 period",
-                        "effective_date": "2024-04-01",
-                        "impact": "medium"
-                    }
-                ]
+            "maysir_prohibition": {
+                "description": "Prohibition of gambling (maysir)",
+                "requirements": [
+                    "No pure speculation",
+                    "Real economic activity",
+                    "Risk-sharing contracts"
+                ],
+                "severity": "high"
             },
-            "EU": {
-                "EU_ETS": [
-                    {
-                        "date": "2024-01-22",
-                        "title": "Phase IV Implementation Guidelines",
-                        "description": "Detailed guidelines for EU ETS Phase IV implementation",
-                        "effective_date": "2024-09-01",
-                        "impact": "high"
-                    }
-                ]
+            "halal_investment": {
+                "description": "Halal investment screening",
+                "requirements": [
+                    "No alcohol, tobacco, gambling",
+                    "No pork or non-halal food",
+                    "No conventional banking"
+                ],
+                "severity": "medium"
             },
-            "GUYANA": {
-                "Guyana_Energy_Law": [
-                    {
-                        "date": "2024-01-12",
-                        "title": "Local Content Requirements Updated",
-                        "description": "Enhanced local content requirements for energy projects",
-                        "effective_date": "2024-05-01",
-                        "impact": "medium"
-                    }
-                ]
+            "zakat_compliance": {
+                "description": "Zakat calculation and distribution",
+                "requirements": [
+                    "Annual wealth assessment",
+                    "2.5% calculation on eligible assets",
+                    "Distribution to eligible recipients"
+                ],
+                "severity": "medium"
             }
         }
-        
-        if region not in updates:
-            return {"error": f"No updates available for region: {region}"}
-        
-        if regulation:
-            return {
-                "region": region,
-                "regulation": regulation,
-                "updates": updates[region].get(regulation, []),
-                "last_updated": datetime.now().isoformat()
-            }
-        
-        return {
-            "region": region,
-            "all_updates": updates[region],
-            "last_updated": datetime.now().isoformat()
-        }
     
-    def _get_report_template(self, region: str, frequency: str) -> str:
-        """Get appropriate report template for region and frequency"""
-        
-        if region in self.reporting_templates and frequency in self.reporting_templates[region]:
-            return self.reporting_templates[region][frequency]
-        
-        return f"Generic_{frequency.capitalize()}_Report_Template"
-    
-    def _generate_requirements_checklist(self, framework: Dict, data: Dict) -> Dict[str, str]:
-        """Generate requirements checklist for compliance report"""
-        
-        checklist = {}
-        for requirement in framework["key_requirements"]:
-            if requirement.lower() in str(data).lower():
-                checklist[requirement] = "met"
-            else:
-                checklist[requirement] = "not_met"
-        
-        return checklist
-    
-    def _calculate_next_deadline(self, frequency: str) -> datetime:
-        """Calculate next reporting deadline based on frequency"""
-        
-        now = datetime.now()
-        
-        if frequency == "daily":
-            return now + timedelta(days=1)
-        elif frequency == "weekly":
-            return now + timedelta(weeks=1)
-        elif frequency == "monthly":
-            return now + timedelta(days=30)
-        elif frequency == "quarterly":
-            return now + timedelta(days=90)
-        elif frequency == "annually":
-            return now + timedelta(days=365)
-        else:
-            return now + timedelta(days=30)  # Default to monthly
-    
-    def _is_valid_date(self, date_str: str) -> bool:
-        """Validate date string format"""
-        
+    async def check_compliance(
+        self,
+        user_id: str,
+        region: ComplianceRegion,
+        transaction_data: Dict[str, Any],
+        user_profile: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Check compliance for a specific transaction and region."""
         try:
-            datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-            return True
-        except ValueError:
-            return False
+            compliance_results = {
+                "user_id": user_id,
+                "region": region.value,
+                "overall_status": ComplianceStatus.COMPLIANT,
+                "rule_checks": [],
+                "violations": [],
+                "warnings": [],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Get applicable rules for the region
+            applicable_rules = [
+                rule for rule in self.compliance_rules.values()
+                if rule.region == region and rule.active
+            ]
+            
+            # Check each applicable rule
+            for rule in applicable_rules:
+                rule_check = await self._check_rule_compliance(rule, transaction_data, user_profile)
+                compliance_results["rule_checks"].append(rule_check)
+                
+                if rule_check.status == ComplianceStatus.NON_COMPLIANT:
+                    compliance_results["overall_status"] = ComplianceStatus.NON_COMPLIANT
+                    compliance_results["violations"].append({
+                        "rule_id": rule.rule_id,
+                        "description": rule.description,
+                        "severity": rule.severity,
+                        "details": rule_check.details
+                    })
+                elif rule_check.status == ComplianceStatus.PENDING_REVIEW:
+                    if compliance_results["overall_status"] == ComplianceStatus.COMPLIANT:
+                        compliance_results["overall_status"] = ComplianceStatus.PENDING_REVIEW
+                    compliance_results["warnings"].append({
+                        "rule_id": rule.rule_id,
+                        "description": rule.description,
+                        "severity": rule.severity,
+                        "details": rule_check.details
+                    })
+            
+            # Check Islamic finance compliance if applicable
+            if user_profile.get("islamic_finance_enabled", False):
+                islamic_compliance = await self._check_islamic_finance_compliance(transaction_data)
+                compliance_results["islamic_finance_compliance"] = islamic_compliance
+                
+                if islamic_compliance["overall_status"] == ComplianceStatus.NON_COMPLIANT:
+                    compliance_results["overall_status"] = ComplianceStatus.NON_COMPLIANT
+                    compliance_results["violations"].extend(islamic_compliance["violations"])
+            
+            # Store compliance check
+            self.compliance_checks.append(ComplianceCheck(
+                rule_id="comprehensive_check",
+                status=compliance_results["overall_status"],
+                details=f"Comprehensive compliance check for {region.value}",
+                violations=[v["description"] for v in compliance_results["violations"]],
+                recommendations=self._generate_compliance_recommendations(compliance_results)
+            ))
+            
+            return compliance_results
+            
+        except Exception as e:
+            logger.error(f"Failed to check compliance: {e}")
+            raise
     
-    def _calculate_data_quality_score(self, data: Dict) -> float:
-        """Calculate data quality score (0-100)"""
-        
-        if not data:
-            return 0.0
-        
-        score = 50.0  # Base score
-        
-        # Add points for data completeness
-        if len(str(data)) > 500:
-            score += 20
-        elif len(str(data)) > 200:
-            score += 10
-        
-        # Add points for structured data
-        if isinstance(data, dict) and len(data) > 5:
-            score += 15
-        
-        # Add points for date fields
-        if any("date" in key.lower() for key in data.keys()):
-            score += 15
-        
-        return min(100.0, score)
+    async def _check_rule_compliance(
+        self,
+        rule: ComplianceRule,
+        transaction_data: Dict[str, Any],
+        user_profile: Dict[str, Any]
+    ) -> ComplianceCheck:
+        """Check compliance for a specific rule."""
+        try:
+            # This is a simplified compliance check
+            # In real implementation, this would involve complex rule evaluation
+            
+            violations = []
+            status = ComplianceStatus.COMPLIANT
+            
+            # Example compliance checks based on rule type
+            if "ADNOC" in rule.rule_type:
+                # Check ADNOC-specific requirements
+                if not transaction_data.get("adnoc_certification"):
+                    violations.append("Missing ADNOC certification")
+                    status = ComplianceStatus.NON_COMPLIANT
+            
+            elif "FERC" in rule.rule_type:
+                # Check FERC compliance
+                if transaction_data.get("market_manipulation_risk", 0) > 0.7:
+                    violations.append("High market manipulation risk detected")
+                    status = ComplianceStatus.NON_COMPLIANT
+            
+            elif "GDPR" in rule.rule_type:
+                # Check GDPR compliance
+                if not transaction_data.get("data_consent"):
+                    violations.append("Missing data consent")
+                    status = ComplianceStatus.NON_COMPLIANT
+            
+            # Generate recommendations
+            recommendations = self._generate_rule_recommendations(rule, violations)
+            
+            return ComplianceCheck(
+                rule_id=rule.rule_id,
+                status=status,
+                details=f"Compliance check for {rule.description}",
+                violations=violations,
+                recommendations=recommendations
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to check rule compliance: {e}")
+            return ComplianceCheck(
+                rule_id=rule.rule_id,
+                status=ComplianceStatus.PENDING_REVIEW,
+                details=f"Error checking compliance: {e}",
+                violations=[],
+                recommendations=["Review compliance check implementation"]
+            )
     
-    def _generate_validation_recommendations(self, errors: List[str], warnings: List[str]) -> List[str]:
-        """Generate recommendations based on validation results"""
-        
+    async def _check_islamic_finance_compliance(
+        self,
+        transaction_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Check Islamic finance compliance."""
+        try:
+            islamic_compliance = {
+                "overall_status": ComplianceStatus.COMPLIANT,
+                "rule_checks": [],
+                "violations": [],
+                "warnings": [],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Check each Islamic finance rule
+            for rule_name, rule_details in self.islamic_finance_rules.items():
+                rule_check = await self._check_islamic_rule(rule_name, rule_details, transaction_data)
+                islamic_compliance["rule_checks"].append(rule_check)
+                
+                if rule_check.status == ComplianceStatus.NON_COMPLIANT:
+                    islamic_compliance["overall_status"] = ComplianceStatus.NON_COMPLIANT
+                    islamic_compliance["violations"].append({
+                        "rule": rule_name,
+                        "description": rule_details["description"],
+                        "severity": rule_details["severity"],
+                        "details": rule_check.details
+                    })
+            
+            return islamic_compliance
+            
+        except Exception as e:
+            logger.error(f"Failed to check Islamic finance compliance: {e}")
+            raise
+    
+    async def _check_islamic_rule(
+        self,
+        rule_name: str,
+        rule_details: Dict[str, Any],
+        transaction_data: Dict[str, Any]
+    ) -> ComplianceCheck:
+        """Check compliance for a specific Islamic finance rule."""
+        try:
+            violations = []
+            status = ComplianceStatus.COMPLIANT
+            details = f"Islamic finance rule check for {rule_details['description']}"
+            
+            if rule_name == "riba_prohibition":
+                # Check for interest-based transactions
+                if transaction_data.get("interest_rate", 0) > 0:
+                    violations.append("Interest-based transaction detected")
+                    status = ComplianceStatus.NON_COMPLIANT
+            
+            elif rule_name == "gharar_prohibition":
+                # Check for excessive uncertainty
+                if transaction_data.get("uncertainty_level", 0) > 0.8:
+                    violations.append("Excessive uncertainty in contract terms")
+                    status = ComplianceStatus.NON_COMPLIANT
+            
+            elif rule_name == "maysir_prohibition":
+                # Check for gambling-like behavior
+                if transaction_data.get("speculation_level", 0) > 0.9:
+                    violations.append("Pure speculation detected")
+                    status = ComplianceStatus.NON_COMPLIANT
+            
+            elif rule_name == "halal_investment":
+                # Check for non-halal investments
+                if transaction_data.get("investment_type") in ["alcohol", "tobacco", "gambling"]:
+                    violations.append("Non-halal investment detected")
+                    status = ComplianceStatus.NON_COMPLIANT
+            
+            elif rule_name == "zakat_compliance":
+                # Check zakat calculation
+                if transaction_data.get("zakat_calculated", False) == False:
+                    violations.append("Zakat calculation required")
+                    status = ComplianceStatus.PENDING_REVIEW
+            
+            recommendations = self._generate_islamic_rule_recommendations(rule_name, violations)
+            
+            return ComplianceCheck(
+                rule_id=f"islamic_{rule_name}",
+                status=status,
+                details=details,
+                violations=violations,
+                recommendations=recommendations
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to check Islamic rule {rule_name}: {e}")
+            return ComplianceCheck(
+                rule_id=f"islamic_{rule_name}",
+                status=ComplianceStatus.PENDING_REVIEW,
+                details=f"Error checking Islamic rule: {e}",
+                violations=[],
+                recommendations=["Review Islamic rule implementation"]
+            )
+    
+    def _generate_compliance_recommendations(self, compliance_results: Dict[str, Any]) -> List[str]:
+        """Generate compliance recommendations based on check results."""
         recommendations = []
         
-        if errors:
-            recommendations.append("Address all validation errors before submission")
-            recommendations.append("Review missing required fields and data")
+        for violation in compliance_results.get("violations", []):
+            if "ADNOC" in violation.get("description", ""):
+                recommendations.append("Obtain ADNOC certification before trading")
+            elif "FERC" in violation.get("description", ""):
+                recommendations.append("Implement market manipulation prevention measures")
+            elif "GDPR" in violation.get("description", ""):
+                recommendations.append("Ensure proper data consent and privacy measures")
+            else:
+                recommendations.append(f"Review and address {violation.get('description', 'compliance issue')}")
         
-        if warnings:
-            recommendations.append("Consider addressing warnings to improve data quality")
+        if not recommendations:
+            recommendations.append("All compliance requirements met")
         
-        if not errors and not warnings:
-            recommendations.append("Data validation successful - ready for submission")
+        return recommendations
+    
+    def _generate_rule_recommendations(self, rule: ComplianceRule, violations: List[str]) -> List[str]:
+        """Generate recommendations for a specific rule."""
+        recommendations = []
+        
+        if not violations:
+            recommendations.append(f"Compliant with {rule.description}")
+        else:
+            for violation in violations:
+                recommendations.append(f"Address: {violation}")
+        
+        return recommendations
+    
+    def _generate_islamic_rule_recommendations(self, rule_name: str, violations: List[str]) -> List[str]:
+        """Generate recommendations for Islamic finance rules."""
+        recommendations = []
+        
+        if rule_name == "riba_prohibition" and violations:
+            recommendations.append("Use profit-sharing contracts instead of interest-based financing")
+        elif rule_name == "gharar_prohibition" and violations:
+            recommendations.append("Ensure clear contract terms and transparent pricing")
+        elif rule_name == "maysir_prohibition" and violations:
+            recommendations.append("Focus on real economic activity rather than speculation")
+        elif rule_name == "halal_investment" and violations:
+            recommendations.append("Screen investments for halal compliance")
+        elif rule_name == "zakat_compliance" and violations:
+            recommendations.append("Implement annual zakat calculation and distribution")
+        
+        if not violations:
+            recommendations.append("Islamic finance requirements met")
+        
+        return recommendations
+    
+    async def get_compliance_history(
+        self,
+        user_id: Optional[str] = None,
+        region: Optional[ComplianceRegion] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+    ) -> List[ComplianceCheck]:
+        """Get compliance check history with optional filtering."""
+        try:
+            filtered_checks = self.compliance_checks
+            
+            if user_id:
+                # Filter by user (in real implementation, this would be stored per user)
+                pass
+            
+            if region:
+                # Filter by region
+                filtered_checks = [
+                    check for check in filtered_checks
+                    if any(rule.region == region for rule in self.compliance_rules.values() if rule.rule_id == check.rule_id)
+                ]
+            
+            if start_date:
+                filtered_checks = [
+                    check for check in filtered_checks
+                    if check.timestamp >= start_date
+                ]
+            
+            if end_date:
+                filtered_checks = [
+                    check for check in filtered_checks
+                    if check.timestamp <= end_date
+                ]
+            
+            return sorted(filtered_checks, key=lambda x: x.timestamp, reverse=True)
+            
+        except Exception as e:
+            logger.error(f"Failed to get compliance history: {e}")
+            raise
+    
+    async def generate_compliance_report(
+        self,
+        user_id: str,
+        region: ComplianceRegion,
+        period_days: int = 30
+    ) -> Dict[str, Any]:
+        """Generate comprehensive compliance report for a user and region."""
+        try:
+            end_date = datetime.now(timezone.utc)
+            start_date = end_date - timedelta(days=period_days)
+            
+            # Get compliance history
+            compliance_history = await self.get_compliance_history(
+                user_id=user_id,
+                region=region,
+                start_date=start_date,
+                end_date=end_date
+            )
+            
+            # Calculate compliance statistics
+            total_checks = len(compliance_history)
+            compliant_checks = len([c for c in compliance_history if c.status == ComplianceStatus.COMPLIANT])
+            non_compliant_checks = len([c for c in compliance_history if c.status == ComplianceStatus.NON_COMPLIANT])
+            pending_checks = len([c for c in compliance_history if c.status == ComplianceStatus.PENDING_REVIEW])
+            
+            compliance_rate = (compliant_checks / total_checks * 100) if total_checks > 0 else 0
+            
+            return {
+                "user_id": user_id,
+                "region": region.value,
+                "period": {
+                    "start_date": start_date.isoformat(),
+                    "end_date": end_date.isoformat(),
+                    "days": period_days
+                },
+                "statistics": {
+                    "total_checks": total_checks,
+                    "compliant_checks": compliant_checks,
+                    "non_compliant_checks": non_compliant_checks,
+                    "pending_checks": pending_checks,
+                    "compliance_rate": round(compliance_rate, 2)
+                },
+                "compliance_history": compliance_history,
+                "recommendations": self._generate_report_recommendations(compliance_history),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to generate compliance report: {e}")
+            raise
+    
+    def _generate_report_recommendations(self, compliance_history: List[ComplianceCheck]) -> List[str]:
+        """Generate recommendations based on compliance history."""
+        recommendations = []
+        
+        # Analyze compliance patterns
+        non_compliant_rules = {}
+        for check in compliance_history:
+            if check.status == ComplianceStatus.NON_COMPLIANT:
+                rule_id = check.rule_id
+                if rule_id not in non_compliant_rules:
+                    non_compliant_rules[rule_id] = 0
+                non_compliant_rules[rule_id] += 1
+        
+        # Generate specific recommendations
+        for rule_id, count in non_compliant_rules.items():
+            if count > 3:
+                recommendations.append(f"Frequent non-compliance with {rule_id}, consider additional training")
+            elif count > 1:
+                recommendations.append(f"Review compliance with {rule_id}")
+        
+        if not recommendations:
+            recommendations.append("Good compliance record maintained")
         
         return recommendations 
