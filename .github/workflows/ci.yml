@@ -30,8 +30,8 @@ jobs:
           - 6379:6379
 
     env:
-      DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:${{ services.postgres.ports[5432] }}/testdb
-      REDIS_URL: redis://localhost:${{ services.redis.ports[6379] }}
+      DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
+      REDIS_URL: redis://localhost:6379
 
     steps:
       - uses: actions/checkout@v4

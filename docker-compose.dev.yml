@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: energyopti-pro-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://energyopti:energyopti123@postgres:5432/energyopti_pro
+      - REDIS_URL=redis://redis:6379
+      - CME_API_KEY=demo_key
+      - ICE_API_KEY=demo_key
+      - NYMEX_API_KEY=demo_key
+      - OPENWEATHER_API_KEY=demo_key
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - energyopti-network
+    restart: unless-stopped
+
+  # Frontend Web App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: energyopti-pro-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_WS_URL=ws://localhost:8000/ws
+    depends_on:
+      - backend
+    networks:
+      - energyopti-network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: energyopti-pro-postgres
+    environment:
+      - POSTGRES_DB=energyopti_pro
+      - POSTGRES_USER=energyopti
+      - POSTGRES_PASSWORD=energyopti123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - energyopti-network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: energyopti-pro-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - energyopti-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  energyopti-network:
+    driver: bridge

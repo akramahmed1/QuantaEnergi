@@ -1,290 +1,266 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
-import { 
-  MarketData, 
-  Order, 
-  Position, 
-  Portfolio, 
-  TradingSignal, 
-  RiskMetrics,
-  ESGScore,
-  AIInsight,
-  Alert
-} from '@/types/trading'
+
+export interface MarketData {
+  symbol: string
+  price: number
+  change: number
+  changePercent: number
+  volume: string
+  timestamp: string
+}
+
+export interface Order {
+  id: string
+  symbol: string
+  type: 'market' | 'limit'
+  side: 'buy' | 'sell'
+  quantity: number
+  price: number
+  status: 'pending' | 'filled' | 'cancelled'
+  timestamp: string
+}
+
+export interface Position {
+  symbol: string
+  quantity: number
+  avgPrice: number
+  currentPrice: number
+  pnl: number
+  pnlPercent: number
+}
+
+export interface Portfolio {
+  totalValue: number
+  totalPnL: number
+  totalPnLPercent: number
+  positions: Position[]
+}
+
+export interface TradingSignal {
+  id: string
+  symbol: string
+  type: 'BUY' | 'SELL' | 'HOLD'
+  confidence: number
+  reason: string
+  price: number
+  target: number
+  stopLoss: number
+  timestamp: string
+}
+
+export interface RiskMetrics {
+  var95: number
+  var99: number
+  maxDrawdown: number
+  sharpeRatio: number
+  beta: number
+  correlation: number
+}
+
+export interface ESGScore {
+  overall: number
+  environmental: number
+  social: number
+  governance: number
+}
+
+export interface AIInsight {
+  id: string
+  type: string
+  symbol: string
+  title: string
+  description: string
+  confidence: number
+  impact: string
+  recommendation: string
+  targetPrice: number
+  currentPrice: number
+  timestamp: string
+}
+
+export interface Alert {
+  id: string
+  type: 'warning' | 'info' | 'success' | 'error'
+  title: string
+  message: string
+  timestamp: string
+  read: boolean
+}
 
 interface TradingState {
   // Market Data
-  marketData: Record<string, MarketData>
-  watchlist: string[]
+  marketData: MarketData[]
+  selectedSymbol: string | null
   
   // Trading
   orders: Order[]
   positions: Position[]
-  portfolio: Portfolio | null
+  portfolio: Portfolio
   
   // AI & Analytics
   tradingSignals: TradingSignal[]
-  riskMetrics: RiskMetrics | null
-  esgScores: Record<string, ESGScore>
+  riskMetrics: RiskMetrics
+  esgScore: ESGScore
   aiInsights: AIInsight[]
   
-  // Alerts & Notifications
-  alerts: Alert[]
-  
   // UI State
-  selectedSymbol: string | null
-  orderForm: {
-    symbol: string
-    side: 'buy' | 'sell'
-    type: 'market' | 'limit' | 'stop' | 'stop_limit'
-    quantity: number
-    price?: number
-    stopPrice?: number
-    timeInForce: 'GTC' | 'IOC' | 'FOK' | 'DAY'
-  }
+  alerts: Alert[]
+  activeTab: string
   
   // Actions
-  setMarketData: (symbol: string, data: MarketData) => void
-  addToWatchlist: (symbol: string) => void
-  removeFromWatchlist: (symbol: string) => void
-  
-  // Orders
-  addOrder: (order: Order) => void
-  updateOrder: (orderId: string, updates: Partial<Order>) => void
-  cancelOrder: (orderId: string) => void
-  
-  // Positions
-  updatePosition: (positionId: string, updates: Partial<Position>) => void
-  closePosition: (positionId: string) => void
-  
-  // Portfolio
-  updatePortfolio: (portfolio: Portfolio) => void
-  
-  // Trading Signals
-  addTradingSignal: (signal: TradingSignal) => void
-  removeTradingSignal: (signalId: string) => void
-  
-  // Risk & ESG
-  updateRiskMetrics: (metrics: RiskMetrics) => void
-  updateESGScore: (symbol: string, score: ESGScore) => void
-  
-  // AI Insights
-  addAIInsight: (insight: AIInsight) => void
-  removeAIInsight: (insightId: string) => void
-  
-  // Alerts
-  addAlert: (alert: Alert) => void
-  updateAlert: (alertId: string, updates: Partial<Alert>) => void
-  removeAlert: (alertId: string) => void
-  
-  // UI Actions
   setSelectedSymbol: (symbol: string | null) => void
-  updateOrderForm: (updates: Partial<TradingState['orderForm']>) => void
-  resetOrderForm: () => void
+  addOrder: (order: Order) => void
+  updateOrder: (id: string, updates: Partial<Order>) => void
+  addPosition: (position: Position) => void
+  updatePosition: (symbol: string, updates: Partial<Position>) => void
+  addAlert: (alert: Alert) => void
+  markAlertAsRead: (id: string) => void
+  dismissAlert: (id: string) => void
+  setActiveTab: (tab: string) => void
   
   // Computed Values
   getTotalPnL: () => number
-  getUnrealizedPnL: () => number
-  getRealizedPnL: () => number
   getPortfolioValue: () => number
-  getPositionBySymbol: (symbol: string) => Position | null
-  getOrdersBySymbol: (symbol: string) => Order[]
-  getActiveOrders: () => Order[]
-  getFilledOrders: () => Order[]
-}
-
-const initialState = {
-  marketData: {},
-  watchlist: ['CRUDE_OIL', 'NATURAL_GAS', 'BRENT_OIL', 'HEATING_OIL', 'GASOLINE'],
-  orders: [],
-  positions: [],
-  portfolio: null,
-  tradingSignals: [],
-  riskMetrics: null,
-  esgScores: {},
-  aiInsights: [],
-  alerts: [],
-  selectedSymbol: null,
-  orderForm: {
-    symbol: '',
-    side: 'buy' as const,
-    type: 'market' as const,
-    quantity: 0,
-    price: undefined,
-    stopPrice: undefined,
-    timeInForce: 'GTC' as const
-  }
+  getWatchlist: () => string[]
 }
 
 export const useTradingStore = create<TradingState>()(
   devtools(
     persist(
       (set, get) => ({
-        ...initialState,
+        // Initial State
+        marketData: [
+          {
+            symbol: 'WTI',
+            price: 78.45,
+            change: 2.34,
+            changePercent: 3.07,
+            volume: '1.2M',
+            timestamp: new Date().toISOString()
+          },
+          {
+            symbol: 'BRENT',
+            price: 82.67,
+            change: -1.23,
+            changePercent: -1.47,
+            volume: '890K',
+            timestamp: new Date().toISOString()
+          },
+          {
+            symbol: 'NATURAL_GAS',
+            price: 3.45,
+            change: 0.12,
+            changePercent: 3.61,
+            volume: '450K',
+            timestamp: new Date().toISOString()
+          }
+        ],
+        selectedSymbol: null,
+        orders: [],
+        positions: [
+          {
+            symbol: 'WTI',
+            quantity: 5000,
+            avgPrice: 76.50,
+            currentPrice: 78.45,
+            pnl: 9750,
+            pnlPercent: 2.55
+          },
+          {
+            symbol: 'BRENT',
+            quantity: 3000,
+            avgPrice: 80.20,
+            currentPrice: 82.67,
+            pnl: 7410,
+            pnlPercent: 3.08
+          }
+        ],
+        portfolio: {
+          totalValue: 1250000,
+          totalPnL: 45000,
+          totalPnLPercent: 3.73,
+          positions: []
+        },
+        tradingSignals: [],
+        riskMetrics: {
+          var95: 125000,
+          var99: 185000,
+          maxDrawdown: 8.5,
+          sharpeRatio: 1.85,
+          beta: 0.92,
+          correlation: 0.78
+        },
+        esgScore: {
+          overall: 78,
+          environmental: 82,
+          social: 75,
+          governance: 79
+        },
+        aiInsights: [],
+        alerts: [],
+        activeTab: 'overview',
+
+        // Actions
+        setSelectedSymbol: (symbol) => set({ selectedSymbol: symbol }),
         
-        // Market Data Actions
-        setMarketData: (symbol: string, data: MarketData) =>
-          set((state) => ({
-            marketData: { ...state.marketData, [symbol]: data }
-          })),
+        addOrder: (order) => set((state) => ({
+          orders: [...state.orders, order]
+        })),
         
-        addToWatchlist: (symbol: string) =>
-          set((state) => ({
-            watchlist: [...state.watchlist, symbol]
-          })),
+        updateOrder: (id, updates) => set((state) => ({
+          orders: state.orders.map(order =>
+            order.id === id ? { ...order, ...updates } : order
+          )
+        })),
         
-        removeFromWatchlist: (symbol: string) =>
-          set((state) => ({
-            watchlist: state.watchlist.filter(s => s !== symbol)
-          })),
+        addPosition: (position) => set((state) => ({
+          positions: [...state.positions, position]
+        })),
         
-        // Order Actions
-        addOrder: (order: Order) =>
-          set((state) => ({
-            orders: [...state.orders, order]
-          })),
+        updatePosition: (symbol, updates) => set((state) => ({
+          positions: state.positions.map(position =>
+            position.symbol === symbol ? { ...position, ...updates } : position
+          )
+        })),
         
-        updateOrder: (orderId: string, updates: Partial<Order>) =>
-          set((state) => ({
-            orders: state.orders.map(order =>
-              order.id === orderId ? { ...order, ...updates } : order
-            )
-          })),
+        addAlert: (alert) => set((state) => ({
+          alerts: [alert, ...state.alerts]
+        })),
         
-        cancelOrder: (orderId: string) =>
-          set((state) => ({
-            orders: state.orders.map(order =>
-              order.id === orderId ? { ...order, status: 'cancelled' } : order
-            )
-          })),
+        markAlertAsRead: (id) => set((state) => ({
+          alerts: state.alerts.map(alert =>
+            alert.id === id ? { ...alert, read: true } : alert
+          )
+        })),
         
-        // Position Actions
-        updatePosition: (positionId: string, updates: Partial<Position>) =>
-          set((state) => ({
-            positions: state.positions.map(position =>
-              position.id === positionId ? { ...position, ...updates } : position
-            )
-          })),
+        dismissAlert: (id) => set((state) => ({
+          alerts: state.alerts.filter(alert => alert.id !== id)
+        })),
         
-        closePosition: (positionId: string) =>
-          set((state) => ({
-            positions: state.positions.filter(position => position.id !== positionId)
-          })),
-        
-        // Portfolio Actions
-        updatePortfolio: (portfolio: Portfolio) =>
-          set({ portfolio }),
-        
-        // Trading Signal Actions
-        addTradingSignal: (signal: TradingSignal) =>
-          set((state) => ({
-            tradingSignals: [...state.tradingSignals, signal]
-          })),
-        
-        removeTradingSignal: (signalId: string) =>
-          set((state) => ({
-            tradingSignals: state.tradingSignals.filter(signal => signal.id !== signalId)
-          })),
-        
-        // Risk & ESG Actions
-        updateRiskMetrics: (metrics: RiskMetrics) =>
-          set({ riskMetrics: metrics }),
-        
-        updateESGScore: (symbol: string, score: ESGScore) =>
-          set((state) => ({
-            esgScores: { ...state.esgScores, [symbol]: score }
-          })),
-        
-        // AI Insight Actions
-        addAIInsight: (insight: AIInsight) =>
-          set((state) => ({
-            aiInsights: [...state.aiInsights, insight]
-          })),
-        
-        removeAIInsight: (insightId: string) =>
-          set((state) => ({
-            aiInsights: state.aiInsights.filter(insight => insight.id !== insightId)
-          })),
-        
-        // Alert Actions
-        addAlert: (alert: Alert) =>
-          set((state) => ({
-            alerts: [...state.alerts, alert]
-          })),
-        
-        updateAlert: (alertId: string, updates: Partial<Alert>) =>
-          set((state) => ({
-            alerts: state.alerts.map(alert =>
-              alert.id === alertId ? { ...alert, ...updates } : alert
-            )
-          })),
-        
-        removeAlert: (alertId: string) =>
-          set((state) => ({
-            alerts: state.alerts.filter(alert => alert.id !== alertId)
-          })),
-        
-        // UI Actions
-        setSelectedSymbol: (symbol: string | null) =>
-          set({ selectedSymbol: symbol }),
-        
-        updateOrderForm: (updates: Partial<TradingState['orderForm']>) =>
-          set((state) => ({
-            orderForm: { ...state.orderForm, ...updates }
-          })),
-        
-        resetOrderForm: () =>
-          set({ orderForm: initialState.orderForm }),
-        
+        setActiveTab: (tab) => set({ activeTab: tab }),
+
         // Computed Values
         getTotalPnL: () => {
           const state = get()
-          return state.portfolio?.totalPnL || 0
-        },
-        
-        getUnrealizedPnL: () => {
-          const state = get()
-          return state.portfolio?.unrealizedPnL || 0
-        },
-        
-        getRealizedPnL: () => {
-          const state = get()
-          return state.portfolio?.realizedPnL || 0
+          return state.positions.reduce((total, position) => total + position.pnl, 0)
         },
         
         getPortfolioValue: () => {
           const state = get()
-          return state.portfolio?.totalValue || 0
+          return state.portfolio.totalValue
         },
         
-        getPositionBySymbol: (symbol: string) => {
+        getWatchlist: () => {
           const state = get()
-          return state.positions.find(position => position.symbol === symbol) || null
-        },
-        
-        getOrdersBySymbol: (symbol: string) => {
-          const state = get()
-          return state.orders.filter(order => order.symbol === symbol)
-        },
-        
-        getActiveOrders: () => {
-          const state = get()
-          return state.orders.filter(order => 
-            ['pending', 'partial'].includes(order.status)
-          )
-        },
-        
-        getFilledOrders: () => {
-          const state = get()
-          return state.orders.filter(order => order.status === 'filled')
+          return state.marketData.map(data => data.symbol)
         }
       }),
       {
         name: 'trading-store',
         partialize: (state) => ({
-          watchlist: state.watchlist,
           selectedSymbol: state.selectedSymbol,
-          orderForm: state.orderForm
+          activeTab: state.activeTab
         })
       }
     ),
