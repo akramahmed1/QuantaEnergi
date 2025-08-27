@@ -1,7 +1,7 @@
 import React from 'react'
-import { motion } from 'framer-motion'
-import { 
-  LeafIcon, 
+// import { motion } from 'framer-motion'
+import {
+  // LeafIcon, 
   HeartIcon, 
   ShieldCheckIcon,
   ChartBarIcon

@@ -2,8 +2,8 @@ services:
   - type: web
     name: energyopti-pro-backend
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn src.energyopti_pro.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r requirements-minimal.txt && pip install -e .
+    startCommand: cd backend && gunicorn main:app --bind 0.0.0.0:$PORT --worker-class uvicorn.workers.UvicornWorker --workers 4
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
@@ -20,6 +20,8 @@ services:
           property: connectionString
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: SECURITY_SECRET_KEY
+        generateValue: true
       - key: CME_API_KEY
         sync: false
       - key: ICE_API_KEY
@@ -32,6 +34,10 @@ services:
         value: INFO
       - key: ALLOWED_ORIGINS
         value: https://energyopti-pro-frontend.vercel.app,https://energyopti-pro.vercel.app
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: API_PORT
+        value: $PORT
 
 databases:
   - name: energyopti-pro-postgres

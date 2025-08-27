@@ -13,12 +13,15 @@ services:
       - DATABASE_URL=postgresql://energyopti:energyopti123@postgres:5432/energyopti_pro
       - REDIS_URL=redis://redis:6379/0
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      - SECURITY_SECRET_KEY=${SECURITY_SECRET_KEY:-your-secret-key-change-in-production}
       - CME_API_KEY=${CME_API_KEY}
       - ICE_API_KEY=${ICE_API_KEY}
       - NYMEX_API_KEY=${NYMEX_API_KEY}
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - ENVIRONMENT=production
       - LOG_LEVEL=INFO
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
     volumes:
       - ./logs:/app/logs
       - ./models:/app/models

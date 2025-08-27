@@ -4,8 +4,8 @@ import {
   CpuChipIcon, 
   LightBulbIcon, 
   ChartBarIcon,
-  TrendingUpIcon,
-  TrendingDownIcon
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon
 } from '@heroicons/react/24/outline'
 
 const AIInsights: React.FC = () => {
@@ -53,7 +53,7 @@ const AIInsights: React.FC = () => {
 
   const getInsightIcon = (type: string) => {
     switch (type) {
-      case 'prediction': return <TrendingUpIcon className="w-5 h-5" />
+      case 'prediction': return <ArrowTrendingUpIcon className="w-5 h-5" />
       case 'pattern': return <ChartBarIcon className="w-5 h-5" />
       case 'sentiment': return <LightBulbIcon className="w-5 h-5" />
       default: return <CpuChipIcon className="w-5 h-5" />

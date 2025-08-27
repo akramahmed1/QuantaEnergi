@@ -30,9 +30,9 @@ RUN mkdir -p /app/logs
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check - fixed endpoint to match the actual health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Start the application
 CMD ["gunicorn", "src.energyopti_pro.main:app", "--bind", "0.0.0.0:8000", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "4"]

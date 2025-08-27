@@ -1,8 +1,8 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { 
-  TrendingUpIcon, 
-  TrendingDownIcon, 
+    ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon, 
   CurrencyDollarIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline'
