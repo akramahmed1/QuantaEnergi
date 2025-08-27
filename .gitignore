@@ -1,13 +1,21 @@
-# .gitignore example (add more as needed) 
-.env 
-node_modules/ 
+# Python 
 __pycache__/ 
 *.pyc 
 venv/ 
+ECHO is on.
+# Dart/Flutter 
 .dart_tool/ 
-.android/ 
 .idea/ 
-.cursor/ 
-.git/ # Don't push Git internals if any 
-logs/ 
+ECHO is on.
+# Environment 
+.env 
+ECHO is on.
+# Logs 
 *.log 
+logs/ 
+ECHO is on.
+# Database 
+*.db 
+ECHO is on.
+# Cursor IDE 
+.cursor/ 
