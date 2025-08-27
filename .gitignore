@@ -2,20 +2,26 @@
 __pycache__/ 
 *.pyc 
 venv/ 
-ECHO is on.
+ 
 # Dart/Flutter 
 .dart_tool/ 
 .idea/ 
-ECHO is on.
+ 
 # Environment 
 .env 
-ECHO is on.
+ 
 # Logs 
 *.log 
 logs/ 
-ECHO is on.
+ 
 # Database 
 *.db 
-ECHO is on.
+ 
 # Cursor IDE 
 .cursor/ 
+ 
+# Node modules 
+node_modules/ 
+ 
+# System files 
+*.msi 
