@@ -30,7 +30,7 @@ class TokenResponse(BaseModel):
     role: str
     company_name: str
 
-@router.post("/signup", response_model=TokenResponse)
+@router.post("/signup", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
     """Register a new user."""
     # Check if user already exists
@@ -67,6 +67,11 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
         role=new_user.role,
         company_name=new_user.company_name
     )
+
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+async def register(user_data: UserSignup, db: Session = Depends(get_db)):
+    """Register a new user (alias for signup)."""
+    return await signup(user_data, db)
 
 @router.post("/login", response_model=TokenResponse)
 async def login(user_data: UserLogin, db: Session = Depends(get_db)):

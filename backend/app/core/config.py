@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ISSUER: str = "energyopti-pro"
+    AUDIENCE: str = "energyopti-pro-users"
     
     # API Keys
     CME_API_KEY: str = os.getenv("CME_API_KEY", "demo_key")

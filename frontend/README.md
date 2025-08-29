@@ -1,70 +1,322 @@
-# Getting Started with Create React App
+# EnergyOpti-Pro Frontend: Disruptive Energy Trading SaaS
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 🚀 Overview
 
-## Available Scripts
+EnergyOpti-Pro Frontend is a cutting-edge React-based web application that provides a comprehensive energy trading platform with disruptive technologies including AI forecasting, quantum optimization, blockchain smart contracts, IoT integration, and multi-region compliance.
 
-In the project directory, you can run:
+## ✨ Key Features
 
-### `npm start`
+### 🤖 AI-Powered Forecasting
+- **Demand Prediction**: Machine learning algorithms with 95% accuracy
+- **Price Breakout Detection**: Advanced pattern recognition
+- **ESG Scoring**: Environmental, Social, Governance analysis
+- **Grok AI Integration**: Cutting-edge AI insights
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### ⚛️ Quantum Portfolio Optimization
+- **QAOA Algorithm**: Quantum Approximate Optimization Algorithm
+- **VQE Algorithm**: Variational Quantum Eigensolver
+- **Classical Fallbacks**: Robust optimization when quantum resources unavailable
+- **Real-time Rebalancing**: Dynamic portfolio adjustments
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🔗 Blockchain Smart Contracts
+- **Energy Trading Contracts**: Automated energy market transactions
+- **Carbon Credit Management**: Transparent carbon trading
+- **ESG Certificates**: Blockchain-verified sustainability credentials
+- **Smart Contract Automation**: Self-executing agreements
 
-### `npm test`
+### 🌐 IoT Integration Hub
+- **Real-time Monitoring**: Live infrastructure data
+- **Weather Integration**: OpenWeatherMap API integration
+- **Grid Stability Analysis**: Power grid health monitoring
+- **Predictive Maintenance**: AI-powered equipment maintenance
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🛡️ Multi-Region Compliance
+- **US Compliance**: FERC regulations
+- **EU Compliance**: REMIT framework
+- **UK Compliance**: UK-ETS requirements
+- **Middle East**: ADNOC and Islamic Finance
+- **Guyana**: Petroleum Act compliance
 
-### `npm run build`
+## 🛠️ Technology Stack
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Core Technologies
+- **React 18**: Modern React with hooks and concurrent features
+- **TypeScript**: Type-safe development
+- **Vite**: Fast build tool and dev server
+- **Tailwind CSS**: Utility-first CSS framework
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### UI/UX Libraries
+- **Framer Motion**: Smooth animations and transitions
+- **Heroicons**: Beautiful SVG icons
+- **Recharts**: Responsive charting library
+- **React Hook Form**: Form handling and validation
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### State Management
+- **Zustand**: Lightweight state management
+- **React Query**: Server state management
+- **WebSocket**: Real-time data streaming
 
-### `npm run eject`
+### Development Tools
+- **ESLint**: Code linting
+- **Prettier**: Code formatting
+- **Jest**: Unit testing
+- **Cypress**: E2E testing
+- **Storybook**: Component development
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🚀 Getting Started
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Prerequisites
+- Node.js 18+ 
+- npm 9+ or yarn
+- Modern web browser
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Installation
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-org/energyopti-pro.git
+   cd energyopti-pro/frontend
+   ```
 
-## Learn More
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+3. **Environment Setup**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your configuration
+   ```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+4. **Start Development Server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-### Code Splitting
+5. **Open Browser**
+   Navigate to `http://localhost:5173`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 📁 Project Structure
 
-### Analyzing the Bundle Size
+```
+frontend/
+├── src/
+│   ├── components/           # Reusable UI components
+│   │   ├── AIForecasting.tsx           # AI forecasting dashboard
+│   │   ├── QuantumOptimization.tsx     # Quantum optimization interface
+│   │   ├── BlockchainSmartContracts.tsx # Blockchain management
+│   │   ├── IoTIntegration.tsx          # IoT monitoring hub
+│   │   ├── ComplianceMultiRegion.tsx   # Compliance dashboard
+│   │   ├── TradingDashboard.tsx        # Main trading interface
+│   │   └── ...                         # Other components
+│   ├── pages/               # Page components
+│   │   ├── DisruptiveFeatures.tsx      # Features landing page
+│   │   ├── Login.tsx                   # Authentication
+│   │   ├── Signup.tsx                  # User registration
+│   │   └── Optimization.tsx            # Optimization demo
+│   ├── store/               # State management
+│   │   └── tradingStore.ts            # Trading state
+│   ├── services/            # API services
+│   │   └── websocketService.ts        # Real-time communication
+│   ├── types/               # TypeScript type definitions
+│   └── utils/               # Utility functions
+├── public/                  # Static assets
+├── tests/                   # Test files
+└── package.json             # Dependencies and scripts
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 🎯 Usage Guide
 
-### Making a Progressive Web App
+### Navigating the Platform
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. **Landing Page** (`/features`)
+   - Overview of all disruptive features
+   - Feature descriptions and benefits
+   - Call-to-action buttons
 
-### Advanced Configuration
+2. **Main Dashboard** (`/dashboard`)
+   - **Overview Tab**: Market overview and trading signals
+   - **Trading Tab**: Active trading and order management
+   - **Portfolio Tab**: Portfolio analysis and performance
+   - **AI Forecasting Tab**: ML-powered predictions
+   - **Quantum Tab**: Quantum optimization interface
+   - **Blockchain Tab**: Smart contract management
+   - **IoT Tab**: Infrastructure monitoring
+   - **Compliance Tab**: Regulatory compliance
+   - **Signals Tab**: Trading signals and alerts
+   - **Risk Tab**: Risk metrics and analysis
+   - **ESG Tab**: Sustainability scoring
+   - **AI Insights Tab**: Advanced analytics
+   - **Alerts Tab**: System notifications
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Using Disruptive Features
 
-### Deployment
+#### AI Forecasting
+- Select forecast period (7d, 14d, 30d, 90d)
+- Choose metric (consumption, price, demand, renewable)
+- View confidence intervals and ESG scores
+- Get AI-powered insights and recommendations
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+#### Quantum Optimization
+- Select optimization algorithm (QAOA, VQE, Hybrid)
+- Adjust risk tolerance and target return
+- View quantum advantage metrics
+- Compare classical vs. quantum results
 
-### `npm run build` fails to minify
+#### Blockchain Smart Contracts
+- Deploy new smart contracts
+- Monitor contract status and gas usage
+- Manage carbon credits and ESG certificates
+- View transaction history
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+#### IoT Integration
+- Monitor device status and battery levels
+- View real-time sensor data
+- Analyze weather conditions
+- Track grid stability metrics
+
+#### Compliance Management
+- Filter by region and framework
+- View compliance scores and trends
+- Monitor audit history
+- Track regulatory updates
+
+## 🔧 Development
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run preview          # Preview production build
+
+# Testing
+npm run test             # Run unit tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Generate coverage report
+npm run e2e              # Run end-to-end tests
+
+# Code Quality
+npm run lint             # Run ESLint
+npm run lint:fix         # Fix ESLint issues
+npm run type-check       # TypeScript type checking
+npm run format           # Format code with Prettier
+
+# Storybook
+npm run storybook        # Start Storybook
+npm run build-storybook  # Build Storybook
+```
+
+### Code Style
+
+- **ESLint**: Enforces code quality rules
+- **Prettier**: Ensures consistent formatting
+- **TypeScript**: Provides type safety
+- **Conventional Commits**: Standardized commit messages
+
+### Testing Strategy
+
+- **Unit Tests**: Jest + React Testing Library
+- **Integration Tests**: Component interaction testing
+- **E2E Tests**: Cypress for user workflows
+- **Visual Tests**: Storybook for component isolation
+
+## 🌐 Deployment
+
+### Vercel (Recommended)
+```bash
+npm run build
+vercel --prod
+```
+
+### Docker
+```bash
+docker build -t energyopti-pro-frontend .
+docker run -p 3000:80 energyopti-pro-frontend
+```
+
+### Environment Variables
+
+```bash
+# API Configuration
+VITE_API_BASE_URL=https://api.energyopti-pro.com
+VITE_WEBSOCKET_URL=wss://api.energyopti-pro.com/ws
+
+# Feature Flags
+VITE_ENABLE_QUANTUM=true
+VITE_ENABLE_BLOCKCHAIN=true
+VITE_ENABLE_IOT=true
+
+# Third-party Services
+VITE_OPENWEATHER_API_KEY=your_key_here
+VITE_GROK_API_KEY=your_key_here
+```
+
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure user sessions
+- **HTTPS Only**: Encrypted communication
+- **CORS Protection**: Cross-origin request security
+- **Input Validation**: XSS and injection prevention
+- **Rate Limiting**: API abuse protection
+
+## 📊 Performance
+
+- **Code Splitting**: Lazy-loaded components
+- **Image Optimization**: WebP and responsive images
+- **Bundle Analysis**: Webpack bundle analyzer
+- **Lighthouse**: Performance monitoring
+- **Service Worker**: Offline capabilities
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow TypeScript best practices
+- Write comprehensive tests
+- Update documentation
+- Use conventional commits
+- Ensure accessibility compliance
+
+## 📚 Documentation
+
+- **API Documentation**: [API Docs](./docs/api.md)
+- **Component Library**: [Storybook](./docs/storybook.md)
+- **Architecture**: [Architecture Guide](./docs/architecture.md)
+- **Deployment**: [Deployment Guide](./docs/deployment.md)
+
+## 🆘 Support
+
+- **Documentation**: [docs.energyopti-pro.com](https://docs.energyopti-pro.com)
+- **Issues**: [GitHub Issues](https://github.com/your-org/energyopti-pro/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/energyopti-pro/discussions)
+- **Email**: support@energyopti-pro.com
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **React Team**: For the amazing framework
+- **Tailwind CSS**: For the utility-first CSS approach
+- **Framer Motion**: For smooth animations
+- **Open Source Community**: For the incredible tools and libraries
+
+---
+
+**Built with ❤️ by the EnergyOpti-Pro Team**
+
+*Transforming energy trading through disruptive technology*

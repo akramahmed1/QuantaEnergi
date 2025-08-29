@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { 
   ChartBarIcon, 
   CurrencyDollarIcon, 
-  TrendingUpIcon, 
+  ArrowTrendingUpIcon, 
   ExclamationTriangleIcon,
   CogIcon,
-  BellIcon
+  BellIcon,
+  CpuChipIcon,
+  CubeIcon,
+  WifiIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { useTradingStore } from '@/store/tradingStore'
 import MarketOverview from './MarketOverview'
@@ -18,19 +23,39 @@ import RiskMetrics from './RiskMetrics'
 import ESGScore from './ESGScore'
 import AIInsights from './AIInsights'
 import Alerts from './Alerts'
+import AIForecasting from './AIForecasting'
+import QuantumOptimization from './QuantumOptimization'
+import BlockchainSmartContracts from './BlockchainSmartContracts'
+import IoTIntegration from './IoTIntegration'
+import ComplianceMultiRegion from './ComplianceMultiRegion'
 import { websocketService } from '@/services/websocketService'
 
 const TradingDashboard: React.FC = () => {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
   const [isConnected, setIsConnected] = useState(false)
   const { 
     selectedSymbol, 
     setSelectedSymbol, 
-    watchlist,
     portfolio,
     getTotalPnL,
     getPortfolioValue
   } = useTradingStore()
+
+  // Handle URL parameters for tab navigation
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && tabs.some(tab => tab.id === tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
+
+  // Update URL when tab changes
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+    navigate(`/dashboard?tab=${tabId}`, { replace: true })
+  }
 
   useEffect(() => {
     // Connect to WebSocket
@@ -39,10 +64,14 @@ const TradingDashboard: React.FC = () => {
         await websocketService.connect('demo_user')
         setIsConnected(true)
         
-        // Subscribe to watchlist symbols
-        watchlist.forEach(symbol => {
-          websocketService.subscribeToSymbol(symbol)
-        })
+        // Subscribe to portfolio symbols
+        if (portfolio.positions && portfolio.positions.length > 0) {
+          portfolio.positions.forEach((item) => {
+            if (item.symbol) {
+              websocketService.subscribeToSymbol(item.symbol)
+            }
+          })
+        }
       } catch (error) {
         console.error('Failed to connect to WebSocket:', error)
       }
@@ -53,17 +82,22 @@ const TradingDashboard: React.FC = () => {
     return () => {
       websocketService.disconnect()
     }
-  }, [watchlist])
+  }, [portfolio.positions])
 
   const tabs = [
-    { id: 'overview', name: 'Overview', icon: ChartBarIcon },
-    { id: 'trading', name: 'Trading', icon: TrendingUpIcon },
-    { id: 'portfolio', name: 'Portfolio', icon: CurrencyDollarIcon },
-    { id: 'signals', name: 'Signals', icon: ExclamationTriangleIcon },
-    { id: 'risk', name: 'Risk', icon: ExclamationTriangleIcon },
-    { id: 'esg', name: 'ESG', icon: ChartBarIcon },
-    { id: 'ai', name: 'AI Insights', icon: CogIcon },
-    { id: 'alerts', name: 'Alerts', icon: BellIcon }
+    { id: 'overview', name: 'Overview', icon: ChartBarIcon, description: 'Market overview and trading signals' },
+    { id: 'trading', name: 'Trading', icon: ArrowTrendingUpIcon, description: 'Active trading and order management' },
+    { id: 'portfolio', name: 'Portfolio', icon: CurrencyDollarIcon, description: 'Portfolio analysis and performance' },
+    { id: 'ai-forecasting', name: 'AI Forecasting', icon: CpuChipIcon, description: 'ML-powered demand and price predictions' },
+    { id: 'quantum', name: 'Quantum Optimization', icon: CubeIcon, description: 'Quantum portfolio optimization' },
+    { id: 'blockchain', name: 'Blockchain', icon: ShieldCheckIcon, description: 'Smart contracts and carbon credits' },
+    { id: 'iot', name: 'IoT Integration', icon: WifiIcon, description: 'Real-time infrastructure monitoring' },
+    { id: 'compliance', name: 'Compliance', icon: ShieldCheckIcon, description: 'Multi-region regulatory compliance' },
+    { id: 'signals', name: 'Signals', icon: ExclamationTriangleIcon, description: 'Trading signals and alerts' },
+    { id: 'risk', name: 'Risk', icon: ExclamationTriangleIcon, description: 'Risk metrics and analysis' },
+    { id: 'esg', name: 'ESG', icon: ChartBarIcon, description: 'Environmental, Social, Governance scoring' },
+    { id: 'ai-insights', name: 'AI Insights', icon: CogIcon, description: 'Advanced AI analytics' },
+    { id: 'alerts', name: 'Alerts', icon: BellIcon, description: 'System alerts and notifications' }
   ]
 
   const totalPnL = getTotalPnL()
@@ -77,7 +111,7 @@ const TradingDashboard: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold text-secondary-900">
-                EnergyOpti-Pro Trading Platform
+                EnergyOpti-Pro: Disruptive Energy Trading SaaS
               </h1>
               <div className="ml-4 flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success-500' : 'bg-danger-500'}`} />
@@ -108,16 +142,17 @@ const TradingDashboard: React.FC = () => {
       {/* Navigation Tabs */}
       <nav className="bg-white border-b border-secondary-200">
         <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+          <div className="flex space-x-1 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex flex-col items-center space-y-1 py-3 px-3 border-b-2 font-medium text-xs min-w-max ${
                   activeTab === tab.id
                     ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'
                 }`}
+                title={tab.description}
               >
                 <tab.icon className="w-5 h-5" />
                 <span>{tab.name}</span>
@@ -146,7 +181,7 @@ const TradingDashboard: React.FC = () => {
           )}
 
           {activeTab === 'trading' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="lg:col-span-2">
                 <TradingChart />
               </div>
@@ -158,6 +193,26 @@ const TradingDashboard: React.FC = () => {
 
           {activeTab === 'portfolio' && (
             <PortfolioSummary />
+          )}
+
+          {activeTab === 'ai-forecasting' && (
+            <AIForecasting />
+          )}
+
+          {activeTab === 'quantum' && (
+            <QuantumOptimization />
+          )}
+
+          {activeTab === 'blockchain' && (
+            <BlockchainSmartContracts />
+          )}
+
+          {activeTab === 'iot' && (
+            <IoTIntegration />
+          )}
+
+          {activeTab === 'compliance' && (
+            <ComplianceMultiRegion />
           )}
 
           {activeTab === 'signals' && (
@@ -172,7 +227,7 @@ const TradingDashboard: React.FC = () => {
             <ESGScore />
           )}
 
-          {activeTab === 'ai' && (
+          {activeTab === 'ai-insights' && (
             <AIInsights />
           )}
 

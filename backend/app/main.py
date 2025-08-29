@@ -14,13 +14,19 @@ from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 import grpc
 import structlog
+from contextlib import asynccontextmanager
 
 # Import our modules
 from .core.config import settings
 from .db.session import get_db, create_tables
 from .api.auth import router as auth_router
+from .api.disruptive_features import router as disruptive_router
 from .schemas.user import User
-from .core.security import verify_token
+from .core.security import verify_token, get_password_hash, verify_password, create_access_token
+from .services.data_integration_service import DataIntegrationService
+
+# Initialize services
+market_service = DataIntegrationService()
 
 # Configure structured logging
 logger = structlog.get_logger()
@@ -56,104 +62,90 @@ class QuantumSecurityAdapter:
             warnings.warn(f"Quantum encryption failed: {e}")
             return {"status": "mock", "data": "mock_encrypted"}
 
-class RealTimeMarketDataService:
-    """Real-time market data service with actual API integrations"""
-    
-    def __init__(self):
-        self.session = None
-        self.cache = {}
-        self.cache_ttl = 300  # 5 minutes
-        
-    async def get_session(self):
-        if self.session is None:
-            self.session = aiohttp.ClientSession()
-        return self.session
-    
-    async def fetch_cme_prices(self, commodity: str = "crude_oil") -> Dict[str, Any]:
-        """Fetch real-time prices from CME Group API"""
-        try:
-            session = await self.get_session()
-            # CME API endpoint (using demo key for now)
-            url = f"https://www.cmegroup.com/api/price/quotes/{commodity}"
-            headers = {"X-CME-API-KEY": CME_API_KEY}
-            
-            async with session.get(url, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return {"source": "cme", "data": data.get("last", 75.50), "timestamp": datetime.now().isoformat()}
-                else:
-                    # Fallback to realistic simulated data
-                    simulated_price = 75.50 + (hash(commodity) % 20) / 100
-                    return {"source": "simulated_cme", "data": round(simulated_price, 2), "timestamp": datetime.now().isoformat()}
-        except Exception as e:
-            logger.warning(f"CME API failed, using simulated data: {e}")
-            simulated_price = 75.50 + (hash(commodity) % 20) / 100
-            return {"source": "simulated_cme", "data": round(simulated_price, 2), "timestamp": datetime.now().isoformat()}
-    
-    async def fetch_ice_prices(self, commodity: str = "brent_crude") -> Dict[str, Any]:
-        """Fetch real-time prices from ICE API"""
-        try:
-            session = await self.get_session()
-            # ICE API endpoint
-            url = f"https://www.theice.com/api/v1/quotes/{commodity}"
-            headers = {"X-ICE-API-KEY": ICE_API_KEY}
-            
-            async with session.get(url, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return {"source": "ice", "data": data.get("last", 78.25), "timestamp": datetime.now().isoformat()}
-                else:
-                    # Fallback to realistic simulated data
-                    simulated_price = 78.25 + (hash(commodity) % 15) / 100
-                    return {"source": "simulated_ice", "data": round(simulated_price, 2), "timestamp": datetime.now().isoformat()}
-        except Exception as e:
-            logger.warning(f"ICE API failed, using simulated data: {e}")
-            simulated_price = 78.25 + (hash(commodity) % 15) / 100
-            return {"source": "simulated_ice", "data": round(simulated_price, 2), "timestamp": datetime.now().isoformat()}
-    
-    async def fetch_weather_data(self, city: str = "Houston") -> Dict[str, Any]:
-        """Fetch real-time weather data from OpenWeatherMap"""
-        try:
-            session = await self.get_session()
-            url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&units=metric"
-            
-            async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return {
-                        "source": "openweathermap",
-                        "temperature": data["main"]["temp"],
-                        "humidity": data["main"]["humidity"],
-                        "description": data["weather"][0]["description"],
-                        "timestamp": datetime.now().isoformat()
-                    }
-                else:
-                    # Fallback to realistic simulated weather data
-                    return {
-                        "source": "simulated_weather",
-                        "temperature": 25.0 + (hash(city) % 20),
-                        "humidity": 60 + (hash(city) % 30),
-                        "description": "Partly cloudy",
-                        "timestamp": datetime.now().isoformat()
-                    }
-        except Exception as e:
-            logger.warning(f"Weather API failed, using simulated data: {e}")
-            return {
-                "source": "simulated_weather",
-                "temperature": 25.0 + (hash(city) % 20),
-                "humidity": 60 + (hash(city) % 30),
-                "description": "Partly cloudy",
-                "timestamp": datetime.now().isoformat()
-            }
-
 qsec_adapter = QuantumSecurityAdapter()
-market_service = RealTimeMarketDataService()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager."""
+    # Startup
+    log_message("Starting EnergyOpti-Pro backend...")
+    log_message("Initializing services...")
+    
+    # Create database tables
+    create_tables()
+    log_message("Database tables created/verified")
+    
+    # Initialize services
+    await market_service.get_session()
+    log_message("Market data service initialized")
+    
+    log_message("EnergyOpti-Pro backend started successfully")
+    
+    yield
+    
+    # Shutdown
+    log_message("Shutting down EnergyOpti-Pro backend...")
+    log_message("Backend shutdown complete")
 
 # Create FastAPI app
 app = FastAPI(
-    title="EnergyOpti-Pro API",
-    description="Next-Generation Energy Trading Platform with AI and Quantum Security",
-    version="2.0.0"
+    title="EnergyOpti-Pro: Disruptive Energy Trading Platform",
+    description="""
+    ## 🌟 EnergyOpti-Pro: Revolutionary Energy Trading SaaS
+    
+    **Transform your energy trading with AI, Quantum Computing, and Blockchain technology.**
+    
+    ### 🚀 Key Features
+    
+    * **AI-Powered Forecasting** with real-time market data
+    * **Quantum Portfolio Optimization** for maximum returns
+    * **Blockchain Smart Contracts** for transparent trading
+    * **Multi-Region Compliance** (FERC, Dodd-Frank, REMIT, Islamic Finance)
+    * **Real-time IoT Integration** for grid and weather data
+    * **ESG Scoring & Sustainability** metrics
+    
+    ### 🔐 Security
+    
+    * JWT-based authentication with post-quantum cryptography
+    * OWASP Top 10 compliance
+    * Rate limiting and threat detection
+    * Multi-factor authentication support
+    
+    ### 📊 Market Data
+    
+    * Real-time prices from CME, ICE, NYMEX
+    * Weather correlation analysis
+    * Renewable energy capacity tracking
+    * Oilfield production data
+    * Tariff impact analysis
+    
+    ### 🎯 Getting Started
+    
+    1. **Register**: Use `/api/auth/register` to create an account
+    2. **Login**: Use `/api/auth/login` to get access token
+    3. **Trade**: Access market data and execute trades
+    4. **Optimize**: Use AI and quantum optimization
+    5. **Comply**: Ensure regulatory compliance
+    
+    ### 🔗 API Endpoints
+    
+    * **Authentication**: `/api/auth/*`
+    * **Market Data**: `/api/prices`, `/api/renewables`, `/api/oilfield`
+    * **Trading**: `/api/trading/*`
+    * **Analytics**: `/api/analytics/*`
+    * **Compliance**: `/api/compliance/*`
+    """,
+    version="2.0.0",
+    contact={
+        "name": "EnergyOpti-Pro Team",
+        "email": "support@energyopti-pro.com",
+        "url": "https://energyopti-pro.com"
+    },
+    license_info={
+        "name": "Commercial License",
+        "url": "https://energyopti-pro.com/license"
+    },
+    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -168,11 +160,11 @@ app.add_middleware(
 # Include authentication router
 app.include_router(auth_router)
 
+# Include disruptive features router
+app.include_router(disruptive_router)
+
 # Create database tables on startup
-@app.on_event("startup")
-async def startup_event():
-    create_tables()
-    logger.info("EnergyOpti-Pro application started successfully")
+# Database tables are now created in the lifespan startup event
 
 log_file = "backend.log"
 
@@ -185,23 +177,44 @@ security = HTTPBearer()
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     """Get current authenticated user"""
-    payload = verify_token(credentials.credentials)
-    if not payload:
+    try:
+        # Extract token from credentials
+        token = credentials.credentials
+        
+        # Verify the token using the security module
+        payload = verify_token(token)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
+        
+        # Extract user ID from payload
+        user_id = int(payload.get("sub"))
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload"
+            )
+        
+        # Get user from database
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        return user
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        log_message(f"Authentication error: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail="Authentication failed"
         )
-    
-    user_id = int(payload.get("sub"))
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    return user
 
 # API Endpoints
 @app.get("/api/prices")

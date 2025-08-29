@@ -1,395 +1,115 @@
 version: '3.8'
 
 services:
-  # Backend API
+  # Backend API Service
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: energyopti-pro-backend
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://energyopti:energyopti123@postgres:5432/energyopti_pro
-      - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-change-in-production}
-      - SECURITY_SECRET_KEY=${SECURITY_SECRET_KEY:-your-secret-key-change-in-production}
-      - CME_API_KEY=${CME_API_KEY}
-      - ICE_API_KEY=${ICE_API_KEY}
-      - NYMEX_API_KEY=${NYMEX_API_KEY}
-      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
-      - ENVIRONMENT=production
-      - LOG_LEVEL=INFO
-      - API_HOST=0.0.0.0
-      - API_PORT=8000
-    volumes:
-      - ./logs:/app/logs
-      - ./models:/app/models
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/energyopti_pro
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=your-secret-key-here
+      - ENVIRONMENT=development
     depends_on:
       - postgres
       - redis
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
     networks:
       - energyopti-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Frontend React App
+  # Frontend Service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: energyopti-pro-frontend
     ports:
       - "3000:3000"
     environment:
       - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_WS_URL=ws://localhost:8000/ws
-      - REACT_APP_ENVIRONMENT=production
+      - REACT_APP_ENVIRONMENT=development
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     networks:
       - energyopti-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Flutter Mobile App (Web Version)
-  mobile-web:
-    build:
-      context: ./mobile
-      dockerfile: Dockerfile.web
-    container_name: energyopti-pro-mobile-web
-    ports:
-      - "4000:4000"
-    environment:
-      - FLUTTER_WEB_API_URL=http://localhost:8000
-      - FLUTTER_WEB_WS_URL=ws://localhost:8000/ws
-    depends_on:
-      - backend
-    networks:
-      - energyopti-network
-    restart: unless-stopped
 
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: energyopti-pro-postgres
     environment:
       - POSTGRES_DB=energyopti_pro
-      - POSTGRES_USER=energyopti
-      - POSTGRES_PASSWORD=energyopti123
-      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - energyopti-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U energyopti -d energyopti_pro"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: energyopti-pro-redis
-    command: redis-server --appendonly yes --requirepass redis123
-    environment:
-      - REDIS_PASSWORD=redis123
-    volumes:
-      - redis_data:/data
     ports:
       - "6379:6379"
-    networks:
-      - energyopti-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Celery Worker for Background Tasks
-  celery-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: energyopti-pro-celery-worker
-    command: celery -A src.energyopti_pro.core.celery worker --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://energyopti:energyopti123@postgres:5432/energyopti_pro
-      - REDIS_URL=redis://:redis123@redis:6379/0
-      - CELERY_BROKER_URL=redis://:redis123@redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://:redis123@redis:6379/0
     volumes:
-      - ./logs:/app/logs
-      - ./models:/app/models
-    depends_on:
-      - postgres
-      - redis
+      - redis_data:/data
     networks:
       - energyopti-network
-    restart: unless-stopped
-
-  # Celery Beat for Scheduled Tasks
-  celery-beat:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: energyopti-pro-celery-beat
-    command: celery -A src.energyopti_pro.core.celery beat --loglevel=info
-    environment:
-      - DATABASE_URL=postgresql://energyopti:energyopti123@postgres:5432/energyopti_pro
-      - REDIS_URL=redis://:redis123@redis:6379/0
-      - CELERY_BROKER_URL=redis://:redis123@redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://:redis123@redis:6379/0
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - energyopti-network
-    restart: unless-stopped
-
-  # Flower for Celery Monitoring
-  flower:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: energyopti-pro-flower
-    command: celery -A src.energyopti_pro.core.celery flower --port=5555
-    environment:
-      - CELERY_BROKER_URL=redis://:redis123@redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://:redis123@redis:6379/0
-    ports:
-      - "5555:5555"
-    depends_on:
-      - redis
-      - celery-worker
-    networks:
-      - energyopti-network
-    restart: unless-stopped
 
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: energyopti-pro-nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - ./logs/nginx:/var/log/nginx
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
     depends_on:
       - backend
       - frontend
-      - mobile-web
     networks:
       - energyopti-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Prometheus for Metrics
+  # Monitoring Stack
   prometheus:
     image: prom/prometheus:latest
-    container_name: energyopti-pro-prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
     networks:
       - energyopti-network
-    restart: unless-stopped
 
-  # Grafana for Dashboards
   grafana:
     image: grafana/grafana:latest
-    container_name: energyopti-pro-grafana
     ports:
       - "3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
     networks:
       - energyopti-network
-    restart: unless-stopped
-
-  # Jaeger for Distributed Tracing
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: energyopti-pro-jaeger
-    ports:
-      - "16686:16686"
-      - "14268:14268"
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-    networks:
-      - energyopti-network
-    restart: unless-stopped
-
-  # Elasticsearch for Log Aggregation
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: energyopti-pro-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-    networks:
-      - energyopti-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Kibana for Log Visualization
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.11.0
-    container_name: energyopti-pro-kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
-    networks:
-      - energyopti-network
-    restart: unless-stopped
-
-  # Filebeat for Log Collection
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:8.11.0
-    container_name: energyopti-pro-filebeat
-    user: root
-    volumes:
-      - ./logs:/var/log/energyopti:ro
-      - ./monitoring/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - elasticsearch
-    networks:
-      - energyopti-network
-    restart: unless-stopped
-
-  # Sentry for Error Tracking
-  sentry:
-    image: getsentry/sentry:latest
-    container_name: energyopti-pro-sentry
-    ports:
-      - "9000:9000"
-    environment:
-      - SENTRY_SECRET_KEY=${SENTRY_SECRET_KEY:-your-sentry-secret-key}
-      - SENTRY_POSTGRES_HOST=postgres
-      - SENTRY_POSTGRES_DB=sentry
-      - SENTRY_POSTGRES_USER=sentry
-      - SENTRY_POSTGRES_PASSWORD=sentry123
-      - SENTRY_REDIS_HOST=redis
-      - SENTRY_REDIS_PASSWORD=redis123
-    volumes:
-      - sentry_data:/var/lib/sentry
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - energyopti-network
-    restart: unless-stopped
-
-  # Blockchain Node (Ethereum)
-  ethereum:
-    image: ethereum/client-go:latest
-    container_name: energyopti-pro-ethereum
-    ports:
-      - "8545:8545"
-      - "8546:8546"
-    command: >
-      --datadir /var/lib/ethereum
-      --http
-      --http.addr 0.0.0.0
-      --http.port 8545
-      --http.corsdomain "*"
-      --http.api "eth,net,web3,personal,miner"
-      --allow-insecure-unlock
-      --dev
-      --dev.period 0
-    volumes:
-      - ethereum_data:/var/lib/ethereum
-    networks:
-      - energyopti-network
-    restart: unless-stopped
-
-  # IPFS Node for Decentralized Storage
-  ipfs:
-    image: ipfs/kubo:latest
-    container_name: energyopti-pro-ipfs
-    ports:
-      - "4001:4001"
-      - "5001:5001"
-      - "8080:8080"
-    volumes:
-      - ipfs_data:/data/ipfs
-    networks:
-      - energyopti-network
-    restart: unless-stopped
 
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
   prometheus_data:
-    driver: local
   grafana_data:
-    driver: local
-  elasticsearch_data:
-    driver: local
-  sentry_data:
-    driver: local
-  ethereum_data:
-    driver: local
-  ipfs_data:
-    driver: local
 
 networks:
   energyopti-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

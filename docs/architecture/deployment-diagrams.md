@@ -217,10 +217,10 @@ graph TB
             Render_Redis[Managed Redis]
         end
 
-        subgraph "AWS Services"
-            S3[S3 Storage]
-            CloudFront[CloudFront CDN]
-            Route53[Route 53 DNS]
+        subgraph "Storage & CDN"
+            Storage[File Storage]
+            CDN[Content Delivery]
+            DNS[DNS Management]
         end
     end
 
@@ -255,10 +255,10 @@ graph TB
     Render_Web --> Render_Redis
 
     %% Storage and CDN
-    Deployment --> S3
-    S3 --> CloudFront
-    Route53 --> CloudFront
-    Route53 --> Vercel_CDN
+    Deployment --> Storage
+    Storage --> CDN
+    DNS --> CDN
+    DNS --> Vercel_CDN
 
     %% Monitoring
     Vercel_Edge --> Vercel_Analytics

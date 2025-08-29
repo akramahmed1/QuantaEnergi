@@ -1,0 +1,51 @@
+services:
+  - type: web
+    name: energyopti-pro-backend
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATABASE_URL
+        fromDatabase:
+          name: energyopti-pro-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: energyopti-pro-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CME_API_KEY
+        value: demo_key
+      - key: ICE_API_KEY
+        value: demo_key
+      - key: NYMEX_API_KEY
+        value: demo_key
+      - key: OPENWEATHER_API_KEY
+        value: demo_key
+      - key: QUANTUM_SECURITY_ENABLED
+        value: false
+      - key: GENERATIVE_AI_ENABLED
+        value: false
+      - key: QUANTUM_HARDWARE_ENABLED
+        value: false
+      - key: OPTIMIZATION_ENGINE_ENABLED
+        value: false
+      - key: RATE_LIMIT_PER_MINUTE
+        value: 100
+
+databases:
+  - name: energyopti-pro-db
+    databaseName: energyopti_pro
+    user: energyopti_pro_user
+    plan: starter
+
+services:
+  - type: redis
+    name: energyopti-pro-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru

@@ -1,9 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
 from datetime import datetime
-
-Base = declarative_base()
+from ..db.session import Base
 
 class EnergyData(Base):
     __tablename__ = "energy_data"
@@ -16,10 +13,7 @@ class EnergyData(Base):
     region = Column(String, nullable=False)
     source = Column(String, nullable=False)  # cme, ice, simulated
     timestamp = Column(DateTime, default=datetime.utcnow)
-    metadata = Column(Text, nullable=True)  # JSON string for additional data
-    
-    # Relationships
-    user = relationship("User", back_populates="energy_data")
+    data_metadata = Column(Text, nullable=True)  # JSON string for additional data
     
     def __repr__(self):
         return f"<EnergyData(id={self.id}, commodity='{self.commodity_type}', price={self.price}, user_id={self.user_id})>"

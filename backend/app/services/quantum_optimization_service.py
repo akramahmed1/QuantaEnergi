@@ -1,498 +1,545 @@
-import asyncio
+import numpy as np
+import pandas as pd
 from typing import Dict, Any, List, Optional, Tuple
+from dataclasses import dataclass
 from datetime import datetime
 import structlog
-import numpy as np
-from ..core.config import settings
+import warnings
 
 logger = structlog.get_logger()
 
+@dataclass
+class PortfolioAsset:
+    """Represents a portfolio asset with risk and return characteristics"""
+    symbol: str
+    weight: float
+    expected_return: float
+    volatility: float
+    sector: str
+    region: str
+    esg_score: float
+
 class QuantumOptimizationService:
-    """Quantum optimization service for portfolio optimization and complex calculations"""
+    """Quantum computing service for portfolio optimization and risk management"""
     
     def __init__(self):
-        self.ibmq_token = settings.IBMQ_TOKEN
-        self.quantum_available = self._check_quantum_availability()
-        self.optimization_history = []
+        self.qiskit_available = False
+        self.quantum_backend = None
+        self.classical_backend = None
         
-    def _check_quantum_availability(self) -> bool:
-        """Check if quantum hardware is available"""
+        # Try to import Qiskit with proper error handling
         try:
-            if not self.ibmq_token:
-                logger.info("IBMQ token not configured, using classical optimization")
-                return False
+            import qiskit
+            from qiskit import QuantumCircuit, Aer, execute
+            from qiskit.algorithms import VQE, QAOA
+            from qiskit.algorithms.optimizers import SPSA, COBYLA
+            from qiskit.circuit.library import TwoLocal
+            from qiskit.quantum_info import Pauli
+            from qiskit.opflow import PauliSumOp, I, X, Z
+            from qiskit_machine_learning.algorithms import VQC
+            from qiskit_machine_learning.neural_networks import CircuitQNN
             
-            # In production, you would check IBMQ backend availability
-            # For now, simulate availability check
-            return True
+            # Store Qiskit components
+            self.qiskit = qiskit
+            self.QuantumCircuit = QuantumCircuit
+            self.Aer = Aer
+            self.execute = execute
+            self.VQE = VQE
+            self.QAOA = QAOA
+            self.SPSA = SPSA
+            self.COBYLA = COBYLA
+            self.TwoLocal = TwoLocal
+            self.Pauli = Pauli
+            self.PauliSumOp = PauliSumOp
+            self.I = I
+            self.X = X
+            self.Z = Z
+            self.VQC = VQC
+            self.CircuitQNN = CircuitQNN
             
+            self.qiskit_available = True
+            self.quantum_backend = Aer.get_backend('qasm_simulator')
+            self.classical_backend = Aer.get_backend('statevector_simulator')
+            
+            logger.info("Qiskit successfully imported and quantum backends configured")
+            
+        except ImportError as e:
+            logger.warning(f"Qiskit not available: {e}. Using classical optimization fallback.")
+            self.qiskit_available = False
         except Exception as e:
-            logger.warning(f"Error checking quantum availability: {e}")
-            return False
-    
-    async def optimize_portfolio(self, assets: List[Dict[str, Any]], 
-                               constraints: Dict[str, Any]) -> Dict[str, Any]:
-        """Optimize portfolio using quantum or classical methods"""
+            logger.warning(f"Error initializing Qiskit: {e}. Using classical optimization fallback.")
+            self.qiskit_available = False
+        
+        # Classical optimization backend
         try:
-            # Prepare optimization problem
-            problem_data = self._prepare_portfolio_problem(assets, constraints)
+            from scipy.optimize import minimize
+            self.scipy_minimize = minimize
+        except ImportError:
+            logger.warning("SciPy not available. Limited optimization capabilities.")
+            self.scipy_minimize = None
+
+    def optimize_portfolio_quantum(self, assets: List[PortfolioAsset], 
+                                 target_return: float = None,
+                                 risk_tolerance: float = 0.5,
+                                 max_iterations: int = 100) -> Dict[str, Any]:
+        """Optimize portfolio using quantum algorithms with classical fallback"""
+        try:
+            if not assets:
+                return {"error": "No assets provided"}
             
-            if self.quantum_available and constraints.get("use_quantum", True):
-                # Use quantum optimization
-                result = await self._quantum_portfolio_optimization(problem_data)
+            # Prepare data
+            returns = np.array([asset.expected_return for asset in assets])
+            volatilities = np.array([asset.volatility for asset in assets])
+            correlation_matrix = self._create_correlation_matrix(len(assets))
+            
+            # Choose optimization method based on problem size and Qiskit availability
+            if self.qiskit_available and len(assets) <= 8:  # Quantum algorithms work best for smaller problems
+                if len(assets) <= 4:
+                    result = self._optimize_with_qaoa(assets, returns, volatilities, correlation_matrix, 
+                                                    target_return, risk_tolerance, max_iterations)
+                else:
+                    result = self._optimize_with_vqe(assets, returns, volatilities, correlation_matrix,
+                                                   target_return, risk_tolerance, max_iterations)
             else:
                 # Use classical optimization
-                result = await self._classical_portfolio_optimization(problem_data)
-            
-            # Store optimization result
-            optimization_record = {
-                "id": f"opt_{len(self.optimization_history) + 1}",
-                "timestamp": datetime.now().isoformat(),
-                "method": "quantum" if result.get("method") == "quantum" else "classical",
-                "assets_count": len(assets),
-                "constraints": constraints,
-                "result": result
-            }
-            self.optimization_history.append(optimization_record)
+                result = self._classical_portfolio_optimization(assets, target_return, risk_tolerance)
             
             return result
             
         except Exception as e:
             logger.error(f"Error in portfolio optimization: {e}")
             return {"error": str(e)}
-    
-    def _prepare_portfolio_problem(self, assets: List[Dict[str, Any]], 
-                                  constraints: Dict[str, Any]) -> Dict[str, Any]:
-        """Prepare portfolio optimization problem data"""
+
+    def _optimize_with_qaoa(self, assets: List[PortfolioAsset], returns: np.ndarray, 
+                           volatilities: np.ndarray, correlation_matrix: np.ndarray,
+                           target_return: float, risk_tolerance: float, max_iterations: int) -> Dict[str, Any]:
+        """Optimize portfolio using Quantum Approximate Optimization Algorithm (QAOA)"""
         try:
-            # Extract asset data
-            asset_names = [asset["name"] for asset in assets]
-            expected_returns = [asset["expected_return"] for asset in assets]
-            volatilities = [asset["volatility"] for asset in assets]
+            # Create cost operator for portfolio optimization
+            cost_operator = self._create_portfolio_cost_operator(assets, returns, volatilities, 
+                                                              correlation_matrix, target_return, risk_tolerance)
             
-            # Create correlation matrix (simplified)
+            # Create QAOA circuit
+            qaoa = self.QAOA(cost_operator, optimizer=self.SPSA(maxiter=max_iterations))
+            
+            # Execute on quantum backend
+            result = qaoa.run(self.quantum_backend)
+            
+            # Extract optimal weights
+            optimal_weights = self._extract_weights_from_qaoa_result(result, len(assets))
+            
+            # Calculate portfolio metrics
+            portfolio_metrics = self._calculate_portfolio_metrics(assets, optimal_weights, 
+                                                               returns, volatilities, correlation_matrix)
+            
+            return {
+                "optimization_method": "QAOA",
+                "optimal_weights": optimal_weights,
+                "portfolio_metrics": portfolio_metrics,
+                "quantum_result": str(result),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"QAOA optimization failed: {e}")
+            # Fallback to classical optimization
+            return self._classical_portfolio_optimization(assets, target_return, risk_tolerance)
+
+    def _optimize_with_vqe(self, assets: List[PortfolioAsset], returns: np.ndarray,
+                          volatilities: np.ndarray, correlation_matrix: np.ndarray,
+                          target_return: float, risk_tolerance: float, max_iterations: int) -> Dict[str, Any]:
+        """Optimize portfolio using Variational Quantum Eigensolver (VQE)"""
+        try:
+            # Create cost operator
+            cost_operator = self._create_portfolio_cost_operator(assets, returns, volatilities, 
+                                                              correlation_matrix, target_return, risk_tolerance)
+            
+            # Create variational form
+            var_form = self.TwoLocal(cost_operator.num_qubits, ['ry', 'rz'], 'cz', reps=2)
+            
+            # Create VQE
+            vqe = self.VQE(var_form, optimizer=self.COBYLA(maxiter=max_iterations))
+            
+            # Execute on quantum backend
+            result = vqe.run(self.quantum_backend)
+            
+            # Extract optimal weights
+            optimal_weights = self._extract_weights_from_vqe_result(result, len(assets))
+            
+            # Calculate portfolio metrics
+            portfolio_metrics = self._calculate_portfolio_metrics(assets, optimal_weights, 
+                                                               returns, volatilities, correlation_matrix)
+            
+            return {
+                "optimization_method": "VQE",
+                "optimal_weights": optimal_weights,
+                "portfolio_metrics": portfolio_metrics,
+                "quantum_result": str(result),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"VQE optimization failed: {e}")
+            # Fallback to classical optimization
+            return self._classical_portfolio_optimization(assets, target_return, risk_tolerance)
+
+    def _create_portfolio_cost_operator(self, assets: List[PortfolioAsset], returns: np.ndarray,
+                                      volatilities: np.ndarray, correlation_matrix: np.ndarray,
+                                      target_return: float, risk_tolerance: float) -> Any:
+        """Create quantum cost operator for portfolio optimization"""
+        try:
             n_assets = len(assets)
-            correlation_matrix = np.eye(n_assets)  # Identity matrix for now
             
-            # Add some correlation between similar assets
+            # Create Pauli operators for each asset
+            pauli_operators = []
             for i in range(n_assets):
-                for j in range(i + 1, n_assets):
-                    if assets[i]["sector"] == assets[j]["sector"]:
-                        correlation_matrix[i][j] = correlation_matrix[j][i] = 0.7
-                    elif assets[i]["region"] == assets[j]["region"]:
-                        correlation_matrix[i][j] = correlation_matrix[j][i] = 0.5
+                # Return term
+                return_op = returns[i] * self.I
+                # Volatility term
+                vol_op = volatilities[i] * self.Z
+                # Add to list
+                pauli_operators.append(return_op + vol_op)
             
-            # Create covariance matrix
-            covariance_matrix = np.zeros((n_assets, n_assets))
+            # Create correlation terms
+            correlation_terms = []
+            for i in range(n_assets):
+                for j in range(i+1, n_assets):
+                    if correlation_matrix[i, j] != 0:
+                        corr_op = correlation_matrix[i, j] * (self.Z ^ self.Z)
+                        correlation_terms.append(corr_op)
+            
+            # Combine all terms
+            cost_operator = sum(pauli_operators) + sum(correlation_terms)
+            
+            # Add target return constraint if specified
+            if target_return is not None:
+                target_op = target_return * self.I
+                cost_operator += target_op
+            
+            return cost_operator
+            
+        except Exception as e:
+            logger.error(f"Error creating cost operator: {e}")
+            # Return a simple operator as fallback
+            return self.I
+
+    def _extract_weights_from_qaoa_result(self, result: Any, n_assets: int) -> List[float]:
+        """Extract portfolio weights from QAOA result"""
+        try:
+            # Get the most likely bitstring
+            counts = result.get_counts()
+            if not counts:
+                return [1.0/n_assets] * n_assets
+            
+            # Find the bitstring with highest count
+            best_bitstring = max(counts, key=counts.get)
+            
+            # Convert bitstring to weights
+            weights = []
+            for bit in best_bitstring:
+                weights.append(float(bit))
+            
+            # Normalize weights to sum to 1
+            total = sum(weights)
+            if total > 0:
+                weights = [w/total for w in weights]
+            else:
+                weights = [1.0/n_assets] * n_assets
+            
+            return weights
+            
+        except Exception as e:
+            logger.error(f"Error extracting weights from QAOA result: {e}")
+            return [1.0/n_assets] * n_assets
+
+    def _extract_weights_from_vqe_result(self, result: Any, n_assets: int) -> List[float]:
+        """Extract portfolio weights from VQE result"""
+        try:
+            # Get the optimal parameters
+            optimal_params = result.optimal_parameters
+            
+            if not optimal_params:
+                return [1.0/n_assets] * n_assets
+            
+            # Convert parameters to weights (simplified approach)
+            weights = []
+            for i in range(n_assets):
+                if i < len(optimal_params):
+                    # Normalize parameter to [0, 1] range
+                    weight = (optimal_params[i] + 1) / 2
+                    weights.append(max(0, min(1, weight)))
+                else:
+                    weights.append(1.0/n_assets)
+            
+            # Normalize weights to sum to 1
+            total = sum(weights)
+            if total > 0:
+                weights = [w/total for w in weights]
+            else:
+                weights = [1.0/n_assets] * n_assets
+            
+            return weights
+            
+        except Exception as e:
+            logger.error(f"Error extracting weights from VQE result: {e}")
+            return [1.0/n_assets] * n_assets
+
+    def _create_correlation_matrix(self, n_assets: int) -> np.ndarray:
+        """Create a realistic correlation matrix for assets"""
+        try:
+            # Create a positive semi-definite correlation matrix
+            np.random.seed(42)  # For reproducibility
+            random_matrix = np.random.randn(n_assets, n_assets)
+            correlation_matrix = np.dot(random_matrix, random_matrix.T)
+            
+            # Normalize to get correlation coefficients between -1 and 1
             for i in range(n_assets):
                 for j in range(n_assets):
-                    covariance_matrix[i][j] = volatilities[i] * volatilities[j] * correlation_matrix[i][j]
+                    if i == j:
+                        correlation_matrix[i, j] = 1.0
+                    else:
+                        correlation_matrix[i, j] = correlation_matrix[i, j] / np.sqrt(correlation_matrix[i, i] * correlation_matrix[j, j])
+                        correlation_matrix[i, j] = max(-0.8, min(0.8, correlation_matrix[i, j]))  # Limit correlations
             
-            problem_data = {
-                "asset_names": asset_names,
-                "expected_returns": expected_returns,
-                "volatilities": volatilities,
-                "covariance_matrix": covariance_matrix.tolist(),
-                "constraints": constraints,
-                "n_assets": n_assets
-            }
-            
-            return problem_data
+            return correlation_matrix
             
         except Exception as e:
-            logger.error(f"Error preparing portfolio problem: {e}")
-            raise
-    
-    async def _quantum_portfolio_optimization(self, problem_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Optimize portfolio using quantum computing"""
+            logger.error(f"Error creating correlation matrix: {e}")
+            # Return identity matrix as fallback
+            return np.eye(n_assets)
+
+    def _calculate_portfolio_metrics(self, assets: List[PortfolioAsset], weights: List[float],
+                                   returns: np.ndarray, volatilities: np.ndarray, 
+                                   correlation_matrix: np.ndarray) -> Dict[str, float]:
+        """Calculate comprehensive portfolio metrics"""
         try:
-            logger.info("Starting quantum portfolio optimization")
+            # Expected return
+            expected_return = np.sum(weights * returns)
             
-            # Simulate quantum optimization process
-            await asyncio.sleep(2)  # Simulate quantum processing time
+            # Portfolio volatility
+            portfolio_variance = 0
+            for i in range(len(assets)):
+                for j in range(len(assets)):
+                    portfolio_variance += weights[i] * weights[j] * volatilities[i] * volatilities[j] * correlation_matrix[i, j]
+            portfolio_volatility = np.sqrt(portfolio_variance)
             
-            # For now, return a simulated quantum result
-            # In production, you would use actual IBMQ integration
-            result = self._simulate_quantum_optimization(problem_data)
+            # Sharpe ratio (assuming risk-free rate of 2%)
+            risk_free_rate = 0.02
+            sharpe_ratio = (expected_return - risk_free_rate) / portfolio_volatility if portfolio_volatility > 0 else 0
+            
+            # Portfolio ESG score
+            portfolio_esg_score = np.sum([weights[i] * assets[i].esg_score for i in range(len(assets))])
+            
+            # Diversification ratio
+            weighted_vol = np.sum(weights * volatilities)
+            diversification_ratio = weighted_vol / portfolio_volatility if portfolio_volatility > 0 else 1
             
             return {
-                "method": "quantum",
-                "status": "completed",
-                "optimization_result": result,
-                "quantum_metrics": {
-                    "qubits_used": problem_data["n_assets"],
-                    "circuit_depth": problem_data["n_assets"] * 2,
-                    "execution_time": "2.1 seconds",
-                    "backend": "ibmq_brisbane" if self.ibmq_token else "simulator"
-                },
-                "timestamp": datetime.now().isoformat()
+                "expected_return": round(expected_return, 4),
+                "portfolio_volatility": round(portfolio_volatility, 4),
+                "sharpe_ratio": round(sharpe_ratio, 4),
+                "portfolio_esg_score": round(portfolio_esg_score, 2),
+                "diversification_ratio": round(diversification_ratio, 4),
+                "risk_adjusted_return": round(expected_return / portfolio_volatility if portfolio_volatility > 0 else 0, 4)
             }
             
         except Exception as e:
-            logger.error(f"Error in quantum optimization: {e}")
-            # Fallback to classical optimization
-            return await self._classical_portfolio_optimization(problem_data)
-    
-    async def _classical_portfolio_optimization(self, problem_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Optimize portfolio using classical optimization methods"""
-        try:
-            logger.info("Starting classical portfolio optimization")
-            
-            # Use Markowitz mean-variance optimization
-            result = self._markowitz_optimization(problem_data)
-            
+            logger.error(f"Error calculating portfolio metrics: {e}")
             return {
-                "method": "classical",
-                "status": "completed",
-                "optimization_result": result,
-                "classical_metrics": {
-                    "algorithm": "Markowitz Mean-Variance",
-                    "solver": "scipy.optimize",
-                    "execution_time": "0.05 seconds",
-                    "iterations": 150
-                },
-                "timestamp": datetime.now().isoformat()
+                "expected_return": 0.0,
+                "portfolio_volatility": 0.0,
+                "sharpe_ratio": 0.0,
+                "portfolio_esg_score": 0.0,
+                "diversification_ratio": 1.0,
+                "risk_adjusted_return": 0.0
             }
+
+    def _classical_portfolio_optimization(self, assets: List[PortfolioAsset], 
+                                        target_return: float, risk_tolerance: float) -> Dict[str, Any]:
+        """Classical portfolio optimization using scipy"""
+        try:
+            if not self.scipy_minimize:
+                return {"error": "SciPy optimization not available"}
             
+            n_assets = len(assets)
+            returns = np.array([asset.expected_return for asset in assets])
+            volatilities = np.array([asset.volatility for asset in assets])
+            correlation_matrix = self._create_correlation_matrix(n_assets)
+            
+            # Define objective function (minimize risk)
+            def objective(weights):
+                portfolio_variance = 0
+                for i in range(n_assets):
+                    for j in range(n_assets):
+                        portfolio_variance += weights[i] * weights[j] * volatilities[i] * volatilities[j] * correlation_matrix[i, j]
+                return np.sqrt(portfolio_variance)
+            
+            # Constraints: weights sum to 1
+            constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+            
+            # Bounds: weights between 0 and 1
+            bounds = tuple((0, 1) for _ in range(n_assets))
+            
+            # Initial guess: equal weights
+            initial_weights = np.array([1.0/n_assets] * n_assets)
+            
+            # Optimize
+            result = self.scipy_minimize(
+                objective, 
+                initial_weights, 
+                method='SLSQP',
+                bounds=bounds,
+                constraints=constraints
+            )
+            
+            if result.success:
+                optimal_weights = result.x.tolist()
+                portfolio_metrics = self._calculate_portfolio_metrics(assets, optimal_weights, 
+                                                                   returns, volatilities, correlation_matrix)
+                
+                return {
+                    "optimization_method": "Classical (SLSQP)",
+                    "optimal_weights": optimal_weights,
+                    "portfolio_metrics": portfolio_metrics,
+                    "optimization_success": True,
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                return {"error": f"Classical optimization failed: {result.message}"}
+                
         except Exception as e:
             logger.error(f"Error in classical optimization: {e}")
             return {"error": str(e)}
-    
-    def _simulate_quantum_optimization(self, problem_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate quantum optimization results"""
+
+    def quantum_risk_assessment(self, portfolio_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Perform quantum-enhanced risk assessment"""
         try:
-            n_assets = problem_data["n_assets"]
-            expected_returns = problem_data["expected_returns"]
-            volatilities = problem_data["volatilities"]
+            if not self.qiskit_available:
+                return self._classical_risk_assessment(portfolio_data)
             
-            # Simulate quantum noise and optimization
-            np.random.seed(42)  # For reproducible results
+            # Create quantum circuit for risk assessment
+            n_qubits = min(8, len(portfolio_data.get("assets", [])))
+            qc = self.QuantumCircuit(n_qubits, n_qubits)
             
-            # Generate optimal weights with quantum-like characteristics
-            base_weights = np.random.dirichlet(np.ones(n_assets))
+            # Apply Hadamard gates to create superposition
+            for i in range(n_qubits):
+                qc.h(i)
             
-            # Apply quantum-inspired optimization
-            for _ in range(100):  # Simulate quantum iterations
-                # Simulate quantum tunneling effect
-                noise = np.random.normal(0, 0.01, n_assets)
-                base_weights += noise
-                base_weights = np.abs(base_weights)  # Ensure non-negative
-                base_weights /= np.sum(base_weights)  # Normalize
+            # Apply rotation gates based on risk parameters
+            assets = portfolio_data.get("assets", [])
+            for i in range(min(n_qubits, len(assets))):
+                risk_factor = assets[i].volatility if hasattr(assets[i], 'volatility') else 0.1
+                qc.ry(risk_factor * np.pi, i)
             
-            # Calculate portfolio metrics
-            portfolio_return = np.sum(base_weights * expected_returns)
-            portfolio_volatility = np.sqrt(
-                np.dot(base_weights.T, np.dot(problem_data["covariance_matrix"], base_weights))
-            )
+            # Measure all qubits
+            qc.measure_all()
             
-            # Calculate Sharpe ratio (assuming risk-free rate of 2%)
-            risk_free_rate = 0.02
-            sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility
+            # Execute on quantum backend
+            job = self.execute(qc, self.quantum_backend, shots=1000)
+            result = job.result()
+            counts = result.get_counts()
             
-            # Generate asset allocation
-            asset_allocation = []
-            for i, asset_name in enumerate(problem_data["asset_names"]):
-                asset_allocation.append({
-                    "asset": asset_name,
-                    "weight": round(base_weights[i], 4),
-                    "allocation_percentage": round(base_weights[i] * 100, 2)
-                })
-            
-            return {
-                "optimal_weights": base_weights.tolist(),
-                "asset_allocation": asset_allocation,
-                "portfolio_metrics": {
-                    "expected_return": round(portfolio_return, 4),
-                    "volatility": round(portfolio_volatility, 4),
-                    "sharpe_ratio": round(sharpe_ratio, 4),
-                    "diversification_ratio": round(1 / np.sum(base_weights**2), 4)
-                },
-                "constraint_satisfaction": {
-                    "sum_weights": round(np.sum(base_weights), 6),
-                    "max_weight": round(np.max(base_weights), 4),
-                    "min_weight": round(np.min(base_weights), 4)
-                }
-            }
-            
-        except Exception as e:
-            logger.error(f"Error simulating quantum optimization: {e}")
-            return {"error": str(e)}
-    
-    def _markowitz_optimization(self, problem_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Classical Markowitz mean-variance optimization"""
-        try:
-            n_assets = problem_data["n_assets"]
-            expected_returns = problem_data["expected_returns"]
-            covariance_matrix = np.array(problem_data["covariance_matrix"])
-            
-            # Simple equal-weight portfolio as baseline
-            # In production, you would use scipy.optimize for proper optimization
-            base_weights = np.ones(n_assets) / n_assets
-            
-            # Apply some optimization logic
-            # This is a simplified version - real implementation would use proper solvers
-            
-            # Calculate portfolio metrics
-            portfolio_return = np.sum(base_weights * expected_returns)
-            portfolio_volatility = np.sqrt(
-                np.dot(base_weights.T, np.dot(covariance_matrix, base_weights))
-            )
-            
-            # Calculate Sharpe ratio
-            risk_free_rate = 0.02
-            sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility
-            
-            # Generate asset allocation
-            asset_allocation = []
-            for i, asset_name in enumerate(problem_data["asset_names"]):
-                asset_allocation.append({
-                    "asset": asset_name,
-                    "weight": round(base_weights[i], 4),
-                    "allocation_percentage": round(base_weights[i] * 100, 2)
-                })
-            
-            return {
-                "optimal_weights": base_weights.tolist(),
-                "asset_allocation": asset_allocation,
-                "portfolio_metrics": {
-                    "expected_return": round(portfolio_return, 4),
-                    "volatility": round(portfolio_volatility, 4),
-                    "sharpe_ratio": round(sharpe_ratio, 4),
-                    "diversification_ratio": round(1 / np.sum(base_weights**2), 4)
-                },
-                "constraint_satisfaction": {
-                    "sum_weights": round(np.sum(base_weights), 6),
-                    "max_weight": round(np.max(base_weights), 4),
-                    "min_weight": round(np.min(base_weights), 4)
-                }
-            }
-            
-        except Exception as e:
-            logger.error(f"Error in Markowitz optimization: {e}")
-            return {"error": str(e)}
-    
-    async def optimize_energy_scheduling(self, energy_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Optimize energy scheduling using quantum methods"""
-        try:
-            # Extract energy scheduling data
-            time_periods = energy_data.get("time_periods", 24)
-            energy_demands = energy_data.get("demands", [])
-            energy_prices = energy_data.get("prices", [])
-            storage_capacity = energy_data.get("storage_capacity", 100)
-            
-            if not energy_demands or not energy_prices:
-                return {"error": "Invalid energy data provided"}
-            
-            # Prepare optimization problem
-            problem_data = {
-                "time_periods": time_periods,
-                "energy_demands": energy_demands,
-                "energy_prices": energy_prices,
-                "storage_capacity": storage_capacity,
-                "constraints": energy_data.get("constraints", {})
-            }
-            
-            if self.quantum_available:
-                result = await self._quantum_energy_optimization(problem_data)
-            else:
-                result = await self._classical_energy_optimization(problem_data)
-            
-            return result
-            
-        except Exception as e:
-            logger.error(f"Error in energy scheduling optimization: {e}")
-            return {"error": str(e)}
-    
-    async def _quantum_energy_optimization(self, problem_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Quantum optimization for energy scheduling"""
-        try:
-            logger.info("Starting quantum energy scheduling optimization")
-            
-            # Simulate quantum processing
-            await asyncio.sleep(1.5)
-            
-            # Generate optimal energy schedule
-            optimal_schedule = self._generate_optimal_energy_schedule(problem_data)
+            # Analyze quantum results
+            risk_analysis = self._analyze_quantum_risk_patterns(counts, portfolio_data)
             
             return {
                 "method": "quantum",
-                "status": "completed",
-                "optimal_schedule": optimal_schedule,
-                "quantum_metrics": {
-                    "qubits_used": problem_data["time_periods"],
-                    "circuit_depth": problem_data["time_periods"] * 3,
-                    "execution_time": "1.5 seconds",
-                    "backend": "ibmq_brisbane" if self.ibmq_token else "simulator"
-                },
+                "risk_metrics": risk_analysis,
+                "quantum_circuit": str(qc),
+                "measurement_counts": counts,
                 "timestamp": datetime.now().isoformat()
             }
             
         except Exception as e:
-            logger.error(f"Error in quantum energy optimization: {e}")
-            return await self._classical_energy_optimization(problem_data)
-    
-    async def _classical_energy_optimization(self, problem_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Classical optimization for energy scheduling"""
+            logger.error(f"Quantum risk assessment failed: {e}")
+            return self._classical_risk_assessment(portfolio_data)
+
+    def _analyze_quantum_risk_patterns(self, counts: Dict[str, int], portfolio_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze quantum measurement results for risk patterns"""
         try:
-            logger.info("Starting classical energy scheduling optimization")
+            total_shots = sum(counts.values())
+            if total_shots == 0:
+                return {"error": "No quantum measurements available"}
             
-            # Generate optimal energy schedule
-            optimal_schedule = self._generate_optimal_energy_schedule(problem_data)
+            # Calculate entropy as a measure of uncertainty
+            entropy = 0
+            for bitstring, count in counts.items():
+                probability = count / total_shots
+                if probability > 0:
+                    entropy -= probability * np.log2(probability)
+            
+            # Analyze bitstring patterns
+            risk_levels = {"low": 0, "medium": 0, "high": 0}
+            for bitstring, count in counts.items():
+                # Count 1s in bitstring as risk indicator
+                risk_count = bitstring.count('1')
+                if risk_count <= len(bitstring) // 3:
+                    risk_levels["low"] += count
+                elif risk_count <= 2 * len(bitstring) // 3:
+                    risk_levels["medium"] += count
+                else:
+                    risk_levels["high"] += count
+            
+            # Normalize risk levels
+            for level in risk_levels:
+                risk_levels[level] = risk_levels[level] / total_shots
+            
+            return {
+                "quantum_entropy": round(entropy, 4),
+                "risk_distribution": risk_levels,
+                "total_measurements": total_shots,
+                "uncertainty_level": "high" if entropy > 2 else "medium" if entropy > 1 else "low"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing quantum risk patterns: {e}")
+            return {"error": str(e)}
+
+    def _classical_risk_assessment(self, portfolio_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Classical risk assessment fallback"""
+        try:
+            assets = portfolio_data.get("assets", [])
+            if not assets:
+                return {"error": "No portfolio assets provided"}
+            
+            # Calculate classical risk metrics
+            total_volatility = sum(asset.volatility for asset in assets)
+            avg_volatility = total_volatility / len(assets)
+            
+            # Simple risk classification
+            if avg_volatility < 0.1:
+                risk_level = "low"
+            elif avg_volatility < 0.2:
+                risk_level = "medium"
+            else:
+                risk_level = "high"
             
             return {
                 "method": "classical",
-                "status": "completed",
-                "optimal_schedule": optimal_schedule,
-                "classical_metrics": {
-                    "algorithm": "Linear Programming",
-                    "solver": "scipy.optimize",
-                    "execution_time": "0.03 seconds",
-                    "iterations": 75
+                "risk_metrics": {
+                    "average_volatility": round(avg_volatility, 4),
+                    "total_volatility": round(total_volatility, 4),
+                    "risk_level": risk_level,
+                    "asset_count": len(assets)
                 },
                 "timestamp": datetime.now().isoformat()
             }
             
         except Exception as e:
-            logger.error(f"Error in classical energy optimization: {e}")
+            logger.error(f"Error in classical risk assessment: {e}")
             return {"error": str(e)}
-    
-    def _generate_optimal_energy_schedule(self, problem_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate optimal energy scheduling solution"""
-        try:
-            time_periods = problem_data["time_periods"]
-            energy_demands = problem_data["energy_demands"]
-            energy_prices = problem_data["energy_prices"]
-            storage_capacity = problem_data["storage_capacity"]
-            
-            # Simple greedy algorithm for energy scheduling
-            schedule = []
-            storage_level = storage_capacity / 2  # Start at 50% capacity
-            
-            for t in range(time_periods):
-                demand = energy_demands[t] if t < len(energy_demands) else 100
-                price = energy_prices[t] if t < len(energy_prices) else 50
-                
-                # Decide whether to buy, sell, or store energy
-                if price < 40:  # Low price - buy and store
-                    action = "buy"
-                    amount = min(demand, storage_capacity - storage_level)
-                    storage_level += amount
-                elif price > 60:  # High price - sell from storage
-                    action = "sell"
-                    amount = min(demand, storage_level)
-                    storage_level -= amount
-                else:  # Medium price - use storage if needed
-                    if demand > storage_level:
-                        action = "buy"
-                        amount = demand - storage_level
-                        storage_level = 0
-                    else:
-                        action = "use_storage"
-                        amount = demand
-                        storage_level -= demand
-                
-                schedule.append({
-                    "time_period": t,
-                    "demand": demand,
-                    "price": price,
-                    "action": action,
-                    "amount": amount,
-                    "storage_level": round(storage_level, 2)
-                })
-            
-            # Calculate total cost
-            total_cost = sum(
-                period["amount"] * period["price"] 
-                for period in schedule 
-                if period["action"] == "buy"
-            )
-            
-            return {
-                "schedule": schedule,
-                "total_cost": round(total_cost, 2),
-                "storage_utilization": round(
-                    (storage_capacity - storage_level) / storage_capacity * 100, 2
-                ),
-                "cost_savings": round(
-                    sum(period["amount"] * period["price"] for period in schedule) - total_cost, 2
-                )
-            }
-            
-        except Exception as e:
-            logger.error(f"Error generating energy schedule: {e}")
-            return {"error": str(e)}
-    
-    async def get_quantum_status(self) -> Dict[str, Any]:
-        """Get quantum service status"""
+
+    def get_quantum_status(self) -> Dict[str, Any]:
+        """Get quantum computing service status"""
         return {
-            "quantum_available": self.quantum_available,
-            "ibmq_configured": bool(self.ibmq_token),
-            "backend_status": "available" if self.quantum_available else "unavailable",
-            "optimization_history_count": len(self.optimization_history),
+            "qiskit_available": self.qiskit_available,
+            "quantum_backend": str(self.quantum_backend) if self.quantum_backend else None,
+            "classical_backend": str(self.classical_backend) if self.classical_backend else None,
+            "scipy_available": self.scipy_minimize is not None,
+            "supported_algorithms": ["QAOA", "VQE", "Classical"] if self.qiskit_available else ["Classical"],
+            "max_qubits": 8 if self.qiskit_available else 0,
             "timestamp": datetime.now().isoformat()
         }
-    
-    async def get_optimization_history(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get optimization history"""
-        return self.optimization_history[-limit:] if limit > 0 else self.optimization_history
-    
-    async def compare_quantum_classical(self, problem_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Compare quantum vs classical optimization results"""
-        try:
-            # Run both optimization methods
-            quantum_result = await self._quantum_portfolio_optimization(problem_data)
-            classical_result = await self._classical_portfolio_optimization(problem_data)
-            
-            # Compare results
-            comparison = {
-                "quantum_result": quantum_result,
-                "classical_result": classical_result,
-                "comparison": {
-                    "execution_time": {
-                        "quantum": quantum_result.get("quantum_metrics", {}).get("execution_time", "N/A"),
-                        "classical": classical_result.get("classical_metrics", {}).get("execution_time", "N/A")
-                    },
-                    "solution_quality": self._compare_solution_quality(
-                        quantum_result.get("optimization_result", {}),
-                        classical_result.get("optimization_result", {})
-                    ),
-                    "scalability": {
-                        "quantum": "Better for large problems",
-                        "classical": "Efficient for small-medium problems"
-                    }
-                },
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            return comparison
-            
-        except Exception as e:
-            logger.error(f"Error comparing optimization methods: {e}")
-            return {"error": str(e)}
-    
-    def _compare_solution_quality(self, quantum_solution: Dict[str, Any], 
-                                 classical_solution: Dict[str, Any]) -> Dict[str, Any]:
-        """Compare solution quality between quantum and classical methods"""
-        try:
-            quantum_metrics = quantum_solution.get("portfolio_metrics", {})
-            classical_metrics = classical_solution.get("portfolio_metrics", {})
-            
-            comparison = {}
-            
-            for metric in ["expected_return", "volatility", "sharpe_ratio"]:
-                q_val = quantum_metrics.get(metric, 0)
-                c_val = classical_metrics.get(metric, 0)
-                
-                if metric == "volatility":  # Lower is better
-                    comparison[metric] = "quantum" if q_val < c_val else "classical"
-                else:  # Higher is better
-                    comparison[metric] = "quantum" if q_val > c_val else "classical"
-            
-            return comparison
-            
-        except Exception as e:
-            logger.error(f"Error comparing solution quality: {e}")
-            return {"error": str(e)}
 
 # Global instance
 quantum_optimization_service = QuantumOptimizationService()
