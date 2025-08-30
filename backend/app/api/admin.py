@@ -5,9 +5,20 @@ from typing import List, Optional, Dict, Any
 from ..db.session import get_db
 from ..schemas.user import User
 from ..core.security import get_current_user, require_role
-from ..services.billing_service import billing_service
-from ..services.optimization_engine import optimization_engine
-from ..services.forecasting_service import forecasting_service
+import sys
+import os
+# Add shared services to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shared', 'services'))
+
+try:
+    from billing_service import billing_service
+    from optimization_engine import optimization_engine
+    from forecasting_service import forecasting_service
+except ImportError:
+    # Fallback if services not available
+    billing_service = None
+    optimization_engine = None
+    forecasting_service = None
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 

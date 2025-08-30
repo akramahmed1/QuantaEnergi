@@ -1,0 +1,11 @@
+# Anti-Stuck Rules for EnergyOpti-Pro
+- Break all tasks into numbered steps: 1. Plan in a temp.md. 2. Implement one file/change at a time. 3. Test/verify.
+- If generation takes >30s or loops, stop and output: "Paused for review. Summarize progress."
+- For bugs/stucks: Hypothesize cause (e.g., large file), suggest fix (e.g., split task), then proceed minimally.
+- Reference only specified files; ignore unrelated code.
+- After each step, ask: "Confirm to continue?" (but auto-proceed if clear).
+- End with commit message as specified.---
+description:
+globs:
+alwaysApply: true
+---

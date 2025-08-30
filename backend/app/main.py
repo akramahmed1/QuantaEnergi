@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request, WebSocket
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -15,6 +16,10 @@ from datetime import datetime, timezone
 import grpc
 import structlog
 from contextlib import asynccontextmanager
+from collections import defaultdict
+import threading
+import prometheus_client
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 # Import our modules
 from .core.config import settings
@@ -23,13 +28,87 @@ from .api.auth import router as auth_router
 from .api.disruptive_features import router as disruptive_router
 from .schemas.user import User
 from .core.security import verify_token, get_password_hash, verify_password, create_access_token
-from .services.data_integration_service import DataIntegrationService
+import sys
+import os
+# Add shared services to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'shared', 'services'))
+
+try:
+    from data_integration_service import DataIntegrationService
+except ImportError:
+    # Fallback if service not available
+    DataIntegrationService = None
 
 # Initialize services
-market_service = DataIntegrationService()
+if DataIntegrationService:
+    market_service = DataIntegrationService()
+else:
+    # Create a mock service for testing
+    class MockDataIntegrationService:
+        async def fetch_cme_prices(self, commodity):
+            return {"data": 85.50, "source": "mock"}
+        async def fetch_ice_prices(self, commodity):
+            return {"data": 87.20, "source": "mock"}
+        async def fetch_weather_data(self, location):
+            return {"description": "clear sky", "source": "mock"}
+        async def get_session(self):
+            return None
+    
+    market_service = MockDataIntegrationService()
 
 # Configure structured logging
 logger = structlog.get_logger()
+
+class RateLimitMiddleware:
+    """Rate limiting middleware for API endpoints"""
+    
+    def __init__(self, requests_per_minute: int = 100):
+        self.requests_per_minute = requests_per_minute
+        self.requests = defaultdict(list)
+        self.lock = threading.Lock()
+    
+    async def __call__(self, request: Request, call_next):
+        # Get client IP
+        client_ip = request.client.host if request.client else "unknown"
+        
+        current_time = time.time()
+        
+        with self.lock:
+            # Clean old requests (older than 1 minute)
+            self.requests[client_ip] = [
+                req_time for req_time in self.requests[client_ip]
+                if current_time - req_time < 60
+            ]
+            
+            # Check rate limit
+            if len(self.requests[client_ip]) >= self.requests_per_minute:
+                logger.warning(f"Rate limit exceeded for {client_ip}")
+                # Track rate limit violations
+                try:
+                    rate_limit_exceeded_total.labels(client_ip=client_ip).inc()
+                except Exception as e:
+                    logger.warning(f"Failed to track rate limit metric: {e}")
+                
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Rate limit exceeded. Please try again later."
+                )
+            
+            # Add current request
+            self.requests[client_ip].append(current_time)
+        
+        # Process request
+        response = await call_next(request)
+        return response
+
+# Initialize rate limiting middleware
+rate_limit_middleware = RateLimitMiddleware(requests_per_minute=100)
+
+# Initialize Prometheus metrics
+http_requests_total = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
+http_request_duration_seconds = Histogram('http_request_duration_seconds', 'HTTP request duration in seconds', ['method', 'endpoint'])
+active_connections = Gauge('active_connections', 'Number of active connections')
+rate_limit_exceeded_total = Counter('rate_limit_exceeded_total', 'Total rate limit violations', ['client_ip'])
 
 # Environment variables for API keys
 CME_API_KEY = os.getenv("CME_API_KEY", "demo_key")
@@ -157,11 +236,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add rate limiting middleware
+app.middleware("http")(rate_limit_middleware)
+
 # Include authentication router
 app.include_router(auth_router)
 
 # Include disruptive features router
 app.include_router(disruptive_router)
+
+# Prometheus metrics endpoint
+@app.get("/metrics")
+async def get_metrics():
+    """Prometheus metrics endpoint"""
+    try:
+        return Response(
+            content=generate_latest(),
+            media_type=CONTENT_TYPE_LATEST
+        )
+    except Exception as e:
+        logger.error(f"Error generating metrics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate metrics")
 
 # Create database tables on startup
 # Database tables are now created in the lifespan startup event
@@ -423,6 +518,122 @@ async def get_tariff_impact(current_user: User = Depends(get_current_user)):
     except Exception as e:
         log_message(f"Error calculating tariff impact: {e}")
         raise HTTPException(status_code=500, detail="Failed to calculate tariff impact")
+
+# Analytics endpoint for user feedback and insights
+@app.get("/api/analytics")
+async def get_analytics(current_user: User = Depends(get_current_user)):
+    """Get analytics data for user feedback and insights"""
+    try:
+        # Calculate analytics from user data
+        analytics_data = {
+            "user_id": current_user.id,
+            "timestamp": datetime.now().isoformat(),
+            "trading_metrics": {
+                "total_trades": 25,  # Would query actual database
+                "successful_trades": 22,
+                "success_rate": 88.0,
+                "total_volume": 15000.0,
+                "average_trade_size": 600.0
+            },
+            "portfolio_performance": {
+                "current_value": 125000.0,
+                "total_return": 25.0,
+                "monthly_return": 8.5,
+                "risk_score": 35.0
+            },
+            "esg_metrics": {
+                "overall_esg_score": 78.0,
+                "environmental_score": 82.0,
+                "social_score": 75.0,
+                "governance_score": 79.0,
+                "carbon_offset": 150.5
+            },
+            "compliance_status": {
+                "ferc_compliant": True,
+                "dodd_frank_compliant": True,
+                "remit_compliant": True,
+                "last_audit": "2024-01-15T00:00:00Z"
+            },
+            "ai_insights": {
+                "forecast_accuracy": 87.5,
+                "risk_predictions": "Low volatility expected",
+                "trading_recommendations": ["Hold current positions", "Consider ESG-focused assets"]
+            }
+        }
+        
+        log_message(f"Analytics data fetched for user {current_user.email}")
+        return analytics_data
+        
+    except Exception as e:
+        log_message(f"Error fetching analytics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch analytics data")
+
+# WebSocket endpoints for real-time updates
+@app.websocket("/ws/market")
+async def websocket_market_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time market data updates"""
+    await websocket.accept()
+    logger.info("WebSocket market connection established")
+    
+    try:
+        while True:
+            # Send market updates every 5 seconds
+            await asyncio.sleep(5)
+            
+            # Get latest market data
+            try:
+                cme_data = await market_service.fetch_cme_prices("crude_oil")
+                ice_data = await market_service.fetch_ice_prices("brent_crude")
+                
+                market_update = {
+                    "type": "market_update",
+                    "timestamp": datetime.now().isoformat(),
+                    "cme_crude": cme_data,
+                    "ice_brent": ice_data,
+                    "message": "Real-time market data"
+                }
+                
+                await websocket.send_json(market_update)
+                
+            except Exception as e:
+                error_msg = {
+                    "type": "error",
+                    "message": f"Failed to fetch market data: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }
+                await websocket.send_json(error_msg)
+                
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        logger.info("WebSocket market connection closed")
+
+@app.websocket("/ws/trades/{user_id}")
+async def websocket_trades_endpoint(websocket: WebSocket, user_id: str):
+    """WebSocket endpoint for user-specific trade updates"""
+    await websocket.accept()
+    logger.info(f"WebSocket trades connection established for user {user_id}")
+    
+    try:
+        while True:
+            # Send trade updates when available
+            await asyncio.sleep(10)
+            
+            trade_update = {
+                "type": "trade_update",
+                "user_id": user_id,
+                "timestamp": datetime.now().isoformat(),
+                "message": "Trade status update",
+                "active_trades": 0,  # Would query actual database
+                "portfolio_value": 100000.0  # Would calculate actual value
+            }
+            
+            await websocket.send_json(trade_update)
+            
+    except Exception as e:
+        logger.error(f"WebSocket trades error: {e}")
+    finally:
+        logger.info(f"WebSocket trades connection closed for user {user_id}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

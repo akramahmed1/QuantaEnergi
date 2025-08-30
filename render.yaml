@@ -3,7 +3,7 @@ services:
     name: energyopti-pro-backend
     env: python
     buildCommand: pip install -r requirements-minimal.txt && pip install -e .
-    startCommand: cd backend && gunicorn main:app --bind 0.0.0.0:$PORT --worker-class uvicorn.workers.UvicornWorker --workers 4
+    startCommand: cd backend && gunicorn main:app --bind 0.0.0.0:$PORT --worker-class uvicorn.workers.UvicornWorker --workers 4 --max-requests 1000 --max-requests-jitter 100
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
@@ -34,6 +34,20 @@ services:
         value: INFO
       - key: ALLOWED_ORIGINS
         value: https://energyopti-pro-frontend.vercel.app,https://energyopti-pro.vercel.app
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: energyopti-pro-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: energyopti-pro-redis
+          property: port
+      - key: REDIS_DB
+        value: 0
+      - key: ENABLE_METRICS
+        value: true
       - key: API_HOST
         value: 0.0.0.0
       - key: API_PORT

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import apiService from '../services/api';
 
 const TradingDashboard = () => {
   const [user, setUser] = useState(null);
-  const [marketData, setMarketData] = useState(null);
-  const [renewableData, setRenewableData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorDetails, setErrorDetails] = useState('');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const currentUser = apiService.getCurrentUserData();
@@ -17,8 +17,85 @@ const TradingDashboard = () => {
       return;
     }
     setUser(currentUser);
-    fetchDashboardData();
   }, [navigate]);
+
+  // React Query hooks for data fetching
+  const { data: marketData, isLoading: marketLoading, error: marketError } = useQuery(
+    'marketPrices',
+    apiService.getMarketPrices,
+    {
+      retry: 3,
+      retryDelay: 1000,
+      onError: (error) => {
+        setErrorDetails(error.message || 'Failed to fetch market data');
+        setShowErrorModal(true);
+      }
+    }
+  );
+
+  const { data: renewableData, isLoading: renewableLoading, error: renewableError } = useQuery(
+    'renewableEnergy',
+    apiService.getRenewableEnergy,
+    {
+      retry: 3,
+      retryDelay: 1000,
+      onError: (error) => {
+        setErrorDetails(error.message || 'Failed to fetch renewable data');
+        setShowErrorModal(true);
+      }
+    }
+  );
+
+  const isLoading = marketLoading || renewableLoading;
+  const hasError = marketError || renewableError;
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    let ws = null;
+    
+    const connectWebSocket = () => {
+      try {
+        ws = new WebSocket('ws://localhost:8000/ws/market');
+        
+        ws.onopen = () => {
+          console.log('WebSocket connected for market updates');
+        };
+        
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'market_update') {
+              // Invalidate and refetch market data
+              queryClient.invalidateQueries(['marketPrices']);
+              console.log('Real-time market update received:', data);
+            }
+          } catch (err) {
+            console.error('WebSocket message parse error:', err);
+          }
+        };
+        
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+        
+        ws.onclose = () => {
+          console.log('WebSocket disconnected, attempting to reconnect...');
+          setTimeout(connectWebSocket, 5000);
+        };
+        
+      } catch (err) {
+        console.error('WebSocket connection error:', err);
+      }
+    };
+    
+    connectWebSocket();
+    
+    return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [queryClient]);
 
   const fetchDashboardData = async () => {
     try {
@@ -332,6 +409,36 @@ const TradingDashboard = () => {
 
         </div>
       </main>
+
+      {/* Error Modal */}
+      {showErrorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="text-red-600 text-2xl mr-3">⚠️</div>
+              <h3 className="text-lg font-semibold text-gray-900">Error</h3>
+            </div>
+            <p className="text-gray-600 mb-6">{errorDetails}</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowErrorModal(false)}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  queryClient.invalidateQueries(['marketPrices', 'renewableEnergy']);
+                  setShowErrorModal(false);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

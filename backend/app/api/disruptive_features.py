@@ -4,11 +4,15 @@ from datetime import datetime, timedelta
 import structlog
 
 from ..core.security import get_current_user
-from ..services.forecasting_service import forecasting_service
-from ..services.quantum_optimization_service import quantum_optimization_service, PortfolioAsset
-from ..services.blockchain_service import blockchain_service
-from ..services.iot_integration_service import iot_integration_service
-from ..services.compliance_service import compliance_service, ComplianceRegion
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shared', 'services'))
+
+from forecasting_service import forecasting_service
+from quantum_optimization_service import quantum_optimization_service, PortfolioAsset
+from blockchain_service import blockchain_service
+from iot_integration_service import iot_integration_service
+from compliance_service import compliance_service, ComplianceRegion
 
 logger = structlog.get_logger()
 

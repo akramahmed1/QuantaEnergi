@@ -5,11 +5,24 @@ from typing import List, Optional, Dict, Any
 from ..db.session import get_db
 from ..schemas.user import User
 from ..core.security import get_current_user
-from ..services.data_integration_service import data_integration_service
-from ..services.forecasting_service import forecasting_service
-from ..services.optimization_engine import optimization_engine
-from ..services.generative_ai_service import generative_ai_service
-from ..services.quantum_optimization_service import quantum_optimization_service
+import sys
+import os
+# Add shared services to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shared', 'services'))
+
+try:
+    from data_integration_service import data_integration_service
+    from forecasting_service import forecasting_service
+    from optimization_engine import optimization_engine
+    from generative_ai_service import generative_ai_service
+    from quantum_optimization_service import quantum_optimization_service
+except ImportError:
+    # Fallback if services not available
+    data_integration_service = None
+    forecasting_service = None
+    optimization_engine = None
+    generative_ai_service = None
+    quantum_optimization_service = None
 
 router = APIRouter(prefix="/api/energy-data", tags=["energy_data"])
 

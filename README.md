@@ -86,6 +86,44 @@
 - **GDPR Compliant**: Data privacy and user rights
 - **Audit Logging**: Comprehensive security event logging
 
+## 📋 Changelog
+
+### v2.0.0 (Current)
+- ✅ **PR1**: Restructured folders per best practices
+  - Created `/infrastructure/` and `/shared/` directories
+  - Moved services to `/shared/services/`
+  - Updated import paths
+  - Added comprehensive `.gitignore`
+- ✅ **PR2**: Updated docs and added CI/CD per best practices
+  - Added changelog section to README
+  - Created comprehensive API documentation
+  - Added GitHub Actions CI/CD pipeline
+- ✅ **PR3**: Added design patterns and functionality per best practices
+  - Factory pattern in compliance service
+  - Decorator pattern in energy trading
+  - AI correction in forecasting service
+  - React Query integration in frontend
+- ✅ **PR4**: Added technical patterns and testing per best practices
+  - Rate limiting middleware in main.py
+  - Concurrency patterns in quantum service
+  - Enhanced logging and fallbacks in IoT service
+  - Comprehensive test coverage
+- ✅ **PR5**: Enhanced scalability, monitoring, and deployment per best practices
+  - Redis caching in forecasting service
+  - Prometheus metrics in main.py
+  - Updated render.yaml with Redis and monitoring
+  - Enhanced vercel.json with performance optimizations
+- ✅ **PR6**: Added real-time features and analytics per best practices
+  - WebSocket endpoints for live market updates
+  - Comprehensive Trade model with Pydantic validation
+  - Analytics endpoint for user feedback
+  - Enhanced frontend with React Query and retries
+
+### v1.0.0
+- Initial release with core energy trading features
+- AI-powered forecasting and quantum optimization
+- Multi-region compliance support
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -130,7 +168,9 @@ export DATABASE_URL="sqlite:///./energyopti_pro.db"
 
 6. **Run Backend**
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# If port 8000 is busy, use 8001
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+# Alternative: uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
 ### Frontend Setup
@@ -210,8 +250,10 @@ npx cypress open
 - **Market Data**: `/api/prices`, `/api/models/v1/prices`
 - **Renewables**: `/api/renewables`
 - **Oilfield**: `/api/oilfield`
-- **Analytics**: `/api/retention`, `/api/onboarding`
+- **Analytics**: `/api/retention`, `/api/onboarding`, `/api/analytics`
 - **Security**: `/api/secure`, `/api/secure/transparency`
+- **Real-time**: `/ws/market`, `/ws/trades/{user_id}`
+- **Trading**: `/api/trade` (POST for new trades)
 
 ### Interactive API Docs
 - **Swagger UI**: `http://localhost:8000/docs`

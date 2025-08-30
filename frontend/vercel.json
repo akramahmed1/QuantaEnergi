@@ -66,6 +66,14 @@
     }
   },
   "regions": ["iad1"],
+  "monitoring": {
+    "enabled": true
+  },
+  "performance": {
+    "cache": {
+      "maxAge": 3600
+    }
+  }
   "github": {
     "enabled": true,
     "silent": true
