@@ -1,29 +1,22 @@
-# PR1: Duplicity Check, Best Practices, 360 Audit - Plan
+# PR1: Audit & Best Practices Implementation
 
-## Step 1: Plan audit steps
-- Pylint duplicity check
-- Add async/logging/rate limiting in main.py
-- JWT base in security.py
-- Bandit scan/fix
+## Goals
+- Run pylint for code quality
+- Add async/logging/rate limiting enhancements
+- Implement JWT in security.py
+- Fix remaining import issues
+- Run Bandit security scan
 
-## Step 2: Run pylint
-- Check for code duplicity
-- Fix any issues found
+## Steps
+1. Run pylint on backend code
+2. Update main.py with enhanced rate limiting
+3. Add JWT authentication in security.py
+4. Fix remaining shared service imports
+5. Run Bandit security scan
+6. Commit PR1 changes
 
-## Step 3: Update main.py with rate limit
-- Add rate limiting middleware
-- Enhance async handling
-
-## Step 4: Add JWT stub in security.py
-- Basic JWT functionality
-- Token generation/validation
-
-## Step 5: Bandit scan/fix
-- Security vulnerability check
-- Fix any security issues
-
-## Anti-stuck rules:
-- Work on one file at a time
-- If any step takes >30s, pause and summarize
-- Keep changes incremental
-- Run tests after each major change
+## Files to Modify
+- backend/app/main.py (rate limiting)
+- backend/app/core/security.py (JWT)
+- shared/services/* (import fixes)
+- Add any missing dependencies

@@ -1,35 +1,32 @@
+# Standard library imports
+import json
+import time
+import warnings
+import os
+import asyncio
+import sys
+import threading
+from contextlib import asynccontextmanager
+from collections import defaultdict
+from typing import Optional, Dict, Any
+from datetime import datetime, timezone
+
+# Third-party imports
 from fastapi import FastAPI, Depends, HTTPException, status, Request, WebSocket
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-import uvicorn
-import json
-import time
-import pandas as pd
-import warnings
-import os
-import asyncio
-import aiohttp
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone
-import grpc
 import structlog
-from contextlib import asynccontextmanager
-from collections import defaultdict
-import threading
-import prometheus_client
 from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
 
-# Import our modules
+# Local imports
 from .core.config import settings
 from .db.session import get_db, create_tables
 from .api.auth import router as auth_router
 from .api.disruptive_features import router as disruptive_router
 from .schemas.user import User
-from .core.security import verify_token, get_password_hash, verify_password, create_access_token
-import sys
-import os
+from .core.security import verify_token
 # Add shared services to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'shared', 'services'))
 
@@ -519,6 +516,38 @@ async def get_tariff_impact(current_user: User = Depends(get_current_user)):
         log_message(f"Error calculating tariff impact: {e}")
         raise HTTPException(status_code=500, detail="Failed to calculate tariff impact")
 
+# News integration endpoint for forecasting
+@app.get("/api/news/energy")
+async def get_energy_news(
+    commodity: str = "crude_oil",
+    days: int = 7,
+    current_user: User = Depends(get_current_user)
+):
+    """Get energy-related news for forecasting context"""
+    try:
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'shared', 'services'))
+        
+        try:
+            from forecasting_service import forecasting_service
+            news_data = forecasting_service.get_energy_news(commodity, days)
+            return {
+                "news_data": news_data,
+                "user_id": current_user.id,
+                "timestamp": datetime.now().isoformat()
+            }
+        except ImportError:
+            return {
+                "news_data": {"error": "Forecasting service not available"},
+                "user_id": current_user.id,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+    except Exception as e:
+        log_message(f"Error fetching energy news: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch energy news")
+
 # Analytics endpoint for user feedback and insights
 @app.get("/api/analytics")
 async def get_analytics(current_user: User = Depends(get_current_user)):
@@ -636,4 +665,4 @@ async def websocket_trades_endpoint(websocket: WebSocket, user_id: str):
         logger.info(f"WebSocket trades connection closed for user {user_id}")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -1,43 +1,26 @@
-# PR2: Add/Edit Features, Refactor, Restructure, Diagrams, README - Plan
+# PR2: Features & Restructuring Implementation
 
-## Step 1: Plan enhancements
-- Restructure services
-- Add Trade model Pydantic
-- Add forecasting news/anomaly
-- Add quantum ESG
-- Add WebSocket in main.py
-- Update README with diagrams
+## Goals
+- Add Trade Pydantic schemas
+- Implement WebSocket endpoints
+- Add forecasting news integration
+- Implement quantum ESG optimization
+- Update README with new features
+- Test backend integration
 
-## Step 2: Restructure services
-- Organize service layers
-- Update import paths
+## Steps
+1. Verify Trade schemas are working
+2. Test WebSocket endpoints
+3. Add forecasting news integration
+4. Implement quantum ESG optimization
+5. Update README with new endpoints
+6. Test full integration
+7. Commit PR2 changes
 
-## Step 3: Add trade.py Pydantic
-- Create Trade model
-- Add validation
-
-## Step 4: Update forecasting.py
-- Add news correlation
-- Add anomaly detection
-
-## Step 5: Update quantum.py
-- Add ESG scoring
-- Enhance optimization
-
-## Step 6: Add WebSocket endpoint
-- Real-time market updates
-- Connection management
-
-## Step 7: Sync TradingDashboard
-- React Query integration
-- Error handling with retries
-
-## Step 8: Add diagrams/README
-- Architecture diagrams
-- Patent documentation
-
-## Anti-stuck rules:
-- Work on one file at a time
-- If any step takes >30s, pause and summarize
-- Keep changes incremental
-- Test after each major change
+## Files to Modify
+- backend/app/schemas/trade.py (verify)
+- backend/app/main.py (WebSocket endpoints)
+- shared/services/forecasting_service.py (news integration)
+- shared/services/quantum_optimization_service.py (ESG)
+- README.md (new endpoints)
+- Test integration

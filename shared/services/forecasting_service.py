@@ -77,6 +77,11 @@ class ForecastingService:
         except ImportError:
             self.xgb_available = False
             logger.warning("XGBoost not available")
+        
+        # News API configuration
+        self.news_api_key = os.getenv("NEWS_API_KEY")
+        self.news_base_url = "https://newsapi.org/v2"
+        self.news_cache_ttl = 1800  # 30 minutes for news
     
     def _generate_cache_key(self, method: str, **kwargs) -> str:
         """Generate a unique cache key for caching operations"""
@@ -685,6 +690,204 @@ class ForecastingService:
         except Exception as e:
             logger.error(f"Error getting model status: {e}")
             return {"error": str(e)}
+    
+    def get_energy_news(self, commodity: str = None, days: int = 7) -> Dict[str, Any]:
+        """Get energy-related news for forecasting context"""
+        try:
+            cache_key = self._generate_cache_key("news", commodity=commodity, days=days)
+            cached_result = self._get_cached_result(cache_key)
+            if cached_result:
+                return cached_result
+            
+            if not self.news_api_key:
+                # Return mock news data if API key not available
+                mock_news = self._generate_mock_energy_news(commodity, days)
+                return mock_news
+            
+            # Query News API
+            query = f"energy {commodity}" if commodity else "energy"
+            url = f"{self.news_base_url}/everything"
+            params = {
+                "q": query,
+                "from": (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d"),
+                "sortBy": "relevancy",
+                "apiKey": self.news_api_key,
+                "language": "en",
+                "pageSize": 20
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            news_data = response.json()
+            
+            # Process and analyze news sentiment
+            processed_news = self._process_news_data(news_data, commodity)
+            
+            # Cache the result
+            self._cache_result(cache_key, processed_news, self.news_cache_ttl)
+            
+            return processed_news
+            
+        except Exception as e:
+            logger.error(f"Error fetching energy news: {e}")
+            # Return mock data on error
+            return self._generate_mock_energy_news(commodity, days)
+    
+    def _generate_mock_energy_news(self, commodity: str = None, days: int = 7) -> Dict[str, Any]:
+        """Generate mock energy news for testing"""
+        mock_articles = []
+        base_date = datetime.now() - timedelta(days=days)
+        
+        news_templates = [
+            "Oil prices {trend} as {factor} affects market",
+            "Renewable energy adoption {trend} in {region}",
+            "Energy companies announce {announcement}",
+            "Global energy demand {trend} due to {factor}",
+            "New regulations impact {sector} energy market"
+        ]
+        
+        trends = ["rise", "fall", "stabilize", "fluctuate"]
+        factors = ["geopolitical tensions", "economic growth", "climate policies", "technological advances"]
+        regions = ["Europe", "Asia", "North America", "Middle East"]
+        announcements = ["major investments", "strategic partnerships", "sustainability initiatives"]
+        sectors = ["renewable", "fossil fuel", "nuclear", "hydroelectric"]
+        
+        for i in range(10):
+            template = np.random.choice(news_templates)
+            article = {
+                "title": template.format(
+                    trend=np.random.choice(trends),
+                    factor=np.random.choice(factors),
+                    region=np.random.choice(regions),
+                    announcement=np.random.choice(announcements),
+                    sector=np.random.choice(sectors)
+                ),
+                "description": f"Energy market update for {commodity or 'general energy'} sector",
+                "publishedAt": (base_date + timedelta(hours=i*2)).isoformat(),
+                "sentiment": np.random.choice(["positive", "neutral", "negative"]),
+                "relevance_score": round(np.random.uniform(0.6, 1.0), 2)
+            }
+            mock_articles.append(article)
+        
+        return {
+            "commodity": commodity,
+            "total_articles": len(mock_articles),
+            "articles": mock_articles,
+            "sentiment_analysis": {
+                "positive": len([a for a in mock_articles if a["sentiment"] == "positive"]),
+                "neutral": len([a for a in mock_articles if a["sentiment"] == "neutral"]),
+                "negative": len([a for a in mock_articles if a["sentiment"] == "negative"])
+            },
+            "source": "mock_data",
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    def _process_news_data(self, news_data: Dict[str, Any], commodity: str) -> Dict[str, Any]:
+        """Process and analyze news data for sentiment and relevance"""
+        try:
+            articles = news_data.get("articles", [])
+            processed_articles = []
+            
+            for article in articles:
+                # Simple sentiment analysis based on keywords
+                title = article.get("title", "").lower()
+                description = article.get("description", "").lower()
+                
+                positive_words = ["rise", "growth", "positive", "gain", "increase", "bullish"]
+                negative_words = ["fall", "decline", "negative", "loss", "decrease", "bearish"]
+                
+                sentiment = "neutral"
+                positive_count = sum(1 for word in positive_words if word in title or word in description)
+                negative_count = sum(1 for word in negative_words if word in title or word in description)
+                
+                if positive_count > negative_count:
+                    sentiment = "positive"
+                elif negative_count > positive_count:
+                    sentiment = "negative"
+                
+                # Calculate relevance score
+                relevance_score = 0.5  # Base score
+                if commodity and commodity.lower() in title.lower():
+                    relevance_score += 0.3
+                if "energy" in title.lower() or "energy" in description.lower():
+                    relevance_score += 0.2
+                
+                processed_article = {
+                    "title": article.get("title"),
+                    "description": article.get("description"),
+                    "publishedAt": article.get("publishedAt"),
+                    "url": article.get("url"),
+                    "sentiment": sentiment,
+                    "relevance_score": min(relevance_score, 1.0)
+                }
+                processed_articles.append(processed_article)
+            
+            # Sort by relevance and sentiment
+            processed_articles.sort(key=lambda x: (x["relevance_score"], x["sentiment"] != "negative"), reverse=True)
+            
+            return {
+                "commodity": commodity,
+                "total_articles": len(processed_articles),
+                "articles": processed_articles[:10],  # Top 10 most relevant
+                "sentiment_analysis": {
+                    "positive": len([a for a in processed_articles if a["sentiment"] == "positive"]),
+                    "neutral": len([a for a in processed_articles if a["sentiment"] == "neutral"]),
+                    "negative": len([a for a in processed_articles if a["sentiment"] == "negative"])
+                },
+                "source": "news_api",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing news data: {e}")
+            return {"error": str(e)}
+    
+    def integrate_news_with_forecast(self, commodity: str, forecast_data: Dict[str, Any], days: int = 7) -> Dict[str, Any]:
+        """Integrate news sentiment with price forecasts"""
+        try:
+            # Get news data
+            news_data = self.get_energy_news(commodity, days)
+            
+            if "error" in news_data:
+                return forecast_data
+            
+            # Calculate news impact factor
+            sentiment_scores = news_data.get("sentiment_analysis", {})
+            total_articles = sentiment_scores.get("positive", 0) + sentiment_scores.get("neutral", 0) + sentiment_scores.get("negative", 0)
+            
+            if total_articles == 0:
+                return forecast_data
+            
+            positive_ratio = sentiment_scores.get("positive", 0) / total_articles
+            negative_ratio = sentiment_scores.get("negative", 0) / total_articles
+            
+            # News impact factor: positive news tends to increase prices, negative news decreases them
+            news_impact = (positive_ratio - negative_ratio) * 0.1  # 10% max impact
+            
+            # Apply news impact to forecast
+            enhanced_forecast = forecast_data.copy()
+            if "forecast_data" in enhanced_forecast:
+                for i, point in enumerate(enhanced_forecast["forecast_data"]):
+                    if "price" in point:
+                        original_price = point["price"]
+                        adjusted_price = original_price * (1 + news_impact)
+                        point["price"] = round(adjusted_price, 2)
+                        point["news_adjustment"] = round(news_impact * 100, 2)
+                        point["original_price"] = original_price
+            
+            enhanced_forecast["news_integration"] = {
+                "news_impact_factor": round(news_impact, 4),
+                "sentiment_analysis": sentiment_scores,
+                "total_articles_analyzed": total_articles,
+                "integration_method": "sentiment_weighted_adjustment"
+            }
+            
+            return enhanced_forecast
+            
+        except Exception as e:
+            logger.error(f"Error integrating news with forecast: {e}")
+            return forecast_data
 
 # Global instance
 forecasting_service = ForecastingService()

@@ -1,8 +1,13 @@
+# Standard library imports
+from typing import Optional
+
+# Third-party imports
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import Optional
+
+# Local imports
 from ..db.session import get_db
 from ..schemas.user import User
 from ..core.security import get_password_hash, verify_password, create_access_token

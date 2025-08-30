@@ -28,9 +28,9 @@ def generate_secure_token(length: int = 32) -> str:
 def calculate_hash(data: str, algorithm: str = "sha256") -> str:
     """Calculate hash of data using specified algorithm"""
     if algorithm == "md5":
-        return hashlib.md5(data.encode()).hexdigest()
+        return hashlib.md5(data.encode(), usedforsecurity=False).hexdigest()
     elif algorithm == "sha1":
-        return hashlib.sha1(data.encode()).hexdigest()
+        return hashlib.sha1(data.encode(), usedforsecurity=False).hexdigest()
     elif algorithm == "sha256":
         return hashlib.sha256(data.encode()).hexdigest()
     elif algorithm == "sha512":

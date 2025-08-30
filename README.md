@@ -254,6 +254,9 @@ npx cypress open
 - **Security**: `/api/secure`, `/api/secure/transparency`
 - **Real-time**: `/ws/market`, `/ws/trades/{user_id}`
 - **Trading**: `/api/trade` (POST for new trades)
+- **News Integration**: `/api/news/energy` (GET energy news for forecasting)
+- **Energy Data**: `/api/energy-data/forecast`, `/api/energy-data/optimize/*`
+- **Disruptive Features**: `/api/disruptive/ai/*`, `/api/disruptive/quantum/*`, `/api/disruptive/blockchain/*`
 
 ### Interactive API Docs
 - **Swagger UI**: `http://localhost:8000/docs`

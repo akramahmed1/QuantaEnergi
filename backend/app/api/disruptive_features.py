@@ -1,18 +1,32 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Body
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
-import structlog
-
-from ..core.security import get_current_user
+# Standard library imports
 import sys
 import os
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timedelta
+
+# Third-party imports
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
+import structlog
+
+# Local imports
+from ..core.security import get_current_user
+
+# Add shared services to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shared', 'services'))
 
-from forecasting_service import forecasting_service
-from quantum_optimization_service import quantum_optimization_service, PortfolioAsset
-from blockchain_service import blockchain_service
-from iot_integration_service import iot_integration_service
-from compliance_service import compliance_service, ComplianceRegion
+try:
+    from forecasting_service import forecasting_service
+    from quantum_optimization_service import quantum_optimization_service, PortfolioAsset
+    from blockchain_service import blockchain_service
+    from iot_integration_service import iot_integration_service
+    from compliance_service import compliance_service, ComplianceRegion
+except ImportError:
+    # Fallback if services not available
+    forecasting_service = None
+    quantum_optimization_service = None
+    blockchain_service = None
+    iot_integration_service = None
+    compliance_service = None
 
 logger = structlog.get_logger()
 

@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2025-08-29T20:31:43Z",
+  "generated_at": "2025-08-30T06:00:14Z",
   "metrics": {
     "_totals": {
       "CONFIDENCE.HIGH": 5,
@@ -11,7 +11,7 @@
       "SEVERITY.LOW": 5,
       "SEVERITY.MEDIUM": 2,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 3221,
+      "loc": 3468,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -50,7 +50,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 425,
+      "loc": 430,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -76,7 +76,7 @@
       "SEVERITY.LOW": 2,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 393,
+      "loc": 400,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -89,7 +89,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 356,
+      "loc": 366,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -193,7 +193,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 1,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 379,
+      "loc": 486,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -233,6 +233,19 @@
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 16,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "app/schemas\\trade.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 118,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -304,7 +317,7 @@
   },
   "results": [
     {
-      "code": "61     \n62     return TokenResponse(\n63         access_token=access_token,\n64         token_type=\"bearer\",\n65         user_id=new_user.id,\n66         email=new_user.email,\n67         role=new_user.role,\n68         company_name=new_user.company_name\n69     )\n70 \n",
+      "code": "66     \n67     return TokenResponse(\n68         access_token=access_token,\n69         token_type=\"bearer\",\n70         user_id=new_user.id,\n71         email=new_user.email,\n72         role=new_user.role,\n73         company_name=new_user.company_name\n74     )\n75 \n",
       "col_offset": 11,
       "end_col_offset": 5,
       "filename": "app/api\\auth.py",
@@ -315,23 +328,23 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Possible hardcoded password: 'bearer'",
-      "line_number": 62,
+      "line_number": 67,
       "line_range": [
-        62,
-        63,
-        64,
-        65,
-        66,
         67,
         68,
-        69
+        69,
+        70,
+        71,
+        72,
+        73,
+        74
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.8.6/plugins/b106_hardcoded_password_funcarg.html",
       "test_id": "B106",
       "test_name": "hardcoded_password_funcarg"
     },
     {
-      "code": "105     \n106     return TokenResponse(\n107         access_token=access_token,\n108         token_type=\"bearer\",\n109         user_id=user.id,\n110         email=user.email,\n111         role=user.role,\n112         company_name=user.company_name\n113     )\n114 \n",
+      "code": "110     \n111     return TokenResponse(\n112         access_token=access_token,\n113         token_type=\"bearer\",\n114         user_id=user.id,\n115         email=user.email,\n116         role=user.role,\n117         company_name=user.company_name\n118     )\n119 \n",
       "col_offset": 11,
       "end_col_offset": 5,
       "filename": "app/api\\auth.py",
@@ -342,23 +355,23 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Possible hardcoded password: 'bearer'",
-      "line_number": 106,
+      "line_number": 111,
       "line_range": [
-        106,
-        107,
-        108,
-        109,
-        110,
         111,
         112,
-        113
+        113,
+        114,
+        115,
+        116,
+        117,
+        118
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.8.6/plugins/b106_hardcoded_password_funcarg.html",
       "test_id": "B106",
       "test_name": "hardcoded_password_funcarg"
     },
     {
-      "code": "471         # Simulate price variations\n472         price_variation = random.uniform(-0.1, 0.1)\n473         price = base_price * (1 + price_variation)\n",
+      "code": "485         # Simulate price variations\n486         price_variation = random.uniform(-0.1, 0.1)\n487         price = base_price * (1 + price_variation)\n",
       "col_offset": 26,
       "end_col_offset": 51,
       "filename": "app/api\\disruptive_features.py",
@@ -369,16 +382,16 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 472,
+      "line_number": 486,
       "line_range": [
-        472
+        486
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.8.6/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
       "test_name": "blacklist"
     },
     {
-      "code": "475         # Simulate volume\n476         volume = random.uniform(100, 1000)\n477         \n",
+      "code": "489         # Simulate volume\n490         volume = random.uniform(100, 1000)\n491         \n",
       "col_offset": 17,
       "end_col_offset": 42,
       "filename": "app/api\\disruptive_features.py",
@@ -389,9 +402,9 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Standard pseudo-random generators are not suitable for security/cryptographic purposes.",
-      "line_number": 476,
+      "line_number": 490,
       "line_range": [
-        476
+        490
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.8.6/blacklists/blacklist_calls.html#b311-random",
       "test_id": "B311",
@@ -419,7 +432,7 @@
       "test_name": "try_except_pass"
     },
     {
-      "code": "499 if __name__ == \"__main__\":\n500     uvicorn.run(app, host=\"0.0.0.0\", port=8000)\n",
+      "code": "635 if __name__ == \"__main__\":\n636     uvicorn.run(app, host=\"0.0.0.0\", port=8000)\n",
       "col_offset": 26,
       "end_col_offset": 35,
       "filename": "app/main.py",
@@ -430,9 +443,9 @@
       },
       "issue_severity": "MEDIUM",
       "issue_text": "Possible binding to all interfaces.",
-      "line_number": 500,
+      "line_number": 636,
       "line_range": [
-        500
+        636
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.8.6/plugins/b104_hardcoded_bind_all_interfaces.html",
       "test_id": "B104",

@@ -1,12 +1,17 @@
-from datetime import datetime, timedelta
-from typing import Optional, Tuple
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from fastapi import HTTPException, status
+# Standard library imports
 import logging
 import hashlib
 import secrets
+from datetime import datetime, timedelta
+from typing import Optional, Tuple
+
+# Third-party imports
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from fastapi import HTTPException, status
 import structlog
+
+# Local imports
 from .config import settings
 
 # Configure structured logging

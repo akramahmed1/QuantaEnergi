@@ -1,12 +1,17 @@
+# Standard library imports
+import sys
+import os
+from typing import List, Optional, Dict, Any
+
+# Third-party imports
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+
+# Local imports
 from ..db.session import get_db
 from ..schemas.user import User
-from ..core.security import get_current_user, require_role
-import sys
-import os
+from ..core.security import get_current_user
 # Add shared services to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shared', 'services'))
 
