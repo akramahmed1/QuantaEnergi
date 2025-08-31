@@ -1,0 +1,367 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "QuantaEnergi Production Dashboard",
+    "tags": ["energy", "trading", "production", "monitoring"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "API Performance Overview",
+        "type": "row",
+        "collapsed": false,
+        "panels": [
+          {
+            "id": 2,
+            "title": "Request Rate (req/s)",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "rate(http_requests_total[5m])",
+                "legendFormat": "{{method}} {{endpoint}}",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Requests/sec", "min": 0},
+              {"show": false}
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Response Time (95th percentile)",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+                "legendFormat": "95th percentile",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Seconds", "min": 0},
+              {"show": false}
+            ]
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "System Resources",
+        "type": "row",
+        "collapsed": false,
+        "panels": [
+          {
+            "id": 5,
+            "title": "CPU Usage (%)",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "cpu_usage_percent",
+                "legendFormat": "CPU %",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Percentage", "min": 0, "max": 100},
+              {"show": false}
+            ]
+          },
+          {
+            "id": 6,
+            "title": "Memory Usage (MB)",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+            "targets": [
+              {
+                "expr": "memory_usage_bytes / 1024 / 1024",
+                "legendFormat": "Memory MB",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "MB", "min": 0},
+              {"show": false}
+            ]
+          },
+          {
+            "id": 7,
+            "title": "Disk Usage (%)",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+            "targets": [
+              {
+                "expr": "disk_usage_percent",
+                "legendFormat": "Disk %",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Percentage", "min": 0, "max": 100},
+              {"show": false}
+            ]
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Redis Performance",
+        "type": "row",
+        "collapsed": false,
+        "panels": [
+          {
+            "id": 9,
+            "title": "Cache Hit Rate (%)",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "rate(redis_cache_hits_total[5m]) / (rate(redis_cache_hits_total[5m]) + rate(redis_cache_misses_total[5m])) * 100",
+                "legendFormat": "Hit Rate",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": null},
+                    {"color": "yellow", "value": 70},
+                    {"color": "green", "value": 90}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 10,
+            "title": "Redis Operations/sec",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 9, "x": 6, "y": 0},
+            "targets": [
+              {
+                "expr": "rate(redis_operations_total[5m])",
+                "legendFormat": "Operations/sec",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Ops/sec", "min": 0},
+              {"show": false}
+            ]
+          },
+          {
+            "id": 11,
+            "title": "Redis Memory Usage",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 9, "x": 15, "y": 0},
+            "targets": [
+              {
+                "expr": "redis_memory_usage_bytes / 1024 / 1024",
+                "legendFormat": "Memory MB",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "MB", "min": 0},
+              {"show": false}
+            ]
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Service Health",
+        "type": "row",
+        "collapsed": false,
+        "panels": [
+          {
+            "id": 13,
+            "title": "Service Status",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "service_health_status",
+                "legendFormat": "{{service}}",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": null},
+                    {"color": "green", "value": 1}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 14,
+            "title": "Database Operations/sec",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 9, "x": 6, "y": 0},
+            "targets": [
+              {
+                "expr": "rate(database_operations_total[5m])",
+                "legendFormat": "{{operation}}",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Ops/sec", "min": 0},
+              {"show": false}
+            ]
+          },
+          {
+            "id": 15,
+            "title": "WebSocket Connections",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 9, "x": 15, "y": 0},
+            "targets": [
+              {
+                "expr": "websocket_connections_total",
+                "legendFormat": "Active Connections",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Connections", "min": 0},
+              {"show": false}
+            ]
+          }
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Business Metrics",
+        "type": "row",
+        "collapsed": false,
+        "panels": [
+          {
+            "id": 17,
+            "title": "Trading Volume",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "rate(trading_volume_total[5m])",
+                "legendFormat": "Volume/sec",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Volume", "min": 0},
+              {"show": false}
+            ]
+          },
+          {
+            "id": 18,
+            "title": "Forecasting Accuracy",
+            "type": "stat",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "targets": [
+              {
+                "expr": "forecasting_accuracy_percent",
+                "legendFormat": "Accuracy %",
+                "refId": "A"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": null},
+                    {"color": "yellow", "value": 80},
+                    {"color": "green", "value": 95}
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "title": "Error Rates & Alerts",
+        "type": "row",
+        "collapsed": false,
+        "panels": [
+          {
+            "id": 20,
+            "title": "Error Rate (%)",
+            "type": "graph",
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{status=~\"5..\"}[5m]) / rate(http_requests_total[5m]) * 100",
+                "legendFormat": "Error Rate %",
+                "refId": "A"
+              }
+            ],
+            "yAxes": [
+              {"label": "Percentage", "min": 0, "max": 100},
+              {"show": false}
+            ]
+          },
+          {
+            "id": 21,
+            "title": "Active Alerts",
+            "type": "table",
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+            "targets": [
+              {
+                "expr": "ALERTS",
+                "legendFormat": "{{alertname}}",
+                "refId": "A"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "service",
+          "type": "query",
+          "query": "label_values(service_health_status, service)",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "endpoint",
+          "type": "query",
+          "query": "label_values(http_requests_total, endpoint)",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(service_health_status[5m]) > 0",
+          "iconColor": "blue"
+        }
+      ]
+    }
+  }
+}

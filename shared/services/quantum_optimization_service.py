@@ -553,6 +553,216 @@ class QuantumOptimizationService:
         except Exception as e:
             logger.error(f"Error in classical optimization: {e}")
             return {"error": str(e)}
+    
+    def optimize_portfolio_esg_focused(self, assets: List[PortfolioAsset], 
+                                     target_esg_score: float = 80.0,
+                                     risk_tolerance: float = 0.5,
+                                     return_target: float = None) -> Dict[str, Any]:
+        """Optimize portfolio with ESG focus using multi-objective optimization"""
+        try:
+            if not assets:
+                return {"error": "No assets provided"}
+            
+            # Filter assets by minimum ESG score
+            min_esg_threshold = target_esg_score - 10  # Allow some flexibility
+            filtered_assets = [asset for asset in assets if asset.esg_score >= min_esg_threshold]
+            
+            if not filtered_assets:
+                return {"error": f"No assets meet minimum ESG threshold of {min_esg_threshold}"}
+            
+            # Multi-objective optimization: balance ESG, return, and risk
+            def esg_objective(weights):
+                portfolio_esg = np.sum([weights[i] * filtered_assets[i].esg_score for i in range(len(filtered_assets))])
+                return -portfolio_esg  # Minimize negative ESG (maximize ESG)
+            
+            def risk_objective(weights):
+                returns = np.array([asset.expected_return for asset in filtered_assets])
+                volatilities = np.array([asset.volatility for asset in filtered_assets])
+                correlation_matrix = self._create_correlation_matrix(len(filtered_assets))
+                
+                portfolio_variance = 0
+                for i in range(len(filtered_assets)):
+                    for j in range(len(filtered_assets)):
+                        portfolio_variance += weights[i] * weights[j] * volatilities[i] * volatilities[j] * correlation_matrix[i, j]
+                return np.sqrt(portfolio_variance)
+            
+            def return_objective(weights):
+                returns = np.array([asset.expected_return for asset in filtered_assets])
+                portfolio_return = np.sum(weights * returns)
+                return -portfolio_return  # Minimize negative return (maximize return)
+            
+            # Combined objective function
+            def combined_objective(weights):
+                esg_weight = 0.4  # ESG importance
+                risk_weight = 0.3  # Risk importance
+                return_weight = 0.3  # Return importance
+                
+                esg_score = -esg_objective(weights)
+                risk_score = risk_objective(weights)
+                return_score = -return_objective(weights)
+                
+                # Normalize scores to 0-1 range
+                esg_normalized = esg_score / 100.0
+                risk_normalized = 1.0 / (1.0 + risk_score)  # Lower risk is better
+                return_normalized = return_score / 0.2  # Assuming max return around 20%
+                
+                return -(esg_weight * esg_normalized + risk_weight * risk_normalized + return_weight * return_normalized)
+            
+            # Constraints and bounds
+            constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+            bounds = tuple((0, 1) for _ in range(len(filtered_assets)))
+            initial_weights = np.array([1.0/len(filtered_assets)] * len(filtered_assets))
+            
+            # Optimize using classical method (more reliable for ESG optimization)
+            if self.scipy_minimize:
+                result = self.scipy_minimize(
+                    combined_objective,
+                    initial_weights,
+                    method='SLSQP',
+                    bounds=bounds,
+                    constraints=constraints
+                )
+                
+                if result.success:
+                    optimal_weights = result.x.tolist()
+                    
+                    # Calculate final metrics
+                    returns = np.array([asset.expected_return for asset in filtered_assets])
+                    volatilities = np.array([asset.volatility for asset in filtered_assets])
+                    correlation_matrix = self._create_correlation_matrix(len(filtered_assets))
+                    
+                    portfolio_metrics = self._calculate_portfolio_metrics(
+                        filtered_assets, optimal_weights, returns, volatilities, correlation_matrix
+                    )
+                    
+                    # ESG-specific metrics
+                    esg_breakdown = {
+                        "overall_score": portfolio_metrics["portfolio_esg_score"],
+                        "min_score": min([asset.esg_score for asset in filtered_assets]),
+                        "max_score": max([asset.esg_score for asset in filtered_assets]),
+                        "score_distribution": self._analyze_esg_distribution(filtered_assets, optimal_weights)
+                    }
+                    
+                    return {
+                        "optimization_method": "ESG-Focused Multi-Objective",
+                        "target_esg_score": target_esg_score,
+                        "optimal_weights": optimal_weights,
+                        "portfolio_metrics": portfolio_metrics,
+                        "esg_analysis": esg_breakdown,
+                        "optimization_success": True,
+                        "timestamp": datetime.now().isoformat()
+                    }
+                else:
+                    return {"error": f"ESG optimization failed: {result.message}"}
+            else:
+                return {"error": "Optimization backend not available"}
+                
+        except Exception as e:
+            logger.error(f"Error in ESG-focused optimization: {e}")
+            return {"error": str(e)}
+    
+    def _analyze_esg_distribution(self, assets: List[PortfolioAsset], weights: List[float]) -> Dict[str, Any]:
+        """Analyze ESG score distribution across portfolio"""
+        try:
+            esg_scores = [asset.esg_score for asset in assets]
+            weighted_esg = [weights[i] * esg_scores[i] for i in range(len(assets))]
+            
+            return {
+                "mean_esg": round(np.mean(esg_scores), 2),
+                "weighted_mean_esg": round(np.sum(weighted_esg), 2),
+                "esg_std": round(np.std(esg_scores), 2),
+                "esg_range": round(max(esg_scores) - min(esg_scores), 2),
+                "high_esg_assets": len([score for score in esg_scores if score >= 80]),
+                "medium_esg_assets": len([score for score in esg_scores if 60 <= score < 80]),
+                "low_esg_assets": len([score for score in esg_scores if score < 60])
+            }
+        except Exception as e:
+            logger.error(f"Error analyzing ESG distribution: {e}")
+            return {"error": str(e)}
+    
+    def generate_esg_report(self, portfolio_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate comprehensive ESG report for portfolio"""
+        try:
+            assets = portfolio_data.get("assets", [])
+            if not assets:
+                return {"error": "No portfolio data provided"}
+            
+            # Calculate ESG metrics
+            esg_scores = [asset.esg_score for asset in assets]
+            sector_esg = {}
+            region_esg = {}
+            
+            for asset in assets:
+                # Sector analysis
+                if asset.sector not in sector_esg:
+                    sector_esg[asset.sector] = []
+                sector_esg[asset.sector].append(asset.esg_score)
+                
+                # Region analysis
+                if asset.region not in region_esg:
+                    region_esg[asset.region] = []
+                region_esg[asset.region].append(asset.esg_score)
+            
+            # Calculate sector and region averages
+            sector_averages = {sector: round(np.mean(scores), 2) for sector, scores in sector_esg.items()}
+            region_averages = {region: round(np.mean(scores), 2) for region, scores in region_esg.items()}
+            
+            # ESG risk assessment
+            esg_risk_level = "Low"
+            if np.mean(esg_scores) < 50:
+                esg_risk_level = "High"
+            elif np.mean(esg_scores) < 70:
+                esg_risk_level = "Medium"
+            
+            return {
+                "overall_esg_score": round(np.mean(esg_scores), 2),
+                "esg_risk_level": esg_risk_level,
+                "sector_analysis": sector_averages,
+                "region_analysis": region_averages,
+                "esg_distribution": {
+                    "excellent": len([score for score in esg_scores if score >= 90]),
+                    "good": len([score for score in esg_scores if 80 <= score < 90]),
+                    "fair": len([score for score in esg_scores if 70 <= score < 80]),
+                    "poor": len([score for score in esg_scores if score < 70])
+                },
+                "recommendations": self._generate_esg_recommendations(esg_scores, sector_averages),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating ESG report: {e}")
+            return {"error": str(e)}
+    
+    def _generate_esg_recommendations(self, esg_scores: List[float], sector_averages: Dict[str, float]) -> List[str]:
+        """Generate ESG improvement recommendations"""
+        recommendations = []
+        
+        try:
+            avg_esg = np.mean(esg_scores)
+            
+            if avg_esg < 70:
+                recommendations.append("Consider increasing allocation to high-ESG assets")
+                recommendations.append("Review ESG policies and engagement strategies")
+            
+            if avg_esg < 80:
+                recommendations.append("Implement ESG screening criteria for new investments")
+                recommendations.append("Engage with companies to improve ESG practices")
+            
+            # Sector-specific recommendations
+            for sector, avg_score in sector_averages.items():
+                if avg_score < 70:
+                    recommendations.append(f"Review {sector} sector ESG exposure")
+                elif avg_score >= 85:
+                    recommendations.append(f"Maintain {sector} sector ESG leadership")
+            
+            if not recommendations:
+                recommendations.append("Portfolio ESG performance is strong - maintain current strategy")
+            
+            return recommendations
+            
+        except Exception as e:
+            logger.error(f"Error generating ESG recommendations: {e}")
+            return ["Unable to generate recommendations"]
 
     def quantum_risk_assessment(self, portfolio_data: Dict[str, Any]) -> Dict[str, Any]:
         """Perform quantum-enhanced risk assessment"""

@@ -1,0 +1,224 @@
+# Prometheus Alerting Rules for EnergyOpti-Pro
+# Monitors system health, performance, and business metrics
+
+groups:
+  - name: energyopti-system-alerts
+    rules:
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% for more than 5 minutes"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: memory_usage_bytes / 1024 / 1024 / 1024 > 8
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanize }}GB for more than 5 minutes"
+
+      # High Disk Usage
+      - alert: HighDiskUsage
+        expr: disk_usage_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is {{ $value }}% for more than 5 minutes"
+
+      # Service Down
+      - alert: ServiceDown
+        expr: service_health_status == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "Service {{ $labels.service }} is down"
+          description: "Service {{ $labels.service }} has been down for more than 1 minute"
+
+  - name: energyopti-api-alerts
+    rules:
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "High API error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for more than 5 minutes"
+
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High API response time detected"
+          description: "95th percentile response time is {{ $value }}s for more than 5 minutes"
+
+      # Low Request Rate
+      - alert: LowRequestRate
+        expr: rate(http_requests_total[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "Low API request rate detected"
+          description: "Request rate is {{ $value }} req/s for more than 10 minutes"
+
+  - name: energyopti-redis-alerts
+    rules:
+      # Redis Down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis service has been down for more than 1 minute"
+
+      # Low Cache Hit Rate
+      - alert: LowCacheHitRate
+        expr: rate(redis_cache_hits_total[5m]) / (rate(redis_cache_hits_total[5m]) + rate(redis_cache_misses_total[5m])) < 0.7
+        for: 10m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Low cache hit rate detected"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} for more than 10 minutes"
+
+      # High Redis Memory Usage
+      - alert: HighRedisMemoryUsage
+        expr: redis_memory_usage_bytes / 1024 / 1024 / 1024 > 4
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "High Redis memory usage detected"
+          description: "Redis memory usage is {{ $value | humanize }}GB for more than 5 minutes"
+
+  - name: energyopti-business-alerts
+    rules:
+      # Low Forecasting Accuracy
+      - alert: LowForecastingAccuracy
+        expr: forecasting_accuracy_percent < 80
+        for: 30m
+        labels:
+          severity: warning
+          service: forecasting
+        annotations:
+          summary: "Low forecasting accuracy detected"
+          description: "Forecasting accuracy is {{ $value }}% for more than 30 minutes"
+
+      # High Trading Volume
+      - alert: HighTradingVolume
+        expr: rate(trading_volume_total[5m]) > 1000
+        for: 5m
+        labels:
+          severity: info
+          service: trading
+        annotations:
+          summary: "High trading volume detected"
+          description: "Trading volume is {{ $value }} units/sec for more than 5 minutes"
+
+      # WebSocket Connection Issues
+      - alert: WebSocketConnectionIssues
+        expr: websocket_connections_total < 1
+        for: 5m
+        labels:
+          severity: warning
+          service: websocket
+        annotations:
+          summary: "WebSocket connection issues detected"
+          description: "No active WebSocket connections for more than 5 minutes"
+
+  - name: energyopti-monitoring-alerts
+    rules:
+      # Prometheus Down
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus monitoring service has been down for more than 1 minute"
+
+      # Grafana Down
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: monitoring
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana dashboard service has been down for more than 1 minute"
+
+      # High Prometheus Memory Usage
+      - alert: HighPrometheusMemoryUsage
+        expr: process_resident_memory_bytes{job="prometheus"} / 1024 / 1024 / 1024 > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "High Prometheus memory usage detected"
+          description: "Prometheus memory usage is {{ $value | humanize }}GB for more than 5 minutes"
+
+  - name: energyopti-deployment-alerts
+    rules:
+      # Pod Restarting
+      - alert: PodRestarting
+        expr: increase(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: kubernetes
+        annotations:
+          summary: "Pod is restarting frequently"
+          description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes"
+
+      # High Pod CPU Usage
+      - alert: HighPodCPUUsage
+        expr: sum(rate(container_cpu_usage_seconds_total{container!=""}[5m])) by (pod) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: kubernetes
+        annotations:
+          summary: "High pod CPU usage detected"
+          description: "Pod {{ $labels.pod }} CPU usage is {{ $value | humanizePercentage }} for more than 5 minutes"
+
+      # High Pod Memory Usage
+      - alert: HighPodMemoryUsage
+        expr: sum(container_memory_usage_bytes{container!=""}) by (pod) / 1024 / 1024 / 1024 > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: kubernetes
+        annotations:
+          summary: "High pod memory usage detected"
+          description: "Pod {{ $labels.pod }} memory usage is {{ $value | humanize }}GB for more than 5 minutes"

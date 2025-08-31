@@ -46,8 +46,44 @@ const TradingDashboard = () => {
     }
   );
 
-  const isLoading = marketLoading || renewableLoading;
-  const hasError = marketError || renewableError;
+  // Enhanced React Query with better retry logic and caching
+  const { data: forecastData, isLoading: forecastLoading, error: forecastError } = useQuery(
+    'energyForecast',
+    () => apiService.getEnergyForecast('crude_oil', 30),
+    {
+      retry: (failureCount, error) => {
+        // Retry up to 3 times, but not for 4xx errors
+        if (failureCount < 3 && error?.response?.status >= 500) {
+          return true;
+        }
+        return false;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      onError: (error) => {
+        setErrorDetails(error.message || 'Failed to fetch forecast data');
+        setShowErrorModal(true);
+      }
+    }
+  );
+
+  const { data: analyticsData, isLoading: analyticsLoading, error: analyticsError } = useQuery(
+    'userAnalytics',
+    apiService.getUserAnalytics,
+    {
+      retry: 3,
+      retryDelay: 1000,
+      staleTime: 2 * 60 * 1000, // 2 minutes for analytics
+      onError: (error) => {
+        setErrorDetails(error.message || 'Failed to fetch analytics data');
+        setShowErrorModal(true);
+      }
+    }
+  );
+
+  const isLoading = marketLoading || renewableLoading || forecastLoading || analyticsLoading;
+  const hasError = marketError || renewableError || forecastError || analyticsError;
 
   // WebSocket connection for real-time updates
   useEffect(() => {

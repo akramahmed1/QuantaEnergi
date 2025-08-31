@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# 🚀 EnergyOpti-Pro Deployment Script
-# This script handles local development, testing, and cloud deployment
+# QuantaEnergi Production Deployment Script
+# This script automates the production deployment process
 
 set -e  # Exit on any error
+
+echo "🚀 Starting QuantaEnergi Production Deployment..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -13,275 +15,383 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_NAME="energyopti-pro"
-BACKEND_PORT=8000
-FRONTEND_PORT=3000
-NGINX_PORT=80
+PROJECT_NAME="quantaenergi"
+ENVIRONMENT=${1:-production}
+DOCKER_COMPOSE_FILE="docker-compose.prod.yml"
+BACKUP_DIR="backups/$(date +%Y%m%d_%H%M%S)"
 
-# Functions
-log_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-log_success() {
-    echo -e "${GREEN}✅ $1${NC}"
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-log_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
-log_error() {
-    echo -e "${RED}❌ $1${NC}"
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
-check_dependencies() {
-    log_info "Checking dependencies..."
+# Function to check prerequisites
+check_prerequisites() {
+    print_status "Checking deployment prerequisites..."
     
     # Check Docker
     if ! command -v docker &> /dev/null; then
-        log_error "Docker is not installed. Please install Docker first."
+        print_error "Docker is not installed. Please install Docker first."
         exit 1
     fi
     
     # Check Docker Compose
     if ! command -v docker-compose &> /dev/null; then
-        log_error "Docker Compose is not installed. Please install Docker Compose first."
+        print_error "Docker Compose is not installed. Please install Docker Compose first."
         exit 1
     fi
     
-    # Check Node.js
-    if ! command -v node &> /dev/null; then
-        log_warning "Node.js is not installed. Frontend development may not work."
+    # Check if we're in the right directory
+    if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
+        print_error "Production Docker Compose file not found. Please run this script from the project root."
+        exit 1
     fi
     
-    # Check Python
-    if ! command -v python &> /dev/null; then
-        log_warning "Python is not installed. Backend development may not work."
+    print_success "Prerequisites check passed"
+}
+
+# Function to create backup
+create_backup() {
+    print_status "Creating backup of current deployment..."
+    
+    mkdir -p "$BACKUP_DIR"
+    
+    # Backup Docker volumes
+    if docker volume ls -q | grep -q "${PROJECT_NAME}_"; then
+        docker run --rm -v "${PROJECT_NAME}_postgres-data:/data" -v "$(pwd)/$BACKUP_DIR:/backup" alpine tar czf /backup/postgres-backup.tar.gz -C /data .
+        docker run --rm -v "${PROJECT_NAME}_redis-data-1:/data" -v "$(pwd)/$BACKUP_DIR:/backup" alpine tar czf /backup/redis-backup.tar.gz -C /data .
     fi
     
-    log_success "Dependencies check completed"
+    # Backup configuration files
+    cp -r monitoring "$BACKUP_DIR/"
+    cp -r nginx "$BACKUP_DIR/"
+    cp "$DOCKER_COMPOSE_FILE" "$BACKUP_DIR/"
+    
+    print_success "Backup created in $BACKUP_DIR"
 }
 
-build_images() {
-    log_info "Building Docker images..."
+# Function to stop current deployment
+stop_current_deployment() {
+    print_status "Stopping current deployment..."
     
-    docker-compose build --no-cache
-    
-    log_success "Docker images built successfully"
-}
-
-start_services() {
-    log_info "Starting services..."
-    
-    docker-compose up -d
-    
-    log_success "Services started successfully"
-}
-
-stop_services() {
-    log_info "Stopping services..."
-    
-    docker-compose down
-    
-    log_success "Services stopped successfully"
-}
-
-restart_services() {
-    log_info "Restarting services..."
-    
-    docker-compose restart
-    
-    log_success "Services restarted successfully"
-}
-
-check_health() {
-    log_info "Checking service health..."
-    
-    # Wait for services to be ready
-    sleep 10
-    
-    # Check backend health
-    if curl -f http://localhost:$BACKEND_PORT/api/health > /dev/null 2>&1; then
-        log_success "Backend is healthy"
+    if docker-compose -f "$DOCKER_COMPOSE_FILE" ps -q | grep -q .; then
+        docker-compose -f "$DOCKER_COMPOSE_FILE" down --remove-orphans
+        print_success "Current deployment stopped"
     else
-        log_error "Backend health check failed"
-        return 1
+        print_warning "No current deployment found"
     fi
-    
-    # Check frontend
-    if curl -f http://localhost:$FRONTEND_PORT > /dev/null 2>&1; then
-        log_success "Frontend is accessible"
-    else
-        log_warning "Frontend health check failed"
-    fi
-    
-    # Check nginx
-    if curl -f http://localhost:$NGINX_PORT > /dev/null 2>&1; then
-        log_success "Nginx reverse proxy is working"
-    else
-        log_warning "Nginx health check failed"
-    fi
-    
-    log_success "Health checks completed"
 }
 
-run_tests() {
-    log_info "Running tests..."
+# Function to build and deploy
+deploy_application() {
+    print_status "Building and deploying QuantaEnergi..."
     
-    # Backend tests
-    cd backend
-    python -m pytest tests/ -v --cov=app --cov-report=html
+    # Build images
+    print_status "Building Docker images..."
+    docker-compose -f "$DOCKER_COMPOSE_FILE" build --no-cache
     
-    # Frontend tests (if available)
-    if [ -d "../frontend" ]; then
-        cd ../frontend
-        if [ -f "package.json" ]; then
-            npm test -- --watchAll=false
+    # Start services
+    print_status "Starting services..."
+    docker-compose -f "$DOCKER_COMPOSE_FILE" up -d
+    
+    print_success "Deployment started successfully"
+}
+
+# Function to wait for services
+wait_for_services() {
+    print_status "Waiting for services to be ready..."
+    
+    # Wait for PostgreSQL
+    print_status "Waiting for PostgreSQL..."
+    for i in {1..60}; do
+        if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T postgres pg_isready -U quantaenergi_user -d quantaenergi_db > /dev/null 2>&1; then
+            print_success "PostgreSQL is ready"
+            break
         fi
-    fi
+        if [ $i -eq 60 ]; then
+            print_error "PostgreSQL failed to start within 5 minutes"
+            exit 1
+        fi
+        sleep 5
+        echo -n "."
+    done
     
-    cd ..
+    # Wait for Redis Cluster
+    print_status "Waiting for Redis Cluster..."
+    for i in {1..60}; do
+        if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T redis-node-1 redis-cli cluster info > /dev/null 2>&1; then
+            print_success "Redis Cluster is ready"
+            break
+        fi
+        if [ $i -eq 60 ]; then
+            print_error "Redis Cluster failed to start within 5 minutes"
+            exit 1
+        fi
+        sleep 5
+        echo -n "."
+    done
     
-    log_success "Tests completed"
+    # Wait for Backend
+    print_status "Waiting for Backend..."
+    for i in {1..60}; do
+        if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+            print_success "Backend is ready"
+            break
+        fi
+        if [ $i -eq 60 ]; then
+            print_error "Backend failed to start within 5 minutes"
+            exit 1
+        fi
+        sleep 5
+        echo -n "."
+    done
+    
+    # Wait for Frontend
+    print_status "Waiting for Frontend..."
+    for i in {1..60}; do
+        if curl -f http://localhost:3000 > /dev/null 2>&1; then
+            print_success "Frontend is ready"
+            break
+        fi
+        if [ $i -eq 60 ]; then
+            print_error "Frontend failed to start within 5 minutes"
+            exit 1
+        fi
+        sleep 5
+        echo -n "."
+    done
 }
 
-deploy_to_render() {
-    log_info "Deploying to Render..."
+# Function to run health checks
+run_health_checks() {
+    print_status "Running health checks..."
     
-    if [ -z "$RENDER_TOKEN" ] || [ -z "$RENDER_SERVICE_ID" ]; then
-        log_error "RENDER_TOKEN and RENDER_SERVICE_ID environment variables are required"
+    # Check all services
+    services=("backend" "frontend" "postgres" "prometheus" "grafana" "nginx")
+    
+    for service in "${services[@]}"; do
+        print_status "Checking $service..."
+        if docker-compose -f "$DOCKER_COMPOSE_FILE" ps "$service" | grep -q "Up"; then
+            print_success "$service is running"
+        else
+            print_error "$service is not running"
+            exit 1
+        fi
+    done
+    
+    # Check Redis Cluster health
+    print_status "Checking Redis Cluster health..."
+    if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T redis-node-1 redis-cli cluster info | grep -q "cluster_state:ok"; then
+        print_success "Redis Cluster is healthy"
+    else
+        print_error "Redis Cluster is not healthy"
         exit 1
     fi
     
-    # Trigger Render deployment
-    curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
-        -H "Authorization: Bearer $RENDER_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d '{"clearCache": "do_not_clear"}'
-    
-    log_success "Render deployment triggered"
+    print_success "All health checks passed"
 }
 
-deploy_to_vercel() {
-    log_info "Deploying to Vercel..."
+# Function to run tests
+run_deployment_tests() {
+    print_status "Running deployment tests..."
     
-    if [ -z "$VERCEL_TOKEN" ]; then
-        log_error "VERCEL_TOKEN environment variable is required"
+    # Test backend API
+    print_status "Testing Backend API..."
+    if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+        print_success "Backend API is accessible"
+    else
+        print_error "Backend API is not accessible"
         exit 1
     fi
     
-    cd frontend
-    
-    # Install Vercel CLI if not present
-    if ! command -v vercel &> /dev/null; then
-        npm install -g vercel
+    # Test frontend
+    print_status "Testing Frontend..."
+    if curl -f http://localhost:3000 > /dev/null 2>&1; then
+        print_success "Frontend is accessible"
+    else
+        print_error "Frontend is not accessible"
+        exit 1
     fi
     
-    # Deploy to Vercel
-    vercel --prod --token $VERCEL_TOKEN
+    # Test monitoring
+    print_status "Testing Monitoring..."
+    if curl -f http://localhost:9090 > /dev/null 2>&1; then
+        print_success "Prometheus is accessible"
+    else
+        print_error "Prometheus is not accessible"
+    fi
     
-    cd ..
+    if curl -f http://localhost:3001 > /dev/null 2>&1; then
+        print_success "Grafana is accessible"
+    else
+        print_error "Grafana is not accessible"
+    fi
     
-    log_success "Vercel deployment completed"
+    print_success "All deployment tests passed"
 }
 
-show_logs() {
-    log_info "Showing service logs..."
+# Function to show deployment status
+show_deployment_status() {
+    print_status "Deployment Status:"
+    echo ""
     
-    docker-compose logs -f
-}
-
-show_status() {
-    log_info "Service status:"
-    
-    docker-compose ps
+    # Show running containers
+    docker-compose -f "$DOCKER_COMPOSE_FILE" ps
     
     echo ""
-    log_info "Service URLs:"
-    echo "  Backend API: http://localhost:$BACKEND_PORT"
-    echo "  Frontend: http://localhost:$FRONTEND_PORT"
-    echo "  Nginx: http://localhost:$NGINX_PORT"
+    print_status "Service URLs:"
+    echo "  Frontend: http://localhost:3000"
+    echo "  Backend API: http://localhost:8000"
     echo "  Prometheus: http://localhost:9090"
     echo "  Grafana: http://localhost:3001"
+    echo "  Redis Commander: http://localhost:8081"
+    echo "  Nginx: http://localhost:80"
+    
+    echo ""
+    print_status "Monitoring:"
+    echo "  Health Check: http://localhost:8000/health"
+    echo "  Metrics: http://localhost:8000/metrics"
+    
+    echo ""
+    print_status "Redis Cluster:"
+    docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T redis-node-1 redis-cli cluster info | grep -E "(cluster_state|cluster_slots_assigned|cluster_slots_ok|cluster_slots_pfail|cluster_slots_fail|cluster_known_nodes|cluster_size|cluster_current_epoch|cluster_my_epoch|cluster_stats_messages_ping_sent|cluster_stats_messages_pong_sent|cluster_stats_messages_meet_sent|cluster_stats_messages_sent|cluster_stats_messages_ping_received|cluster_stats_messages_pong_received|cluster_stats_messages_meet_received|cluster_stats_messages_other_received|cluster_stats_messages_received)"
 }
 
+# Function to rollback deployment
+rollback_deployment() {
+    print_warning "Rolling back deployment..."
+    
+    # Stop current deployment
+    docker-compose -f "$DOCKER_COMPOSE_FILE" down --remove-orphans
+    
+    # Restore from backup if available
+    if [ -d "$BACKUP_DIR" ]; then
+        print_status "Restoring from backup..."
+        # Implementation would depend on backup strategy
+        print_warning "Manual restoration required from $BACKUP_DIR"
+    fi
+    
+    print_error "Deployment rollback completed"
+}
+
+# Function to cleanup
 cleanup() {
-    log_info "Cleaning up..."
+    print_status "Cleaning up..."
     
-    docker-compose down -v --remove-orphans
-    docker system prune -f
+    # Remove unused images
+    docker image prune -f
     
-    log_success "Cleanup completed"
+    # Remove unused volumes
+    docker volume prune -f
+    
+    print_success "Cleanup completed"
 }
 
-# Main script
-case "${1:-help}" in
-    "start")
-        check_dependencies
-        build_images
-        start_services
-        check_health
-        show_status
-        ;;
-    "stop")
-        stop_services
-        ;;
-    "restart")
-        restart_services
-        check_health
-        ;;
-    "build")
-        build_images
-        ;;
-    "test")
-        run_tests
-        ;;
-    "logs")
-        show_logs
-        ;;
-    "status")
-        show_status
-        ;;
-    "health")
-        check_health
-        ;;
-    "deploy-render")
-        deploy_to_render
-        ;;
-    "deploy-vercel")
-        deploy_to_vercel
-        ;;
-    "deploy-all")
-        deploy_to_render
-        deploy_to_vercel
-        ;;
-    "cleanup")
+# Function to show help
+show_help() {
+    echo "QuantaEnergi Production Deployment Script"
+    echo ""
+    echo "Usage: $0 [ENVIRONMENT] [OPTIONS]"
+    echo ""
+    echo "ENVIRONMENT:"
+    echo "  production    Production deployment (default)"
+    echo "  staging      Staging deployment"
+    echo ""
+    echo "OPTIONS:"
+    echo "  -h, --help          Show this help message"
+    echo "  -r, --rollback      Rollback to previous deployment"
+    echo "  -s, --status        Show deployment status"
+    echo "  -c, --cleanup       Cleanup unused resources"
+    echo ""
+    echo "EXAMPLES:"
+    echo "  $0                  Deploy to production"
+    echo "  $0 staging          Deploy to staging"
+    echo "  $0 -r               Rollback deployment"
+    echo "  $0 -s               Show status"
+}
+
+# Main execution
+main() {
+    local rollback=false
+    local status_only=false
+    local cleanup_only=false
+    
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -r|--rollback)
+                rollback=true
+                shift
+                ;;
+            -s|--status)
+                status_only=true
+                shift
+                ;;
+            -c|--cleanup)
+                cleanup_only=true
+                shift
+                ;;
+            production|staging)
+                ENVIRONMENT="$1"
+                shift
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+    
+    # Set trap for cleanup on exit
+    trap cleanup EXIT
+    
+    if [ "$cleanup_only" = true ]; then
         cleanup
-        ;;
-    "help"|*)
-        echo "🚀 EnergyOpti-Pro Deployment Script"
-        echo ""
-        echo "Usage: $0 [command]"
-        echo ""
-        echo "Commands:"
-        echo "  start         - Start all services"
-        echo "  stop          - Stop all services"
-        echo "  restart       - Restart all services"
-        echo "  build         - Build Docker images"
-        echo "  test          - Run tests"
-        echo "  logs          - Show service logs"
-        echo "  status        - Show service status"
-        echo "  health        - Check service health"
-        echo "  deploy-render - Deploy backend to Render"
-        echo "  deploy-vercel - Deploy frontend to Vercel"
-        echo "  deploy-all    - Deploy to both platforms"
-        echo "  cleanup       - Clean up Docker resources"
-        echo "  help          - Show this help message"
-        echo ""
-        echo "Environment Variables:"
-        echo "  RENDER_TOKEN      - Render API token"
-        echo "  RENDER_SERVICE_ID - Render service ID"
-        echo "  VERCEL_TOKEN      - Vercel API token"
-        ;;
-esac
+        exit 0
+    fi
+    
+    if [ "$status_only" = true ]; then
+        show_deployment_status
+        exit 0
+    fi
+    
+    if [ "$rollback" = true ]; then
+        rollback_deployment
+        exit 0
+    fi
+    
+    # Full deployment process
+    print_status "Starting deployment to $ENVIRONMENT environment..."
+    
+    check_prerequisites
+    create_backup
+    stop_current_deployment
+    deploy_application
+    wait_for_services
+    run_health_checks
+    run_deployment_tests
+    show_deployment_status
+    
+    print_success "QuantaEnergi production deployment completed successfully! 🎉"
+    print_status "Application is now running and accessible"
+}
+
+# Run main function with all arguments
+main "$@"

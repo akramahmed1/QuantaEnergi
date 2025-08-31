@@ -107,6 +107,15 @@ http_request_duration_seconds = Histogram('http_request_duration_seconds', 'HTTP
 active_connections = Gauge('active_connections', 'Number of active connections')
 rate_limit_exceeded_total = Counter('rate_limit_exceeded_total', 'Total rate limit violations', ['client_ip'])
 
+# Enhanced monitoring metrics
+websocket_connections_total = Counter('websocket_connections_total', 'Total WebSocket connections', ['endpoint'])
+websocket_messages_total = Counter('websocket_messages_total', 'Total WebSocket messages', ['endpoint', 'type'])
+database_operations_total = Counter('database_operations_total', 'Total database operations', ['operation', 'table'])
+service_health_status = Gauge('service_health_status', 'Service health status (1=healthy, 0=unhealthy)', ['service_name'])
+memory_usage_bytes = Gauge('memory_usage_bytes', 'Memory usage in bytes')
+cpu_usage_percent = Gauge('cpu_usage_percent', 'CPU usage percentage')
+disk_usage_percent = Gauge('disk_usage_percent', 'Disk usage percentage')
+
 # Environment variables for API keys
 CME_API_KEY = os.getenv("CME_API_KEY", "demo_key")
 ICE_API_KEY = os.getenv("ICE_API_KEY", "demo_key")
@@ -144,7 +153,7 @@ qsec_adapter = QuantumSecurityAdapter()
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
-    log_message("Starting EnergyOpti-Pro backend...")
+    log_message("Starting QuantaEnergi backend...")
     log_message("Initializing services...")
     
     # Create database tables
@@ -155,19 +164,19 @@ async def lifespan(app: FastAPI):
     await market_service.get_session()
     log_message("Market data service initialized")
     
-    log_message("EnergyOpti-Pro backend started successfully")
+    log_message("QuantaEnergi backend started successfully")
     
     yield
     
     # Shutdown
-    log_message("Shutting down EnergyOpti-Pro backend...")
+    log_message("Shutting down QuantaEnergi backend...")
     log_message("Backend shutdown complete")
 
-# Create FastAPI app
+# Create FastAPI app with enhanced OpenAPI documentation
 app = FastAPI(
-    title="EnergyOpti-Pro: Disruptive Energy Trading Platform",
+    title="QuantaEnergi: Next-Gen AI/Quantum Energy Trading Platform",
     description="""
-    ## 🌟 EnergyOpti-Pro: Revolutionary Energy Trading SaaS
+    ## 🌟 QuantaEnergi: Revolutionary Energy Trading SaaS
     
     **Transform your energy trading with AI, Quantum Computing, and Blockchain technology.**
     
@@ -198,6 +207,9 @@ app = FastAPI(
     ### 🎯 Getting Started
     
     1. **Register**: Use `/api/auth/register` to create an account
+    * **API Documentation**: Available at `/docs` and `/redoc`
+    * **Rate Limiting**: 100 requests per minute per IP
+    * **WebSocket**: Real-time updates at `/ws/market` and `/ws/trades/{user_id}`
     2. **Login**: Use `/api/auth/login` to get access token
     3. **Trade**: Access market data and execute trades
     4. **Optimize**: Use AI and quantum optimization
@@ -210,17 +222,21 @@ app = FastAPI(
     * **Trading**: `/api/trading/*`
     * **Analytics**: `/api/analytics/*`
     * **Compliance**: `/api/compliance/*`
+    * **Rate Limiting**: `/api/rate-limit-test` (for testing rate limits)
     """,
     version="2.0.0",
     contact={
-        "name": "EnergyOpti-Pro Team",
-        "email": "support@energyopti-pro.com",
-        "url": "https://energyopti-pro.com"
+        "name": "QuantaEnergi Team",
+        "email": "support@quantaenergi.com",
+        "url": "https://quantaenergi.com"
     },
     license_info={
         "name": "Commercial License",
-        "url": "https://energyopti-pro.com/license"
+        "url": "https://quantaenergi.com/license"
     },
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
     lifespan=lifespan
 )
 
@@ -235,6 +251,34 @@ app.add_middleware(
 
 # Add rate limiting middleware
 app.middleware("http")(rate_limit_middleware)
+
+# Add monitoring middleware
+@app.middleware("http")
+async def monitoring_middleware(request: Request, call_next):
+    """Middleware to track HTTP requests and update metrics"""
+    start_time = time.time()
+    
+    # Track request start
+    method = request.method
+    endpoint = request.url.path
+    
+    try:
+        # Process request
+        response = await call_next(request)
+        
+        # Update metrics on success
+        http_requests_total.labels(method=method, endpoint=endpoint, status=response.status_code).inc()
+        http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(time.time() - start_time)
+        
+        return response
+        
+    except Exception as e:
+        # Update metrics on error
+        http_requests_total.labels(method=method, endpoint=endpoint, status=500).inc()
+        http_request_duration_seconds.labels(method=method, endpoint=endpoint).observe(time.time() - start_time)
+        
+        # Re-raise the exception
+        raise
 
 # Include authentication router
 app.include_router(auth_router)
@@ -254,6 +298,16 @@ async def get_metrics():
     except Exception as e:
         logger.error(f"Error generating metrics: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate metrics")
+
+# Rate limiting test endpoint
+@app.get("/api/rate-limit-test")
+async def test_rate_limit():
+    """Test endpoint for rate limiting functionality"""
+    return {
+        "message": "Rate limiting is working!",
+        "timestamp": datetime.now().isoformat(),
+        "rate_limit": "100 requests per minute per IP"
+    }
 
 # Create database tables on startup
 # Database tables are now created in the lifespan startup event
@@ -438,6 +492,10 @@ async def get_health():
             "quantum_security": "active" if OQS_AVAILABLE else "fallback"
         }
         
+        # Update service health metrics
+        for service_name, status in services_status.items():
+            service_health_status.labels(service_name=service_name).set(1 if status == "healthy" else 0)
+        
         log_message("Real health check completed with service status")
         return {
             "status": "healthy",
@@ -447,7 +505,132 @@ async def get_health():
         }
     except Exception as e:
         log_message(f"Error during health check: {e}")
+        # Update health metrics on error
+        service_health_status.labels(service_name="overall").set(0)
         raise HTTPException(status_code=500, detail="Health check failed")
+
+@app.get("/api/monitoring/metrics")
+async def get_monitoring_metrics():
+    """Get comprehensive monitoring metrics"""
+    try:
+        import psutil
+        
+        # System metrics
+        memory_info = psutil.virtual_memory()
+        cpu_percent = psutil.cpu_percent(interval=1)
+        disk_usage = psutil.disk_usage('/')
+        
+        # Update Prometheus metrics
+        memory_usage_bytes.set(memory_info.used)
+        cpu_usage_percent.set(cpu_percent)
+        disk_usage_percent.set(disk_usage.percent)
+        
+        return {
+            "system": {
+                "memory_used_mb": round(memory_info.used / 1024 / 1024, 2),
+                "memory_total_mb": round(memory_info.total / 1024 / 1024, 2),
+                "memory_percent": memory_info.percent,
+                "cpu_percent": cpu_percent,
+                "disk_used_gb": round(disk_usage.used / 1024 / 1024 / 1024, 2),
+                "disk_total_gb": round(disk_usage.total / 1024 / 1024 / 1024, 2),
+                "disk_percent": disk_usage.percent
+            },
+            "application": {
+                "active_connections": active_connections._value.get(),
+                "total_requests": http_requests_total._value.get(),
+                "rate_limit_violations": rate_limit_exceeded_total._value.get()
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except ImportError:
+        return {
+            "error": "psutil not available",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        log_message(f"Error getting monitoring metrics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get monitoring metrics")
+
+@app.get("/api/monitoring/cache/health")
+async def get_cache_health():
+    """Get cache health status and performance metrics"""
+    try:
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'shared', 'services'))
+        
+        try:
+            from forecasting_service import forecasting_service
+            cache_health = forecasting_service._cache_health_check()
+            return cache_health
+        except ImportError:
+            return {
+                "status": "error",
+                "error": "Forecasting service not available",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+    except Exception as e:
+        log_message(f"Error getting cache health: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get cache health")
+
+@app.get("/api/monitoring/health/detailed")
+async def get_detailed_health():
+    """Get detailed health status for all services"""
+    try:
+        # Check database connection
+        db_status = "healthy"
+        try:
+            # Try to get a database session
+            db = next(get_db())
+            db.close()
+        except Exception:
+            db_status = "unhealthy"
+            database_operations_total.labels(operation="health_check", table="connection").inc()
+        
+        # Check external services
+        external_apis_status = "healthy"
+        try:
+            # Test market service
+            await market_service.get_session()
+        except Exception:
+            external_apis_status = "unhealthy"
+        
+        # Check quantum security
+        quantum_status = "active" if OQS_AVAILABLE else "fallback"
+        
+        # Update health metrics
+        service_health_status.labels(service_name="database").set(1 if db_status == "healthy" else 0)
+        service_health_status.labels(service_name="external_apis").set(1 if external_apis_status == "healthy" else 0)
+        service_health_status.labels(service_name="quantum_security").set(1 if quantum_status == "active" else 0)
+        
+        return {
+            "status": "healthy" if all(s == "healthy" for s in [db_status, external_apis_status]) else "degraded",
+            "services": {
+                "database": {
+                    "status": db_status,
+                    "connection": "established" if db_status == "healthy" else "failed"
+                },
+                "external_apis": {
+                    "status": external_apis_status,
+                    "market_service": "available" if external_apis_status == "healthy" else "unavailable"
+                },
+                "quantum_security": {
+                    "status": quantum_status,
+                    "encryption": "kyber1024" if quantum_status == "active" else "fallback"
+                }
+            },
+            "metrics": {
+                "total_requests": http_requests_total._value.get(),
+                "active_connections": active_connections._value.get(),
+                "rate_limit_violations": rate_limit_exceeded_total._value.get()
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        log_message(f"Error during detailed health check: {e}")
+        service_health_status.labels(service_name="overall").set(0)
+        raise HTTPException(status_code=500, detail="Detailed health check failed")
 
 @app.get("/api/secure")
 async def secure_endpoint(current_user: User = Depends(get_current_user)):

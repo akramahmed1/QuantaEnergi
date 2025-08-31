@@ -3,6 +3,7 @@ import numpy as np
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
 import structlog
+import time
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, VotingRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -30,29 +31,69 @@ class ForecastingService:
         self.grok_api_key = os.getenv("GROK_API_KEY")
         self.grok_base_url = os.getenv("GROK_BASE_URL", "https://api.grok.ai/v1")
         
-        # Redis caching configuration
+        # Redis caching configuration with clustering support
         self.redis_client = None
+        self.redis_cluster = None
         self.redis_enabled = False
         self.cache_ttl = 3600  # 1 hour default
         
         try:
-            redis_host = os.getenv("REDIS_HOST", "localhost")
-            redis_port = int(os.getenv("REDIS_PORT", 6379))
-            redis_db = int(os.getenv("REDIS_DB", 0))
+            # Try Redis Cluster first
+            redis_cluster_hosts = os.getenv("REDIS_CLUSTER_HOSTS")
+            if redis_cluster_hosts:
+                try:
+                    from redis.cluster import RedisCluster
+                    cluster_hosts = [host.strip() for host in redis_cluster_hosts.split(",")]
+                    self.redis_cluster = RedisCluster(
+                        startup_nodes=[{"host": host.split(":")[0], "port": int(host.split(":")[1])} 
+                                     for host in cluster_hosts],
+                        decode_responses=False,
+                        socket_connect_timeout=5,
+                        socket_timeout=5,
+                        retry_on_timeout=True,
+                        max_connections=20
+                    )
+                    # Test cluster connection
+                    self.redis_cluster.ping()
+                    self.redis_enabled = True
+                    logger.info(f"Redis Cluster enabled with {len(cluster_hosts)} nodes")
+                    
+                except Exception as cluster_error:
+                    logger.warning(f"Redis Cluster failed: {cluster_error}. Falling back to single Redis.")
+                    self.redis_cluster = None
             
-            self.redis_client = redis.Redis(
-                host=redis_host,
-                port=redis_port,
-                db=redis_db,
-                decode_responses=False,  # Keep as bytes for pickle
-                socket_connect_timeout=5,
-                socket_timeout=5
-            )
-            
-            # Test connection
-            self.redis_client.ping()
-            self.redis_enabled = True
-            logger.info(f"Redis caching enabled at {redis_host}:{redis_port}")
+            # Fallback to single Redis if cluster not available
+            if not self.redis_cluster:
+                redis_host = os.getenv("REDIS_HOST", "localhost")
+                redis_port = int(os.getenv("REDIS_PORT", 6379))
+                redis_db = int(os.getenv("REDIS_DB", 0))
+                redis_password = os.getenv("REDIS_PASSWORD")
+                
+                # Connection pooling for single Redis
+                self.redis_client = redis.Redis(
+                    host=redis_host,
+                    port=redis_port,
+                    db=redis_db,
+                    password=redis_password,
+                    decode_responses=False,  # Keep as bytes for pickle
+                    socket_connect_timeout=5,
+                    socket_timeout=5,
+                    retry_on_timeout=True,
+                    max_connections=20,
+                    connection_pool=redis.ConnectionPool(
+                        host=redis_host,
+                        port=redis_port,
+                        db=redis_db,
+                        password=redis_password,
+                        max_connections=20,
+                        retry_on_timeout=True
+                    )
+                )
+                
+                # Test connection
+                self.redis_client.ping()
+                self.redis_enabled = True
+                logger.info(f"Redis caching enabled at {redis_host}:{redis_port}")
             
         except Exception as e:
             logger.warning(f"Redis not available: {e}. Caching disabled.")
@@ -82,6 +123,10 @@ class ForecastingService:
         self.news_api_key = os.getenv("NEWS_API_KEY")
         self.news_base_url = "https://newsapi.org/v2"
         self.news_cache_ttl = 1800  # 30 minutes for news
+        
+        # Anomaly detection configuration
+        self.anomaly_detection_enabled = True
+        self.anomaly_threshold = 2.0  # Standard deviations for anomaly detection
     
     def _generate_cache_key(self, method: str, **kwargs) -> str:
         """Generate a unique cache key for caching operations"""
@@ -94,33 +139,158 @@ class ForecastingService:
             logger.warning(f"Error generating cache key: {e}")
             return f"{method}_{hash(str(kwargs))}"
     
-    def _get_cached_result(self, cache_key: str) -> Optional[Dict[str, Any]]:
-        """Get cached result from Redis"""
-        if not self.redis_enabled or not self.redis_client:
+    def _get_redis_client(self):
+        """Get the appropriate Redis client (cluster or single)"""
+        return self.redis_cluster if self.redis_cluster else self.redis_client
+    
+    def _cache_get(self, key: str) -> Optional[Any]:
+        """Get value from cache with failover handling"""
+        if not self.redis_enabled:
             return None
         
         try:
-            cached_data = self.redis_client.get(cache_key)
+            client = self._get_redis_client()
+            cached_data = client.get(key)
             if cached_data:
-                result = pickle.loads(cached_data)
+                return pickle.loads(cached_data)
+        except Exception as e:
+            logger.warning(f"Cache get failed for key {key}: {e}")
+            # Try to recover from cache corruption
+            self._cache_delete(key)
+        
+        return None
+    
+    def _cache_set(self, key: str, value: Any, ttl: int = None) -> bool:
+        """Set value in cache with failover handling"""
+        if not self.redis_enabled:
+            return False
+        
+        try:
+            client = self._get_redis_client()
+            ttl = ttl or self.cache_ttl
+            serialized_data = pickle.dumps(value)
+            return client.setex(key, ttl, serialized_data)
+        except Exception as e:
+            logger.warning(f"Cache set failed for key {key}: {e}")
+            return False
+    
+    def _cache_delete(self, key: str) -> bool:
+        """Delete value from cache"""
+        if not self.redis_enabled:
+            return False
+        
+        try:
+            client = self._get_redis_client()
+            return bool(client.delete(key))
+        except Exception as e:
+            logger.warning(f"Cache delete failed for key {key}: {e}")
+            return False
+    
+    def _cache_invalidate_pattern(self, pattern: str) -> int:
+        """Invalidate cache keys matching a pattern"""
+        if not self.redis_enabled:
+            return 0
+        
+        try:
+            client = self._get_redis_client()
+            if self.redis_cluster:
+                # For Redis Cluster, scan all nodes
+                deleted_count = 0
+                for node in client.get_nodes():
+                    keys = client.scan_iter(match=pattern, target_nodes=[node])
+                    for key in keys:
+                        if client.delete(key):
+                            deleted_count += 1
+                return deleted_count
+            else:
+                # For single Redis, use scan
+                keys = client.scan_iter(match=pattern)
+                deleted_count = 0
+                for key in keys:
+                    if client.delete(key):
+                        deleted_count += 1
+                return deleted_count
+        except Exception as e:
+            logger.warning(f"Cache pattern invalidation failed for {pattern}: {e}")
+            return 0
+    
+    def _cache_health_check(self) -> Dict[str, Any]:
+        """Check cache health and performance"""
+        if not self.redis_enabled:
+            return {"status": "disabled", "error": "Redis not available"}
+        
+        try:
+            client = self._get_redis_client()
+            start_time = time.time()
+            
+            # Test basic operations
+            test_key = "_health_check_test"
+            test_value = {"test": "data", "timestamp": datetime.now().isoformat()}
+            
+            # Test set
+            set_success = self._cache_set(test_key, test_value, 60)
+            set_time = time.time() - start_time
+            
+            # Test get
+            get_start = time.time()
+            retrieved_value = self._cache_get(test_key)
+            get_time = time.time() - get_start
+            
+            # Test delete
+            delete_success = self._cache_delete(test_key)
+            
+            # Get cache info
+            info = client.info()
+            
+            return {
+                "status": "healthy" if all([set_success, retrieved_value == test_value, delete_success]) else "degraded",
+                "operations": {
+                    "set": {"success": set_success, "time_ms": round(set_time * 1000, 2)},
+                    "get": {"success": retrieved_value == test_value, "time_ms": round(get_time * 1000, 2)},
+                    "delete": {"success": delete_success}
+                },
+                "redis_info": {
+                    "version": info.get("redis_version", "unknown"),
+                    "connected_clients": info.get("connected_clients", 0),
+                    "used_memory_human": info.get("used_memory_human", "unknown"),
+                    "total_commands_processed": info.get("total_commands_processed", 0)
+                },
+                "cluster": bool(self.redis_cluster),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+    
+    def _get_cached_result(self, cache_key: str) -> Optional[Dict[str, Any]]:
+        """Get cached result from Redis using enhanced caching"""
+        if not self.redis_enabled:
+            return None
+        
+        try:
+            result = self._cache_get(cache_key)
+            if result:
                 logger.info(f"Cache hit for key: {cache_key}")
-                return result
+            return result
         except Exception as e:
             logger.warning(f"Error retrieving from cache: {e}")
         
         return None
     
     def _set_cached_result(self, cache_key: str, result: Dict[str, Any], ttl: int = None) -> bool:
-        """Set result in Redis cache"""
-        if not self.redis_enabled or not self.redis_client:
+        """Set result in Redis cache using enhanced caching"""
+        if not self.redis_enabled:
             return False
         
         try:
-            ttl = ttl or self.cache_ttl
-            serialized_result = pickle.dumps(result)
-            self.redis_client.setex(cache_key, ttl, serialized_result)
-            logger.info(f"Cached result for key: {cache_key} with TTL: {ttl}s")
-            return True
+            success = self._cache_set(cache_key, result, ttl)
+            if success:
+                logger.info(f"Cached result for key: {cache_key} with TTL: {ttl or self.cache_ttl}s")
+            return success
         except Exception as e:
             logger.warning(f"Error setting cache: {e}")
             return False
@@ -887,6 +1057,187 @@ class ForecastingService:
             
         except Exception as e:
             logger.error(f"Error integrating news with forecast: {e}")
+            return forecast_data
+    
+    def detect_anomalies(self, data: List[float], method: str = "isolation_forest") -> Dict[str, Any]:
+        """Detect anomalies in time series data using multiple methods"""
+        try:
+            if not self.anomaly_detection_enabled:
+                return {"anomalies": [], "method": "disabled"}
+            
+            if method == "isolation_forest":
+                return self._detect_anomalies_isolation_forest(data)
+            elif method == "statistical":
+                return self._detect_anomalies_statistical(data)
+            elif method == "zscore":
+                return self._detect_anomalies_zscore(data)
+            else:
+                logger.warning(f"Unknown anomaly detection method: {method}")
+                return self._detect_anomalies_statistical(data)
+                
+        except Exception as e:
+            logger.error(f"Error in anomaly detection: {e}")
+            return {"anomalies": [], "method": "failed", "error": str(e)}
+    
+    def _detect_anomalies_isolation_forest(self, data: List[float]) -> Dict[str, Any]:
+        """Detect anomalies using Isolation Forest algorithm"""
+        try:
+            from sklearn.ensemble import IsolationForest
+            
+            # Reshape data for sklearn
+            X = np.array(data).reshape(-1, 1)
+            
+            # Fit isolation forest
+            iso_forest = IsolationForest(contamination=0.1, random_state=42)
+            predictions = iso_forest.fit_predict(X)
+            
+            # Find anomalies (predictions == -1)
+            anomalies = [i for i, pred in enumerate(predictions) if pred == -1]
+            
+            return {
+                "anomalies": anomalies,
+                "method": "isolation_forest",
+                "total_points": len(data),
+                "anomaly_count": len(anomalies),
+                "anomaly_percentage": round(len(anomalies) / len(data) * 100, 2)
+            }
+            
+        except ImportError:
+            logger.warning("IsolationForest not available, falling back to statistical method")
+            return self._detect_anomalies_statistical(data)
+        except Exception as e:
+            logger.error(f"Error in isolation forest anomaly detection: {e}")
+            return {"anomalies": [], "method": "isolation_forest_failed", "error": str(e)}
+    
+    def _detect_anomalies_statistical(self, data: List[float]) -> Dict[str, Any]:
+        """Detect anomalies using statistical methods (mean + standard deviation)"""
+        try:
+            data_array = np.array(data)
+            mean_val = np.mean(data_array)
+            std_val = np.std(data_array)
+            
+            # Define anomaly threshold
+            lower_bound = mean_val - (self.anomaly_threshold * std_val)
+            upper_bound = mean_val + (self.anomaly_threshold * std_val)
+            
+            # Find anomalies
+            anomalies = []
+            for i, value in enumerate(data_array):
+                if value < lower_bound or value > upper_bound:
+                    anomalies.append({
+                        "index": i,
+                        "value": value,
+                        "deviation": round((value - mean_val) / std_val, 2)
+                    })
+            
+            return {
+                "anomalies": anomalies,
+                "method": "statistical",
+                "total_points": len(data),
+                "anomaly_count": len(anomalies),
+                "anomaly_percentage": round(len(anomalies) / len(data) * 100, 2),
+                "statistics": {
+                    "mean": round(mean_val, 4),
+                    "std": round(std_val, 4),
+                    "lower_bound": round(lower_bound, 4),
+                    "upper_bound": round(upper_bound, 4)
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in statistical anomaly detection: {e}")
+            return {"anomalies": [], "method": "statistical_failed", "error": str(e)}
+    
+    def _detect_anomalies_zscore(self, data: List[float]) -> Dict[str, Any]:
+        """Detect anomalies using Z-score method"""
+        try:
+            data_array = np.array(data)
+            mean_val = np.mean(data_array)
+            std_val = np.std(data_array)
+            
+            if std_val == 0:
+                return {"anomalies": [], "method": "zscore", "error": "Zero standard deviation"}
+            
+            # Calculate Z-scores
+            z_scores = np.abs((data_array - mean_val) / std_val)
+            
+            # Find anomalies (Z-score > threshold)
+            anomalies = []
+            for i, z_score in enumerate(z_scores):
+                if z_score > self.anomaly_threshold:
+                    anomalies.append({
+                        "index": i,
+                        "value": data_array[i],
+                        "z_score": round(z_score, 2)
+                    })
+            
+            return {
+                "anomalies": anomalies,
+                "method": "zscore",
+                "total_points": len(data),
+                "anomaly_count": len(anomalies),
+                "anomaly_percentage": round(len(anomalies) / len(data) * 100, 2),
+                "threshold": self.anomaly_threshold
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in Z-score anomaly detection: {e}")
+            return {"anomalies": [], "method": "zscore_failed", "error": str(e)}
+    
+    def forecast_with_anomaly_detection(self, commodity: str, days: int = 30) -> Dict[str, Any]:
+        """Generate forecast with integrated anomaly detection"""
+        try:
+            # Get base forecast
+            base_forecast = self.forecast_prices(commodity, days)
+            
+            if "error" in base_forecast:
+                return base_forecast
+            
+            # Extract price data for anomaly detection
+            if "forecast_data" in base_forecast:
+                prices = [point.get("price", 0) for point in base_forecast["forecast_data"]]
+                
+                # Detect anomalies
+                anomalies = self.detect_anomalies(prices)
+                
+                # Add anomaly information to forecast
+                base_forecast["anomaly_detection"] = anomalies
+                
+                # Apply anomaly corrections if needed
+                if anomalies.get("anomalies"):
+                    base_forecast["anomaly_corrections"] = self._apply_anomaly_corrections(
+                        base_forecast["forecast_data"], anomalies
+                    )
+            
+            return base_forecast
+            
+        except Exception as e:
+            logger.error(f"Error in forecast with anomaly detection: {e}")
+            return {"error": f"Forecast with anomaly detection failed: {str(e)}"}
+    
+    def _apply_anomaly_corrections(self, forecast_data: List[Dict], anomalies: Dict) -> List[Dict]:
+        """Apply corrections to anomalous forecast points"""
+        try:
+            corrected_data = forecast_data.copy()
+            
+            for anomaly in anomalies.get("anomalies", []):
+                idx = anomaly.get("index", 0)
+                if idx < len(corrected_data):
+                    # Apply smoothing correction
+                    if idx > 0 and idx < len(corrected_data) - 1:
+                        # Use moving average of surrounding points
+                        prev_price = corrected_data[idx - 1].get("price", 0)
+                        next_price = corrected_data[idx + 1].get("price", 0)
+                        corrected_price = (prev_price + next_price) / 2
+                        
+                        corrected_data[idx]["price"] = round(corrected_price, 2)
+                        corrected_data[idx]["anomaly_corrected"] = True
+                        corrected_data[idx]["correction_method"] = "moving_average_smoothing"
+            
+            return corrected_data
+            
+        except Exception as e:
+            logger.error(f"Error applying anomaly corrections: {e}")
             return forecast_data
 
 # Global instance

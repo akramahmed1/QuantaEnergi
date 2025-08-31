@@ -83,6 +83,54 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
             detail="Token creation failed"
         )
 
+def refresh_access_token(old_token: str) -> str:
+    """Refresh an expired JWT access token."""
+    try:
+        settings = _get_settings()
+        
+        # Decode the old token without verifying expiration
+        payload = jwt.decode(
+            old_token, 
+            settings.SECRET_KEY, 
+            algorithms=[settings.ALGORITHM],
+            options={"verify_exp": False}  # Don't verify expiration for refresh
+        )
+        
+        # Validate other claims
+        if payload.get("iss") != settings.ISSUER:
+            logger.warning("Invalid token issuer during refresh")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token issuer"
+            )
+        
+        if payload.get("aud") != settings.AUDIENCE:
+            logger.warning("Invalid token audience during refresh")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token audience"
+            )
+        
+        # Create new token with same user data but new expiration
+        user_data = {"sub": payload.get("sub"), "role": payload.get("role", "user")}
+        new_token = create_access_token(user_data)
+        
+        logger.info(f"Access token refreshed for user {payload.get('sub', 'unknown')}")
+        return new_token
+        
+    except JWTError as e:
+        logger.warning(f"JWT refresh error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token"
+        )
+    except Exception as e:
+        logger.error(f"Token refresh error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Token refresh failed"
+        )
+
 def verify_token(token: str) -> Optional[dict]:
     """Verify and decode a JWT token with enhanced validation."""
     try:

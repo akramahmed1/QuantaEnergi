@@ -1,0 +1,185 @@
+# Redis Cluster Configuration for Kubernetes
+# Provides high availability and horizontal scaling
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-cluster-config
+  namespace: energyopti-pro
+data:
+  redis.conf: |
+    cluster-enabled yes
+    cluster-config-file nodes.conf
+    cluster-node-timeout 5000
+    appendonly yes
+    appendfsync everysec
+    save 900 1
+    save 300 10
+    save 60 10000
+    maxmemory-policy allkeys-lru
+    tcp-keepalive 300
+    timeout 0
+    tcp-backlog 511
+    databases 16
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    dir /data
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cluster
+  namespace: energyopti-pro
+spec:
+  serviceName: redis-cluster
+  replicas: 6
+  selector:
+    matchLabels:
+      app: redis-cluster
+  template:
+    metadata:
+      labels:
+        app: redis-cluster
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: client
+        - containerPort: 16379
+          name: cluster
+        command:
+        - redis-server
+        - /etc/redis/redis.conf
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-cluster-config
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: standard
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster
+  namespace: energyopti-pro
+  labels:
+    app: redis-cluster
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: client
+  - port: 16379
+    targetPort: 16379
+    name: cluster
+  clusterIP: None
+  selector:
+    app: redis-cluster
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster-headless
+  namespace: energyopti-pro
+  labels:
+    app: redis-cluster
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: client
+  - port: 16379
+    targetPort: 16379
+    name: cluster
+  clusterIP: None
+  selector:
+    app: redis-cluster
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: redis-cluster-init
+  namespace: energyopti-pro
+spec:
+  template:
+    spec:
+      containers:
+      - name: redis-cluster-init
+        image: redis:7-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for Redis nodes to be ready..."
+          sleep 30
+          
+          echo "Creating Redis cluster..."
+          redis-cli --cluster create \
+            redis-cluster-0.redis-cluster:6379 \
+            redis-cluster-1.redis-cluster:6379 \
+            redis-cluster-2.redis-cluster:6379 \
+            redis-cluster-3.redis-cluster:6379 \
+            redis-cluster-4.redis-cluster:6379 \
+            redis-cluster-5.redis-cluster:6379 \
+            --cluster-replicas 1 \
+            --cluster-yes
+          
+          echo "Cluster created successfully!"
+        env:
+        - name: REDIS_CLUSTER_HOSTS
+          value: "redis-cluster-0.redis-cluster:6379,redis-cluster-1.redis-cluster:6379,redis-cluster-2.redis-cluster:6379,redis-cluster-3.redis-cluster:6379,redis-cluster-4.redis-cluster:6379,redis-cluster-5.redis-cluster:6379"
+      restartPolicy: OnFailure
+      serviceAccountName: redis-cluster-init
+  backoffLimit: 3
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis-cluster-init
+  namespace: energyopti-pro

@@ -87,8 +87,121 @@ class ComplianceRuleFactory:
                 penalties=["Fines", "Reporting delays", "Compliance review"],
                 status="active"
             )
+        elif rule_type == "environmental":
+            return ComplianceRule(
+                rule_id=f"environmental_{region.value}_{hash(str(kwargs))}",
+                region=region,
+                rule_name=f"Environmental Compliance Rule - {region.value}",
+                description=f"Environmental compliance requirements for {region.value}",
+                category="environmental",
+                effective_date=datetime.now(),
+                last_updated=datetime.now(),
+                requirements=["Emissions reporting", "Carbon tracking", "Sustainability metrics"],
+                penalties=["Environmental fines", "Operation restrictions", "Compliance audits"],
+                status="active"
+            )
+        elif rule_type == "cybersecurity":
+            return ComplianceRule(
+                rule_id=f"cybersecurity_{region.value}_{hash(str(kwargs))}",
+                region=region,
+                rule_name=f"Cybersecurity Compliance Rule - {region.value}",
+                description=f"Cybersecurity compliance requirements for {region.value}",
+                category="cybersecurity",
+                effective_date=datetime.now(),
+                last_updated=datetime.now(),
+                requirements=["Data protection", "Access controls", "Incident reporting"],
+                penalties=["Security fines", "System shutdowns", "Regulatory oversight"],
+                status="active"
+            )
         else:
             raise ValueError(f"Unknown rule type: {rule_type}")
+    
+    @staticmethod
+    def create_custom_rule(rule_data: Dict[str, Any]) -> ComplianceRule:
+        """Create a custom compliance rule with specific requirements"""
+        return ComplianceRule(
+            rule_id=f"custom_{rule_data.get('category', 'general')}_{hash(str(rule_data))}",
+            region=rule_data.get('region', ComplianceRegion.US_FERC),
+            rule_name=rule_data.get('rule_name', 'Custom Compliance Rule'),
+            description=rule_data.get('description', 'Custom compliance requirements'),
+            category=rule_data.get('category', 'general'),
+            effective_date=rule_data.get('effective_date', datetime.now()),
+            last_updated=datetime.now(),
+            requirements=rule_data.get('requirements', []),
+            penalties=rule_data.get('penalties', []),
+            status=rule_data.get('status', 'active')
+        )
+
+class TradingStrategyFactory:
+    """Factory for creating trading strategies based on market conditions and risk profile"""
+    
+    @staticmethod
+    def create_strategy(strategy_type: str, market_conditions: Dict[str, Any], risk_profile: str) -> Dict[str, Any]:
+        """Create a trading strategy based on type, market conditions, and risk profile"""
+        if strategy_type == "momentum":
+            return {
+                "strategy_id": f"momentum_{risk_profile}_{hash(str(market_conditions))}",
+                "strategy_name": f"Momentum Trading Strategy - {risk_profile.title()}",
+                "description": "Follows market momentum with risk-adjusted position sizing",
+                "type": "momentum",
+                "risk_profile": risk_profile,
+                "parameters": {
+                    "lookback_period": market_conditions.get("volatility", "high") == "high" and 5 or 10,
+                    "position_size": risk_profile == "conservative" and 0.1 or 0.3,
+                    "stop_loss": risk_profile == "conservative" and 0.05 or 0.15,
+                    "take_profit": risk_profile == "conservative" and 0.1 or 0.25
+                },
+                "market_conditions": market_conditions,
+                "created_at": datetime.now().isoformat()
+            }
+        elif strategy_type == "mean_reversion":
+            return {
+                "strategy_id": f"mean_reversion_{risk_profile}_{hash(str(market_conditions))}",
+                "strategy_name": f"Mean Reversion Strategy - {risk_profile.title()}",
+                "description": "Trades against market extremes expecting reversion to mean",
+                "type": "mean_reversion",
+                "risk_profile": risk_profile,
+                "parameters": {
+                    "bollinger_periods": 20,
+                    "std_deviation": risk_profile == "conservative" and 2.0 or 1.5,
+                    "position_size": risk_profile == "conservative" and 0.15 or 0.4,
+                    "stop_loss": risk_profile == "conservative" and 0.08 or 0.2
+                },
+                "market_conditions": market_conditions,
+                "created_at": datetime.now().isoformat()
+            }
+        elif strategy_type == "arbitrage":
+            return {
+                "strategy_id": f"arbitrage_{risk_profile}_{hash(str(market_conditions))}",
+                "strategy_name": f"Arbitrage Strategy - {risk_profile.title()}",
+                "description": "Exploits price differences across markets or instruments",
+                "type": "arbitrage",
+                "risk_profile": risk_profile,
+                "parameters": {
+                    "min_spread": 0.001,
+                    "execution_speed": "high",
+                    "position_size": risk_profile == "conservative" and 0.2 or 0.5,
+                    "max_hold_time": 300  # 5 minutes
+                },
+                "market_conditions": market_conditions,
+                "created_at": datetime.now().isoformat()
+            }
+        else:
+            raise ValueError(f"Unknown strategy type: {strategy_type}")
+    
+    @staticmethod
+    def create_custom_strategy(strategy_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a custom trading strategy with specific parameters"""
+        return {
+            "strategy_id": f"custom_{strategy_data.get('type', 'general')}_{hash(str(strategy_data))}",
+            "strategy_name": strategy_data.get('strategy_name', 'Custom Trading Strategy'),
+            "description": strategy_data.get('description', 'Custom trading strategy'),
+            "type": strategy_data.get('type', 'custom'),
+            "risk_profile": strategy_data.get('risk_profile', 'moderate'),
+            "parameters": strategy_data.get('parameters', {}),
+            "market_conditions": strategy_data.get('market_conditions', {}),
+            "created_at": datetime.now().isoformat()
+        }
 
 class ComplianceService:
     """Multi-region compliance service for energy trading"""

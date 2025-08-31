@@ -1,0 +1,415 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quantaenergi-backend
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-backend
+    version: v1.0.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: quantaenergi-backend
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-backend
+        version: v1.0.0
+    spec:
+      containers:
+      - name: backend
+        image: quantaenergi/backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: database-url
+        - name: REDIS_CLUSTER_NODES
+          valueFrom:
+            configMapKeyRef:
+              name: quantaenergi-config
+              key: redis-cluster-nodes
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: jwt-secret
+        - name: ENVIRONMENT
+          value: "production"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+      imagePullSecrets:
+      - name: quantaenergi-registry-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quantaenergi-frontend
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-frontend
+    version: v1.0.0
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quantaenergi-frontend
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-frontend
+        version: v1.0.0
+    spec:
+      containers:
+      - name: frontend
+        image: quantaenergi/frontend:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: VITE_API_BASE_URL
+          value: "https://api.quantaenergi.com"
+        - name: VITE_APP_NAME
+          value: "QuantaEnergi"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: quantaenergi-postgres
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-postgres
+spec:
+  serviceName: quantaenergi-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quantaenergi-postgres
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "quantaenergi_db"
+        - name: POSTGRES_USER
+          value: "quantaenergi_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: postgres-password
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - quantaenergi_user
+            - -d
+            - quantaenergi_db
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - quantaenergi_user
+            - -d
+            - quantaenergi_db
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: quantaenergi-redis-cluster
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-redis-cluster
+spec:
+  serviceName: quantaenergi-redis-cluster
+  replicas: 6
+  selector:
+    matchLabels:
+      app: quantaenergi-redis-cluster
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-redis-cluster
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --port
+        - "6379"
+        - --cluster-enabled
+        - "yes"
+        - --cluster-config-file
+        - nodes.conf
+        - --cluster-node-timeout
+        - "5000"
+        - --appendonly
+        - "yes"
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-backend-service
+  namespace: quantaenergi
+spec:
+  selector:
+    app: quantaenergi-backend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-frontend-service
+  namespace: quantaenergi
+spec:
+  selector:
+    app: quantaenergi-frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-postgres-service
+  namespace: quantaenergi
+spec:
+  selector:
+    app: quantaenergi-postgres
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-redis-cluster-service
+  namespace: quantaenergi
+spec:
+  selector:
+    app: quantaenergi-redis-cluster
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: quantaenergi-ingress
+  namespace: quantaenergi
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - quantaenergi.com
+    - www.quantaenergi.com
+    - api.quantaenergi.com
+    secretName: quantaenergi-tls
+  rules:
+  - host: quantaenergi.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quantaenergi-frontend-service
+            port:
+              number: 80
+  - host: www.quantaenergi.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quantaenergi-frontend-service
+            port:
+              number: 80
+  - host: api.quantaenergi.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quantaenergi-backend-service
+            port:
+              number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: quantaenergi-backend-hpa
+  namespace: quantaenergi
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: quantaenergi-backend
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: quantaenergi-frontend-hpa
+  namespace: quantaenergi
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: quantaenergi-frontend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
