@@ -122,6 +122,15 @@ class ApiService {
     return this.request('/api/health');
   }
 
+  // Weather methods
+  async getCurrentWeather(lat = 33.44, lon = -94.04) {
+    return this.request(`/api/weather/current?lat=${lat}&lon=${lon}`);
+  }
+
+  async getWeatherForecast(lat = 33.44, lon = -94.04) {
+    return this.request(`/api/weather/forecast?lat=${lat}&lon=${lon}`);
+  }
+
   // Logout
   logout() {
     localStorage.removeItem('token');

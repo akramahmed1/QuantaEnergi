@@ -7,8 +7,31 @@ const TradingDashboard = () => {
   const [user, setUser] = useState(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorDetails, setErrorDetails] = useState('');
+  const [weatherData, setWeatherData] = useState(null);
+  const [weatherForecastData, setWeatherForecastData] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Weather functions
+  const fetchCurrentWeather = async () => {
+    try {
+      const data = await apiService.getCurrentWeather();
+      setWeatherData(data);
+    } catch (error) {
+      console.error('Weather fetch error:', error);
+      setWeatherData({ temp: 20, humidity: 50, description: 'Error fetching', wind_speed: 0 });
+    }
+  };
+
+  const fetchWeatherForecast = async () => {
+    try {
+      const data = await apiService.getWeatherForecast();
+      setWeatherForecastData(data);
+    } catch (error) {
+      console.error('Forecast fetch error:', error);
+      setWeatherForecastData({ forecasts: [] });
+    }
+  };
 
   useEffect(() => {
     const currentUser = apiService.getCurrentUserData();
@@ -417,6 +440,49 @@ const TradingDashboard = () => {
                 <h3 className="font-medium text-gray-900">Market Prices</h3>
                 <p className="text-sm text-gray-500">Live Data</p>
               </button>
+            </div>
+          </div>
+
+          {/* Weather Widget */}
+          <div className="bg-white shadow rounded-lg p-6 mb-8">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Weather Data</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-medium text-blue-900 mb-2">Current Weather</h3>
+                <button 
+                  onClick={() => fetchCurrentWeather()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mb-3"
+                >
+                  Fetch Weather
+                </button>
+                {weatherData && (
+                  <div className="space-y-2">
+                    <p className="text-sm"><span className="font-medium">Temperature:</span> {weatherData.temp}°C</p>
+                    <p className="text-sm"><span className="font-medium">Humidity:</span> {weatherData.humidity}%</p>
+                    <p className="text-sm"><span className="font-medium">Description:</span> {weatherData.description}</p>
+                    <p className="text-sm"><span className="font-medium">Wind Speed:</span> {weatherData.wind_speed} m/s</p>
+                  </div>
+                )}
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-medium text-green-900 mb-2">Weather Forecast</h3>
+                <button 
+                  onClick={() => fetchWeatherForecast()}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mb-3"
+                >
+                  Fetch Forecast
+                </button>
+                {weatherForecastData && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Next 24 Hours:</p>
+                    {weatherForecastData.forecasts?.slice(0, 3).map((forecast, index) => (
+                      <div key={index} className="text-sm">
+                        <span className="font-medium">{forecast.time}:</span> {forecast.temp}°C - {forecast.description}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
