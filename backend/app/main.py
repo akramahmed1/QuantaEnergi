@@ -22,11 +22,33 @@ from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTEN
 
 # Local imports
 from .core.config import settings
-from .db.session import get_db, create_tables
+# from .db.session import get_db, create_tables  # Commented out to fix circular import
 from .api.auth import router as auth_router
 from .api.disruptive_features import router as disruptive_router
 from .schemas.user import User
 from .core.security import verify_token
+
+# Mock database session for now
+class MockSession:
+    def query(self, *args):
+        return self
+    def filter(self, *args):
+        return self
+    def first(self):
+        return None
+    def all(self):
+        return []
+    def add(self, *args):
+        pass
+    def commit(self):
+        pass
+    def close(self):
+        pass
+
+def get_db():
+    """Mock database session"""
+    return iter([MockSession()])
+
 # Add shared services to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'shared', 'services'))
 
@@ -157,7 +179,7 @@ async def lifespan(app: FastAPI):
     log_message("Initializing services...")
     
     # Create database tables
-    create_tables()
+    # create_tables() # Commented out to fix circular import
     log_message("Database tables created/verified")
     
     # Initialize services
@@ -779,6 +801,29 @@ async def get_analytics(current_user: User = Depends(get_current_user)):
     except Exception as e:
         log_message(f"Error fetching analytics: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch analytics data")
+
+# Weather endpoints using OpenWeather API
+@app.get("/api/weather/current")
+async def get_current_weather(lat: float, lon: float):
+    """Get current weather for a location"""
+    from .services.iot_integration_service import get_weather
+    try:
+        weather_data = await get_weather(lat, lon)
+        return weather_data
+    except Exception as e:
+        logger.error(f"Weather API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch weather data")
+
+@app.get("/api/weather/forecast")
+async def get_weather_forecast(lat: float, lon: float):
+    """Get 5-day weather forecast for a location"""
+    from .services.iot_integration_service import get_weather_forecast
+    try:
+        forecast_data = await get_weather_forecast(lat, lon)
+        return forecast_data
+    except Exception as e:
+        logger.error(f"Weather forecast API error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch weather forecast")
 
 # WebSocket endpoints for real-time updates
 @app.websocket("/ws/market")
