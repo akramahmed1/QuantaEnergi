@@ -8,7 +8,7 @@ __version__ = "2.0.0"
 __author__ = "EnergyOpti-Pro Team"
 __email__ = "support@energyopti-pro.com"
 
-# Import main application
-from .main import app
+# Don't import main here to avoid circular dependencies
+# The main_clean.py file should be run directly
 
-__all__ = ["app"]
+__all__ = []

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8001';
 
 class ApiService {
   constructor() {
@@ -99,6 +99,19 @@ class ApiService {
 
   async getOnboardingGuide(user_type = 'trader') {
     return this.request(`/api/onboarding?user_type=${user_type}`);
+  }
+
+  // New API methods for enhanced UI components
+  async getUserAnalytics() {
+    return this.request('/api/analytics');
+  }
+
+  async getTrades() {
+    return this.request('/api/trades');
+  }
+
+  async getForecast() {
+    return this.request('/api/forecast');
   }
 
   async getSecureData() {

@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import apiService from '../services/api';
+
+// Import new components
+import MarketOverview from './MarketOverview';
+import ESGScore from './ESGScore';
+import TradingSignals from './TradingSignals';
 
 const TradingDashboard = () => {
   const [user, setUser] = useState(null);
@@ -486,6 +493,19 @@ const TradingDashboard = () => {
             </div>
           </div>
 
+          {/* New Enhanced Components */}
+          <div className="mb-8">
+            <MarketOverview />
+          </div>
+
+          <div className="mb-8">
+            <ESGScore />
+          </div>
+
+          <div className="mb-8">
+            <TradingSignals />
+          </div>
+
           {/* User Info */}
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">User Information</h2>
@@ -541,6 +561,20 @@ const TradingDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Toast Notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </div>
   );
 };

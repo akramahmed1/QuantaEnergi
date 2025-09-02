@@ -1,0 +1,311 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: quantaenergi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quantaenergi-secrets
+  namespace: quantaenergi
+type: Opaque
+data:
+  # These are base64 encoded values - replace with actual secrets in production
+  database-url: cG9zdGdyZXNxbDovL3F1YW50YWVuZXJnaV91c2VyOnF1YW50YWVuZXJnaV9wYXNzQHF1YW50YWVuZXJnaS1wb3N0Z3Jlcy5xdWFudGFlbmVyZ2kuc3ZjLmNsdXN0ZXIubG9jYWw6NTQzMi9xdWFudGFlbmVyZ2lfZGI=
+  redis-url: cmVkaXM6Ly9xdWFudGFlbmVyZ2ktcmVkaXMtY2x1c3Rlci1zZXJ2aWNlLnF1YW50YWVuZXJnaS5zdmMuY2x1c3Rlci5sb2NhbDo2Mzc5
+  jwt-secret: cXVhbnRhZW5lcmdpLWp3dC1zZWNyZXQta2V5LTIwMjUtcHJvZHVjdGlvbg==
+  postgres-password: cXVhbnRhZW5lcmdpX3Bhc3N3b3JkXzIwMjU=
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: quantaenergi-config
+  namespace: quantaenergi
+data:
+  postgres-config: |
+    max_connections = 200
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    maintenance_work_mem = 64MB
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    default_statistics_target = 100
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    work_mem = 4MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    max_worker_processes = 8
+    max_parallel_workers_per_gather = 4
+    max_parallel_workers = 8
+    max_parallel_maintenance_workers = 4
+  redis-config: |
+    maxmemory 2gb
+    maxmemory-policy allkeys-lru
+    save 900 1
+    save 300 10
+    save 60 10000
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    dir /data
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: quantaenergi-postgres
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-postgres
+spec:
+  serviceName: quantaenergi-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quantaenergi-postgres
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+          name: postgres
+        env:
+        - name: POSTGRES_DB
+          value: "quantaenergi_db"
+        - name: POSTGRES_USER
+          value: "quantaenergi_user"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: postgres-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-config
+          mountPath: /etc/postgresql/postgresql.conf
+          subPath: postgresql.conf
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - quantaenergi_user
+            - -d
+            - quantaenergi_db
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - quantaenergi_user
+            - -d
+            - quantaenergi_db
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        command:
+        - postgres
+        - -c
+        - config_file=/etc/postgresql/postgresql.conf
+      volumes:
+      - name: postgres-config
+        configMap:
+          name: quantaenergi-config
+          items:
+          - key: postgres-config
+            path: postgresql.conf
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
+      storageClassName: gp2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-postgres
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-postgres
+spec:
+  selector:
+    app: quantaenergi-postgres
+  ports:
+  - protocol: TCP
+    port: 5432
+    targetPort: 5432
+    name: postgres
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: quantaenergi-redis-cluster
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-redis-cluster
+spec:
+  serviceName: quantaenergi-redis-cluster
+  replicas: 6
+  selector:
+    matchLabels:
+      app: quantaenergi-redis-cluster
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-redis-cluster
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --port
+        - "6379"
+        - --cluster-enabled
+        - "yes"
+        - --cluster-config-file
+        - nodes.conf
+        - --cluster-node-timeout
+        - "5000"
+        - --appendonly
+        - "yes"
+        - --maxmemory
+        - "2gb"
+        - --maxmemory-policy
+        - "allkeys-lru"
+        ports:
+        - containerPort: 6379
+          name: redis
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /usr/local/etc/redis/redis.conf
+          subPath: redis.conf
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: redis-config
+        configMap:
+          name: quantaenergi-config
+          items:
+          - key: redis-config
+            path: redis.conf
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 5Gi
+      storageClassName: gp2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-redis-cluster
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-redis-cluster
+spec:
+  selector:
+    app: quantaenergi-redis-cluster
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+    name: redis
+  type: ClusterIP
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: quantaenergi-db-init
+  namespace: quantaenergi
+spec:
+  template:
+    spec:
+      containers:
+      - name: db-init
+        image: postgres:15-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for PostgreSQL to be ready..."
+          until pg_isready -h quantaenergi-postgres -U quantaenergi_user -d quantaenergi_db; do
+            sleep 2
+          done
+          echo "PostgreSQL is ready. Running migrations..."
+          # Add your migration commands here
+          echo "Database initialization complete."
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: postgres-password
+        - name: PGHOST
+          value: "quantaenergi-postgres"
+        - name: PGUSER
+          value: "quantaenergi_user"
+        - name: PGDATABASE
+          value: "quantaenergi_db"
+      restartPolicy: OnFailure
+      serviceAccountName: quantaenergi-db-init
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quantaenergi-db-init
+  namespace: quantaenergi

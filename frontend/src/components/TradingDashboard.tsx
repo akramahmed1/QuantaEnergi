@@ -1,260 +1,484 @@
-import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { Chart, registerables } from 'chart.js';
 import { 
-  ChartBarIcon, 
-  CurrencyDollarIcon, 
-  ArrowTrendingUpIcon, 
-  ExclamationTriangleIcon,
-  CogIcon,
-  BellIcon,
-  CpuChipIcon,
-  CubeIcon,
-  WifiIcon,
-  ShieldCheckIcon
-} from '@heroicons/react/24/outline'
-import { useTradingStore } from '@/store/tradingStore'
-import MarketOverview from './MarketOverview'
-import TradingChart from './TradingChart'
-import OrderPanel from './OrderPanel'
-import PortfolioSummary from './PortfolioSummary'
-import TradingSignals from './TradingSignals'
-import RiskMetrics from './RiskMetrics'
-import ESGScore from './ESGScore'
-import AIInsights from './AIInsights'
-import Alerts from './Alerts'
-import AIForecasting from './AIForecasting'
-import QuantumOptimization from './QuantumOptimization'
-import BlockchainSmartContracts from './BlockchainSmartContracts'
-import IoTIntegration from './IoTIntegration'
-import ComplianceMultiRegion from './ComplianceMultiRegion'
-import { websocketService } from '@/services/websocketService'
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { 
+  Button, 
+  Input, 
+  Textarea, 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Activity, 
+  Brain, 
+  Zap, 
+  Shield, 
+  Globe,
+  MessageSquare,
+  Send,
+  RefreshCw
+} from 'lucide-react';
 
-const TradingDashboard: React.FC = () => {
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('overview')
-  const [isConnected, setIsConnected] = useState(false)
-  const { 
-    selectedSymbol, 
-    setSelectedSymbol, 
-    portfolio,
-    getTotalPnL,
-    getPortfolioValue
-  } = useTradingStore()
+// Register Chart.js components
+Chart.register(...registerables);
 
-  // Handle URL parameters for tab navigation
-  useEffect(() => {
-    const tabParam = searchParams.get('tab')
-    if (tabParam && tabs.some(tab => tab.id === tabParam)) {
-      setActiveTab(tabParam)
-    }
-  }, [searchParams])
-
-  // Update URL when tab changes
-  const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId)
-    navigate(`/dashboard?tab=${tabId}`, { replace: true })
-  }
-
-  useEffect(() => {
-    // Connect to WebSocket
-    const connectWebSocket = async () => {
-      try {
-        await websocketService.connect('demo_user')
-        setIsConnected(true)
-        
-        // Subscribe to portfolio symbols
-        if (portfolio.positions && portfolio.positions.length > 0) {
-          portfolio.positions.forEach((item) => {
-            if (item.symbol) {
-              websocketService.subscribeToSymbol(item.symbol)
-            }
-          })
-        }
-      } catch (error) {
-        console.error('Failed to connect to WebSocket:', error)
-      }
-    }
-
-    connectWebSocket()
-
-    return () => {
-      websocketService.disconnect()
-    }
-  }, [portfolio.positions])
-
-  const tabs = [
-    { id: 'overview', name: 'Overview', icon: ChartBarIcon, description: 'Market overview and trading signals' },
-    { id: 'trading', name: 'Trading', icon: ArrowTrendingUpIcon, description: 'Active trading and order management' },
-    { id: 'portfolio', name: 'Portfolio', icon: CurrencyDollarIcon, description: 'Portfolio analysis and performance' },
-    { id: 'ai-forecasting', name: 'AI Forecasting', icon: CpuChipIcon, description: 'ML-powered demand and price predictions' },
-    { id: 'quantum', name: 'Quantum Optimization', icon: CubeIcon, description: 'Quantum portfolio optimization' },
-    { id: 'blockchain', name: 'Blockchain', icon: ShieldCheckIcon, description: 'Smart contracts and carbon credits' },
-    { id: 'iot', name: 'IoT Integration', icon: WifiIcon, description: 'Real-time infrastructure monitoring' },
-    { id: 'compliance', name: 'Compliance', icon: ShieldCheckIcon, description: 'Multi-region regulatory compliance' },
-    { id: 'signals', name: 'Signals', icon: ExclamationTriangleIcon, description: 'Trading signals and alerts' },
-    { id: 'risk', name: 'Risk', icon: ExclamationTriangleIcon, description: 'Risk metrics and analysis' },
-    { id: 'esg', name: 'ESG', icon: ChartBarIcon, description: 'Environmental, Social, Governance scoring' },
-    { id: 'ai-insights', name: 'AI Insights', icon: CogIcon, description: 'Advanced AI analytics' },
-    { id: 'alerts', name: 'Alerts', icon: BellIcon, description: 'System alerts and notifications' }
-  ]
-
-  const totalPnL = getTotalPnL()
-  const portfolioValue = getPortfolioValue()
-
-  return (
-    <div className="min-h-screen bg-secondary-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-secondary-200">
-        <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-secondary-900">
-                EnergyOpti-Pro: Disruptive Energy Trading SaaS
-              </h1>
-              <div className="ml-4 flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success-500' : 'bg-danger-500'}`} />
-                <span className="text-sm text-secondary-600">
-                  {isConnected ? 'Connected' : 'Disconnected'}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm text-secondary-600">Portfolio Value</p>
-                <p className="text-lg font-semibold text-secondary-900">
-                  ${portfolioValue.toLocaleString()}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-secondary-600">Total P&L</p>
-                <p className={`text-lg font-semibold ${totalPnL >= 0 ? 'text-success-600' : 'text-danger-600'}`}>
-                  {totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation Tabs */}
-      <nav className="bg-white border-b border-secondary-200">
-        <div className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1 overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex flex-col items-center space-y-1 py-3 px-3 border-b-2 font-medium text-xs min-w-max ${
-                  activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'
-                }`}
-                title={tab.description}
-              >
-                <tab.icon className="w-5 h-5" />
-                <span>{tab.name}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-9xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <MarketOverview />
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <TradingChart />
-                <TradingSignals />
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'trading' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="lg:col-span-2">
-                <TradingChart />
-              </div>
-              <div>
-                <OrderPanel />
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'portfolio' && (
-            <PortfolioSummary />
-          )}
-
-          {activeTab === 'ai-forecasting' && (
-            <AIForecasting />
-          )}
-
-          {activeTab === 'quantum' && (
-            <QuantumOptimization />
-          )}
-
-          {activeTab === 'blockchain' && (
-            <BlockchainSmartContracts />
-          )}
-
-          {activeTab === 'iot' && (
-            <IoTIntegration />
-          )}
-
-          {activeTab === 'compliance' && (
-            <ComplianceMultiRegion />
-          )}
-
-          {activeTab === 'signals' && (
-            <TradingSignals />
-          )}
-
-          {activeTab === 'risk' && (
-            <RiskMetrics />
-          )}
-
-          {activeTab === 'esg' && (
-            <ESGScore />
-          )}
-
-          {activeTab === 'ai-insights' && (
-            <AIInsights />
-          )}
-
-          {activeTab === 'alerts' && (
-            <Alerts />
-          )}
-        </motion.div>
-      </main>
-
-      {/* Symbol Selector */}
-      {selectedSymbol && (
-        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-secondary-200 p-4">
-          <div className="flex items-center space-x-3">
-            <span className="text-sm font-medium text-secondary-900">
-              {selectedSymbol}
-            </span>
-            <button
-              onClick={() => setSelectedSymbol(null)}
-              className="text-secondary-400 hover:text-secondary-600"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+interface MarketData {
+  timestamp: string;
+  price: number;
+  volume: number;
+  volatility: number;
 }
 
-export default TradingDashboard
+interface AGIPrediction {
+  id: string;
+  timestamp: string;
+  prediction: number;
+  confidence: number;
+  strategy: string;
+  reasoning: string;
+}
+
+interface QuantumOptimization {
+  id: string;
+  timestamp: string;
+  optimalWeights: number[];
+  expectedReturn: number;
+  risk: number;
+  sharpeRatio: number;
+  speedup: number;
+}
+
+interface TradingMessage {
+  id: string;
+  timestamp: string;
+  type: 'user' | 'agi' | 'system';
+  content: string;
+  confidence?: number;
+  strategy?: string;
+}
+
+const TradingDashboard: React.FC = () => {
+  // State management
+  const [marketData, setMarketData] = useState<MarketData[]>([]);
+  const [agiPredictions, setAgiPredictions] = useState<AGIPrediction[]>([]);
+  const [quantumOptimizations, setQuantumOptimizations] = useState<QuantumOptimization[]>([]);
+  const [tradingMessages, setTradingMessages] = useState<TradingMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [selectedAsset, setSelectedAsset] = useState('WTI_Crude');
+  const [isLoading, setIsLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
+  
+  // Refs
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // WebSocket connection for real-time data
+  useEffect(() => {
+    const connectWebSocket = () => {
+      try {
+        // Mock WebSocket connection - in production, connect to real WebSocket
+        setConnectionStatus('connecting');
+        
+        // Simulate connection
+        setTimeout(() => {
+          setConnectionStatus('connected');
+          // Mock real-time data updates
+          startMockDataUpdates();
+        }, 1000);
+        
+      } catch (error) {
+        console.error('WebSocket connection failed:', error);
+        setConnectionStatus('disconnected');
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  // Mock real-time data updates
+  const startMockDataUpdates = () => {
+    const interval = setInterval(() => {
+      // Update market data
+      const newMarketData: MarketData = {
+        timestamp: new Date().toISOString(),
+        price: 75.5 + Math.random() * 10,
+        volume: 1000000 + Math.random() * 500000,
+        volatility: 0.02 + Math.random() * 0.01
+      };
+      
+      setMarketData(prev => [...prev.slice(-19), newMarketData]);
+      
+      // Update AGI predictions
+      if (Math.random() > 0.7) {
+        const newPrediction: AGIPrediction = {
+          id: `pred_${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          prediction: 75.5 + Math.random() * 10,
+          confidence: 0.7 + Math.random() * 0.3,
+          strategy: ['Momentum', 'Mean Reversion', 'Breakout'][Math.floor(Math.random() * 3)],
+          reasoning: 'AI analysis suggests potential price movement based on market sentiment and technical indicators.'
+        };
+        setAgiPredictions(prev => [...prev.slice(-9), newPrediction]);
+      }
+      
+      // Update quantum optimizations
+      if (Math.random() > 0.8) {
+        const newOptimization: QuantumOptimization = {
+          id: `opt_${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          optimalWeights: [0.3, 0.25, 0.2, 0.15, 0.1],
+          expectedReturn: 0.08 + Math.random() * 0.04,
+          risk: 0.12 + Math.random() * 0.03,
+          sharpeRatio: 0.6 + Math.random() * 0.4,
+          speedup: 5 + Math.random() * 5
+        };
+        setQuantumOptimizations(prev => [...prev.slice(-4), newOptimization]);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  };
+
+  // Auto-scroll to bottom of messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [tradingMessages]);
+
+  // Send message to AGI
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+
+    const userMessage: TradingMessage = {
+      id: `msg_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      type: 'user',
+      content: newMessage
+    };
+
+    setTradingMessages(prev => [...prev, userMessage]);
+    setNewMessage('');
+    setIsLoading(true);
+
+    try {
+      // Mock AGI response - in production, call real AGI API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const agiResponse: TradingMessage = {
+        id: `msg_${Date.now() + 1}`,
+        timestamp: new Date().toISOString(),
+        type: 'agi',
+        content: `Based on your question about "${newMessage}", I recommend analyzing the current market conditions and considering a diversified approach. The quantum optimization suggests optimal portfolio weights, and our risk metrics indicate moderate volatility.`,
+        confidence: 0.85,
+        strategy: 'Balanced Portfolio'
+      };
+
+      setTradingMessages(prev => [...prev, agiResponse]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Chart data preparation
+  const priceChartData = {
+    labels: marketData.map(d => new Date(d.timestamp).toLocaleTimeString()),
+    datasets: [{
+      label: 'Price',
+      data: marketData.map(d => d.price),
+      borderColor: 'rgb(59, 130, 246)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      tension: 0.4
+    }]
+  };
+
+  const volumeChartData = {
+    labels: marketData.map(d => new Date(d.timestamp).toLocaleTimeString()),
+    datasets: [{
+      label: 'Volume',
+      data: marketData.map(d => d.volume),
+      backgroundColor: 'rgba(34, 197, 94, 0.8)'
+    }]
+  };
+
+  const quantumWeightsData = {
+    labels: ['WTI', 'Brent', 'Natural Gas', 'Heating Oil', 'Gasoline'],
+    datasets: [{
+      data: quantumOptimizations[0]?.optimalWeights || [0.2, 0.2, 0.2, 0.2, 0.2],
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.8)',
+        'rgba(54, 162, 235, 0.8)',
+        'rgba(255, 205, 86, 0.8)',
+        'rgba(75, 192, 192, 0.8)',
+        'rgba(153, 102, 255, 0.8)'
+      ]
+    }]
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            QuantaEnergi Trading Dashboard
+          </h1>
+          <div className="flex items-center gap-4">
+            <Badge variant={connectionStatus === 'connected' ? 'default' : 'destructive'}>
+              <Activity className="w-4 h-4 mr-1" />
+              {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+            </Badge>
+            <Badge variant="outline">
+              <Brain className="w-4 h-4 mr-1" />
+              AGI Active
+            </Badge>
+            <Badge variant="outline">
+              <Zap className="w-4 h-4 mr-1" />
+              Quantum Ready
+            </Badge>
+          </div>
+        </div>
+
+        {/* Main Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Market Data Chart */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Real-Time Market Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <Line 
+                  data={priceChartData} 
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: true }
+                    },
+                    scales: {
+                      y: { beginAtZero: false }
+                    }
+                  }} 
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quantum Optimization */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                Quantum Portfolio
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <Doughnut 
+                  data={quantumWeightsData} 
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: 'bottom' }
+                    }
+                  }} 
+                />
+              </div>
+              {quantumOptimizations[0] && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Expected Return:</span>
+                    <span className="text-sm font-medium">
+                      {(quantumOptimizations[0].expectedReturn * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Risk:</span>
+                    <span className="text-sm font-medium">
+                      {(quantumOptimizations[0].risk * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Sharpe Ratio:</span>
+                    <span className="text-sm font-medium">
+                      {quantumOptimizations[0].sharpeRatio.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Speedup:</span>
+                    <span className="text-sm font-medium">
+                      {quantumOptimizations[0].speedup.toFixed(1)}x
+                    </span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* AGI Chat and Volume Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* AGI Trading Chat */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                AGI Trading Assistant
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 overflow-y-auto border rounded-lg p-4 mb-4 bg-gray-50">
+                {tradingMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`mb-3 p-3 rounded-lg ${
+                      message.type === 'user' 
+                        ? 'bg-blue-100 ml-8' 
+                        : message.type === 'agi'
+                        ? 'bg-green-100 mr-8'
+                        : 'bg-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-500">
+                        {new Date(message.timestamp).toLocaleTimeString()}
+                      </span>
+                      {message.confidence && (
+                        <Badge variant="outline" className="text-xs">
+                          {(message.confidence * 100).toFixed(0)}% confidence
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm">{message.content}</p>
+                    {message.strategy && (
+                      <Badge variant="secondary" className="mt-1 text-xs">
+                        {message.strategy}
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">AGI is thinking...</span>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+              
+              <div className="flex gap-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Ask AGI about trading strategies, market analysis..."
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  disabled={isLoading}
+                />
+                <Button 
+                  onClick={sendMessage} 
+                  disabled={isLoading || !newMessage.trim()}
+                  size="sm"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Volume Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingDown className="w-5 h-5" />
+                Trading Volume
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <Bar 
+                  data={volumeChartData} 
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false }
+                    },
+                    scales: {
+                      y: { beginAtZero: true }
+                    }
+                  }} 
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Asset Selection and Controls */}
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                Trading Controls
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium">Asset:</label>
+                  <Select value={selectedAsset} onValueChange={setSelectedAsset}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="WTI_Crude">WTI Crude</SelectItem>
+                      <SelectItem value="Brent_Crude">Brent Crude</SelectItem>
+                      <SelectItem value="Natural_Gas">Natural Gas</SelectItem>
+                      <SelectItem value="Heating_Oil">Heating Oil</SelectItem>
+                      <SelectItem value="Gasoline">Gasoline</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button variant="outline" size="sm">
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  Refresh Data
+                </Button>
+                
+                <Button variant="outline" size="sm">
+                  <Shield className="w-4 h-4 mr-1" />
+                  Risk Check
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default TradingDashboard;

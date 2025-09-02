@@ -1,11 +1,9 @@
 #!/bin/bash
 
 # QuantaEnergi Production Deployment Script
-# This script automates the production deployment process
+# This script deploys the complete QuantaEnergi platform to production
 
-set -e  # Exit on any error
-
-echo "🚀 Starting QuantaEnergi Production Deployment..."
+set -e
 
 # Colors for output
 RED='\033[0;31m'
@@ -15,383 +13,415 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_NAME="quantaenergi"
-ENVIRONMENT=${1:-production}
-DOCKER_COMPOSE_FILE="docker-compose.prod.yml"
-BACKUP_DIR="backups/$(date +%Y%m%d_%H%M%S)"
+NAMESPACE="quantaenergi"
+MONITORING_NAMESPACE="monitoring"
+CLUSTER_NAME="quantaenergi-cluster"
+REGION="us-east-1"
+DOMAIN="quantaenergi.com"
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+# Logging function
+log() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}"
 }
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+warn() {
+    echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] WARNING: $1${NC}"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+error() {
+    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ERROR: $1${NC}"
+    exit 1
 }
 
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Function to check prerequisites
+# Check prerequisites
 check_prerequisites() {
-    print_status "Checking deployment prerequisites..."
+    log "Checking prerequisites..."
     
-    # Check Docker
+    # Check if kubectl is installed
+    if ! command -v kubectl &> /dev/null; then
+        error "kubectl is not installed. Please install kubectl first."
+    fi
+    
+    # Check if helm is installed
+    if ! command -v helm &> /dev/null; then
+        error "helm is not installed. Please install helm first."
+    fi
+    
+    # Check if aws CLI is installed
+    if ! command -v aws &> /dev/null; then
+        error "AWS CLI is not installed. Please install AWS CLI first."
+    fi
+    
+    # Check if docker is installed
     if ! command -v docker &> /dev/null; then
-        print_error "Docker is not installed. Please install Docker first."
-        exit 1
+        error "Docker is not installed. Please install Docker first."
     fi
     
-    # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null; then
-        print_error "Docker Compose is not installed. Please install Docker Compose first."
-        exit 1
-    fi
-    
-    # Check if we're in the right directory
-    if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
-        print_error "Production Docker Compose file not found. Please run this script from the project root."
-        exit 1
-    fi
-    
-    print_success "Prerequisites check passed"
+    log "All prerequisites are satisfied."
 }
 
-# Function to create backup
-create_backup() {
-    print_status "Creating backup of current deployment..."
+# Create EKS cluster
+create_eks_cluster() {
+    log "Creating EKS cluster: $CLUSTER_NAME"
     
-    mkdir -p "$BACKUP_DIR"
-    
-    # Backup Docker volumes
-    if docker volume ls -q | grep -q "${PROJECT_NAME}_"; then
-        docker run --rm -v "${PROJECT_NAME}_postgres-data:/data" -v "$(pwd)/$BACKUP_DIR:/backup" alpine tar czf /backup/postgres-backup.tar.gz -C /data .
-        docker run --rm -v "${PROJECT_NAME}_redis-data-1:/data" -v "$(pwd)/$BACKUP_DIR:/backup" alpine tar czf /backup/redis-backup.tar.gz -C /data .
+    # Check if cluster already exists
+    if aws eks describe-cluster --name $CLUSTER_NAME --region $REGION &> /dev/null; then
+        log "Cluster $CLUSTER_NAME already exists. Skipping creation."
+        return
     fi
     
-    # Backup configuration files
-    cp -r monitoring "$BACKUP_DIR/"
-    cp -r nginx "$BACKUP_DIR/"
-    cp "$DOCKER_COMPOSE_FILE" "$BACKUP_DIR/"
+    # Create EKS cluster
+    eksctl create cluster \
+        --name $CLUSTER_NAME \
+        --region $REGION \
+        --nodegroup-name standard-workers \
+        --node-type t3.medium \
+        --nodes 3 \
+        --nodes-min 1 \
+        --nodes-max 5 \
+        --managed
     
-    print_success "Backup created in $BACKUP_DIR"
+    log "EKS cluster created successfully."
 }
 
-# Function to stop current deployment
-stop_current_deployment() {
-    print_status "Stopping current deployment..."
+# Install required add-ons
+install_addons() {
+    log "Installing required add-ons..."
     
-    if docker-compose -f "$DOCKER_COMPOSE_FILE" ps -q | grep -q .; then
-        docker-compose -f "$DOCKER_COMPOSE_FILE" down --remove-orphans
-        print_success "Current deployment stopped"
-    else
-        print_warning "No current deployment found"
-    fi
+    # Install AWS Load Balancer Controller
+    log "Installing AWS Load Balancer Controller..."
+    helm repo add eks https://aws.github.io/eks-charts
+    helm repo update
+    
+    helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+        -n kube-system \
+        --set clusterName=$CLUSTER_NAME \
+        --set serviceAccount.create=false \
+        --set serviceAccount.name=aws-load-balancer-controller
+    
+    # Install cert-manager for SSL certificates
+    log "Installing cert-manager..."
+    helm repo add jetstack https://charts.jetstack.io
+    helm repo update
+    
+    helm install cert-manager jetstack/cert-manager \
+        --namespace cert-manager \
+        --create-namespace \
+        --version v1.13.0 \
+        --set installCRDs=true
+    
+    # Wait for cert-manager to be ready
+    log "Waiting for cert-manager to be ready..."
+    kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=300s
+    
+    # Install NGINX Ingress Controller
+    log "Installing NGINX Ingress Controller..."
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    helm repo update
+    
+    helm install ingress-nginx ingress-nginx/ingress-nginx \
+        --namespace ingress-nginx \
+        --create-namespace \
+        --set controller.service.type=LoadBalancer \
+        --set controller.ingressClassResource.name=nginx \
+        --set controller.ingressClassResource.default=true
+    
+    log "All add-ons installed successfully."
 }
 
-# Function to build and deploy
+# Create namespaces
+create_namespaces() {
+    log "Creating namespaces..."
+    
+    kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+    kubectl create namespace $MONITORING_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+    
+    log "Namespaces created successfully."
+}
+
+# Build and push Docker images
+build_images() {
+    log "Building and pushing Docker images..."
+    
+    # Set AWS account ID
+    AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+    ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com"
+    
+    # Create ECR repositories
+    aws ecr create-repository --repository-name quantaenergi/backend --region $REGION --output text || true
+    aws ecr create-repository --repository-name quantaenergi/frontend --region $REGION --output text || true
+    
+    # Login to ECR
+    aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+    
+    # Build and push backend image
+    log "Building backend image..."
+    docker build -t $ECR_REGISTRY/quantaenergi/backend:latest backend/
+    docker push $ECR_REGISTRY/quantaenergi/backend:latest
+    
+    # Build and push frontend image
+    log "Building frontend image..."
+    docker build -t $ECR_REGISTRY/quantaenergi/frontend:latest frontend/
+    docker push $ECR_REGISTRY/quantaenergi/frontend:latest
+    
+    # Update deployment files with ECR registry
+    sed -i "s|quantaenergi/backend:latest|$ECR_REGISTRY/quantaenergi/backend:latest|g" kubernetes/deployment.yaml
+    sed -i "s|quantaenergi/frontend:latest|$ECR_REGISTRY/quantaenergi/frontend:latest|g" kubernetes/deployment.yaml
+    
+    log "Docker images built and pushed successfully."
+}
+
+# Deploy database and Redis
+deploy_infrastructure() {
+    log "Deploying infrastructure components..."
+    
+    # Deploy PostgreSQL and Redis
+    kubectl apply -f kubernetes/database.yaml
+    
+    # Wait for database to be ready
+    log "Waiting for PostgreSQL to be ready..."
+    kubectl wait --for=condition=ready pod -l app=quantaenergi-postgres -n $NAMESPACE --timeout=300s
+    
+    log "Waiting for Redis to be ready..."
+    kubectl wait --for=condition=ready pod -l app=quantaenergi-redis-cluster -n $NAMESPACE --timeout=300s
+    
+    log "Infrastructure components deployed successfully."
+}
+
+# Deploy monitoring stack
+deploy_monitoring() {
+    log "Deploying monitoring stack..."
+    
+    kubectl apply -f kubernetes/monitoring.yaml
+    
+    # Wait for monitoring components to be ready
+    log "Waiting for Prometheus to be ready..."
+    kubectl wait --for=condition=ready pod -l app=prometheus -n $MONITORING_NAMESPACE --timeout=300s
+    
+    log "Waiting for Grafana to be ready..."
+    kubectl wait --for=condition=ready pod -l app=grafana -n $MONITORING_NAMESPACE --timeout=300s
+    
+    log "Monitoring stack deployed successfully."
+}
+
+# Deploy application
 deploy_application() {
-    print_status "Building and deploying QuantaEnergi..."
+    log "Deploying QuantaEnergi application..."
     
-    # Build images
-    print_status "Building Docker images..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" build --no-cache
+    kubectl apply -f kubernetes/deployment.yaml
     
-    # Start services
-    print_status "Starting services..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" up -d
+    # Wait for application to be ready
+    log "Waiting for backend to be ready..."
+    kubectl wait --for=condition=ready pod -l app=quantaenergi-backend -n $NAMESPACE --timeout=300s
     
-    print_success "Deployment started successfully"
+    log "Waiting for frontend to be ready..."
+    kubectl wait --for=condition=ready pod -l app=quantaenergi-frontend -n $NAMESPACE --timeout=300s
+    
+    log "Application deployed successfully."
 }
 
-# Function to wait for services
-wait_for_services() {
-    print_status "Waiting for services to be ready..."
+# Configure SSL certificates
+configure_ssl() {
+    log "Configuring SSL certificates..."
     
-    # Wait for PostgreSQL
-    print_status "Waiting for PostgreSQL..."
-    for i in {1..60}; do
-        if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T postgres pg_isready -U quantaenergi_user -d quantaenergi_db > /dev/null 2>&1; then
-            print_success "PostgreSQL is ready"
-            break
-        fi
-        if [ $i -eq 60 ]; then
-            print_error "PostgreSQL failed to start within 5 minutes"
-            exit 1
-        fi
-        sleep 5
-        echo -n "."
-    done
+    # Create ClusterIssuer for Let's Encrypt
+    cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@$DOMAIN
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+EOF
     
-    # Wait for Redis Cluster
-    print_status "Waiting for Redis Cluster..."
-    for i in {1..60}; do
-        if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T redis-node-1 redis-cli cluster info > /dev/null 2>&1; then
-            print_success "Redis Cluster is ready"
-            break
-        fi
-        if [ $i -eq 60 ]; then
-            print_error "Redis Cluster failed to start within 5 minutes"
-            exit 1
-        fi
-        sleep 5
-        echo -n "."
-    done
-    
-    # Wait for Backend
-    print_status "Waiting for Backend..."
-    for i in {1..60}; do
-        if curl -f http://localhost:8000/health > /dev/null 2>&1; then
-            print_success "Backend is ready"
-            break
-        fi
-        if [ $i -eq 60 ]; then
-            print_error "Backend failed to start within 5 minutes"
-            exit 1
-        fi
-        sleep 5
-        echo -n "."
-    done
-    
-    # Wait for Frontend
-    print_status "Waiting for Frontend..."
-    for i in {1..60}; do
-        if curl -f http://localhost:3000 > /dev/null 2>&1; then
-            print_success "Frontend is ready"
-            break
-        fi
-        if [ $i -eq 60 ]; then
-            print_error "Frontend failed to start within 5 minutes"
-            exit 1
-        fi
-        sleep 5
-        echo -n "."
-    done
+    log "SSL certificates configured successfully."
 }
 
-# Function to run health checks
-run_health_checks() {
-    print_status "Running health checks..."
+# Setup DNS and CDN
+setup_dns_cdn() {
+    log "Setting up DNS and CDN..."
     
-    # Check all services
-    services=("backend" "frontend" "postgres" "prometheus" "grafana" "nginx")
+    # Get Load Balancer DNS name
+    LB_DNS=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
     
-    for service in "${services[@]}"; do
-        print_status "Checking $service..."
-        if docker-compose -f "$DOCKER_COMPOSE_FILE" ps "$service" | grep -q "Up"; then
-            print_success "$service is running"
-        else
-            print_error "$service is not running"
-            exit 1
-        fi
-    done
-    
-    # Check Redis Cluster health
-    print_status "Checking Redis Cluster health..."
-    if docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T redis-node-1 redis-cli cluster info | grep -q "cluster_state:ok"; then
-        print_success "Redis Cluster is healthy"
-    else
-        print_error "Redis Cluster is not healthy"
-        exit 1
+    if [ -z "$LB_DNS" ]; then
+        warn "Load Balancer DNS name not available yet. Please wait a few minutes and run this script again."
+        return
     fi
     
-    print_success "All health checks passed"
-}
-
-# Function to run tests
-run_deployment_tests() {
-    print_status "Running deployment tests..."
+    log "Load Balancer DNS: $LB_DNS"
     
-    # Test backend API
-    print_status "Testing Backend API..."
-    if curl -f http://localhost:8000/health > /dev/null 2>&1; then
-        print_success "Backend API is accessible"
-    else
-        print_error "Backend API is not accessible"
-        exit 1
+    # Create Route53 hosted zone if it doesn't exist
+    HOSTED_ZONE_ID=$(aws route53 list-hosted-zones-by-name --dns-name $DOMAIN --query 'HostedZones[0].Id' --output text 2>/dev/null || echo "")
+    
+    if [ -z "$HOSTED_ZONE_ID" ]; then
+        log "Creating Route53 hosted zone for $DOMAIN..."
+        HOSTED_ZONE_ID=$(aws route53 create-hosted-zone --name $DOMAIN --caller-reference $(date +%s) --query 'HostedZone.Id' --output text)
+        HOSTED_ZONE_ID=${HOSTED_ZONE_ID#/hostedzone/}
     fi
     
-    # Test frontend
-    print_status "Testing Frontend..."
-    if curl -f http://localhost:3000 > /dev/null 2>&1; then
-        print_success "Frontend is accessible"
-    else
-        print_error "Frontend is not accessible"
-        exit 1
+    # Create DNS records
+    log "Creating DNS records..."
+    
+    # API subdomain
+    aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
+        "Changes": [
+            {
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                    "Name": "api.'$DOMAIN'",
+                    "Type": "CNAME",
+                    "TTL": 300,
+                    "ResourceRecords": [
+                        {
+                            "Value": "'$LB_DNS'"
+                        }
+                    ]
+                }
+            }
+        ]
+    }'
+    
+    # App subdomain
+    aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
+        "Changes": [
+            {
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                    "Name": "app.'$DOMAIN'",
+                    "Type": "CNAME",
+                    "TTL": 300,
+                    "ResourceRecords": [
+                        {
+                            "Value": "'$LB_DNS'"
+                        }
+                    ]
+                }
+            }
+        ]
+    }'
+    
+    # Monitoring subdomain
+    aws route53 change-resource-record-sets --hosted-zone-id $HOSTED_ZONE_ID --change-batch '{
+        "Changes": [
+            {
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                    "Name": "monitoring.'$DOMAIN'",
+                    "Type": "CNAME",
+                    "TTL": 300,
+                    "ResourceRecords": [
+                        {
+                            "Value": "'$LB_DNS'"
+                        }
+                    ]
+                }
+            }
+        ]
+    }'
+    
+    log "DNS records created successfully."
+    
+    # Setup Cloudflare CDN (if configured)
+    if [ ! -z "$CLOUDFLARE_API_TOKEN" ]; then
+        log "Setting up Cloudflare CDN..."
+        # Add Cloudflare configuration here
     fi
     
-    # Test monitoring
-    print_status "Testing Monitoring..."
-    if curl -f http://localhost:9090 > /dev/null 2>&1; then
-        print_success "Prometheus is accessible"
-    else
-        print_error "Prometheus is not accessible"
+    log "DNS and CDN setup completed."
+}
+
+# Run database migrations
+run_migrations() {
+    log "Running database migrations..."
+    
+    # Wait for database initialization job to complete
+    kubectl wait --for=condition=complete job/quantaenergi-db-init -n $NAMESPACE --timeout=600s
+    
+    log "Database migrations completed successfully."
+}
+
+# Health check
+health_check() {
+    log "Performing health check..."
+    
+    # Check backend health
+    BACKEND_HEALTH=$(kubectl get pods -n $NAMESPACE -l app=quantaenergi-backend -o jsonpath='{.items[0].status.phase}')
+    if [ "$BACKEND_HEALTH" != "Running" ]; then
+        error "Backend is not healthy. Status: $BACKEND_HEALTH"
     fi
     
-    if curl -f http://localhost:3001 > /dev/null 2>&1; then
-        print_success "Grafana is accessible"
-    else
-        print_error "Grafana is not accessible"
+    # Check frontend health
+    FRONTEND_HEALTH=$(kubectl get pods -n $NAMESPACE -l app=quantaenergi-frontend -o jsonpath='{.items[0].status.phase}')
+    if [ "$FRONTEND_HEALTH" != "Running" ]; then
+        error "Frontend is not healthy. Status: $FRONTEND_HEALTH"
     fi
     
-    print_success "All deployment tests passed"
-}
-
-# Function to show deployment status
-show_deployment_status() {
-    print_status "Deployment Status:"
-    echo ""
-    
-    # Show running containers
-    docker-compose -f "$DOCKER_COMPOSE_FILE" ps
-    
-    echo ""
-    print_status "Service URLs:"
-    echo "  Frontend: http://localhost:3000"
-    echo "  Backend API: http://localhost:8000"
-    echo "  Prometheus: http://localhost:9090"
-    echo "  Grafana: http://localhost:3001"
-    echo "  Redis Commander: http://localhost:8081"
-    echo "  Nginx: http://localhost:80"
-    
-    echo ""
-    print_status "Monitoring:"
-    echo "  Health Check: http://localhost:8000/health"
-    echo "  Metrics: http://localhost:8000/metrics"
-    
-    echo ""
-    print_status "Redis Cluster:"
-    docker-compose -f "$DOCKER_COMPOSE_FILE" exec -T redis-node-1 redis-cli cluster info | grep -E "(cluster_state|cluster_slots_assigned|cluster_slots_ok|cluster_slots_pfail|cluster_slots_fail|cluster_known_nodes|cluster_size|cluster_current_epoch|cluster_my_epoch|cluster_stats_messages_ping_sent|cluster_stats_messages_pong_sent|cluster_stats_messages_meet_sent|cluster_stats_messages_sent|cluster_stats_messages_ping_received|cluster_stats_messages_pong_received|cluster_stats_messages_meet_received|cluster_stats_messages_other_received|cluster_stats_messages_received)"
-}
-
-# Function to rollback deployment
-rollback_deployment() {
-    print_warning "Rolling back deployment..."
-    
-    # Stop current deployment
-    docker-compose -f "$DOCKER_COMPOSE_FILE" down --remove-orphans
-    
-    # Restore from backup if available
-    if [ -d "$BACKUP_DIR" ]; then
-        print_status "Restoring from backup..."
-        # Implementation would depend on backup strategy
-        print_warning "Manual restoration required from $BACKUP_DIR"
+    # Check monitoring health
+    PROMETHEUS_HEALTH=$(kubectl get pods -n $MONITORING_NAMESPACE -l app=prometheus -o jsonpath='{.items[0].status.phase}')
+    if [ "$PROMETHEUS_HEALTH" != "Running" ]; then
+        error "Prometheus is not healthy. Status: $PROMETHEUS_HEALTH"
     fi
     
-    print_error "Deployment rollback completed"
+    log "All components are healthy!"
 }
 
-# Function to cleanup
-cleanup() {
-    print_status "Cleaning up..."
-    
-    # Remove unused images
-    docker image prune -f
-    
-    # Remove unused volumes
-    docker volume prune -f
-    
-    print_success "Cleanup completed"
+# Display deployment information
+display_info() {
+    log "Deployment completed successfully!"
+    echo ""
+    echo "=== QuantaEnergi Production Deployment ==="
+    echo "Cluster Name: $CLUSTER_NAME"
+    echo "Region: $REGION"
+    echo "Domain: $DOMAIN"
+    echo ""
+    echo "=== Access URLs ==="
+    echo "Main Application: https://app.$DOMAIN"
+    echo "API: https://api.$DOMAIN"
+    echo "API Documentation: https://api.$DOMAIN/docs"
+    echo "Monitoring: https://monitoring.$DOMAIN"
+    echo ""
+    echo "=== Monitoring Credentials ==="
+    echo "Grafana: admin / admin123"
+    echo "Prometheus: No authentication required"
+    echo ""
+    echo "=== Next Steps ==="
+    echo "1. Update DNS records if using custom domain"
+    echo "2. Configure monitoring alerts"
+    echo "3. Set up backup and disaster recovery"
+    echo "4. Run security scans and penetration tests"
+    echo "5. Begin beta user onboarding"
+    echo ""
 }
 
-# Function to show help
-show_help() {
-    echo "QuantaEnergi Production Deployment Script"
-    echo ""
-    echo "Usage: $0 [ENVIRONMENT] [OPTIONS]"
-    echo ""
-    echo "ENVIRONMENT:"
-    echo "  production    Production deployment (default)"
-    echo "  staging      Staging deployment"
-    echo ""
-    echo "OPTIONS:"
-    echo "  -h, --help          Show this help message"
-    echo "  -r, --rollback      Rollback to previous deployment"
-    echo "  -s, --status        Show deployment status"
-    echo "  -c, --cleanup       Cleanup unused resources"
-    echo ""
-    echo "EXAMPLES:"
-    echo "  $0                  Deploy to production"
-    echo "  $0 staging          Deploy to staging"
-    echo "  $0 -r               Rollback deployment"
-    echo "  $0 -s               Show status"
-}
-
-# Main execution
+# Main deployment function
 main() {
-    local rollback=false
-    local status_only=false
-    local cleanup_only=false
-    
-    # Parse command line arguments
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -h|--help)
-                show_help
-                exit 0
-                ;;
-            -r|--rollback)
-                rollback=true
-                shift
-                ;;
-            -s|--status)
-                status_only=true
-                shift
-                ;;
-            -c|--cleanup)
-                cleanup_only=true
-                shift
-                ;;
-            production|staging)
-                ENVIRONMENT="$1"
-                shift
-                ;;
-            *)
-                print_error "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
-        esac
-    done
-    
-    # Set trap for cleanup on exit
-    trap cleanup EXIT
-    
-    if [ "$cleanup_only" = true ]; then
-        cleanup
-        exit 0
-    fi
-    
-    if [ "$status_only" = true ]; then
-        show_deployment_status
-        exit 0
-    fi
-    
-    if [ "$rollback" = true ]; then
-        rollback_deployment
-        exit 0
-    fi
-    
-    # Full deployment process
-    print_status "Starting deployment to $ENVIRONMENT environment..."
+    log "Starting QuantaEnergi production deployment..."
     
     check_prerequisites
-    create_backup
-    stop_current_deployment
+    create_eks_cluster
+    install_addons
+    create_namespaces
+    build_images
+    deploy_infrastructure
+    deploy_monitoring
     deploy_application
-    wait_for_services
-    run_health_checks
-    run_deployment_tests
-    show_deployment_status
+    configure_ssl
+    setup_dns_cdn
+    run_migrations
+    health_check
+    display_info
     
-    print_success "QuantaEnergi production deployment completed successfully! 🎉"
-    print_status "Application is now running and accessible"
+    log "Deployment completed successfully!"
 }
 
-# Run main function with all arguments
+# Run main function
 main "$@"

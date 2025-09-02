@@ -1,8 +1,8 @@
-const { defineConfig } = require('cypress')
+import { defineConfig } from 'cypress'
 
-module.exports = defineConfig({
+export default defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:3000',
+    baseUrl: 'http://localhost:3001',
     supportFile: 'cypress/support/e2e.js',
     specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
     viewportWidth: 1280,
@@ -14,9 +14,9 @@ module.exports = defineConfig({
     responseTimeout: 10000,
     pageLoadTimeout: 30000,
     env: {
-      apiUrl: 'http://localhost:8000',
-      backendUrl: 'http://localhost:8000',
-      frontendUrl: 'http://localhost:3000'
+      apiUrl: 'http://localhost:8001',
+      backendUrl: 'http://localhost:8001',
+      frontendUrl: 'http://localhost:3001'
     },
     setupNodeEvents(on, config) {
       // implement node event listeners here

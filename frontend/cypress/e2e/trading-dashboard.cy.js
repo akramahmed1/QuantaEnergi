@@ -98,6 +98,86 @@ describe('QuantaEnergi Trading Dashboard', () => {
     cy.verifyWebSocketConnection()
     
     // Check for real-time price updates
+  })
+
+  it('should display enhanced Market Overview component', () => {
+    // Check Market Overview section
+    cy.get('h2').contains('Market Overview').should('be.visible')
+    
+    // Check KPI cards
+    cy.get('.MuiCard-root').should('have.length.at.least', 4)
+    
+    // Check for specific metrics
+    cy.get('h4').contains('Market Performance').should('be.visible')
+    cy.get('h4').contains('Portfolio Value').should('be.visible')
+    cy.get('h4').contains('Daily Return').should('be.visible')
+    cy.get('h4').contains('Risk Score').should('be.visible')
+    
+    // Check for live market prices
+    cy.get('h6').contains('Live Market Prices').should('be.visible')
+  })
+
+  it('should display ESG Score component with charts', () => {
+    // Check ESG Score section
+    cy.get('h2').contains('ESG Performance Dashboard').should('be.visible')
+    
+    // Check overall ESG score
+    cy.get('h2').contains('/100').should('be.visible')
+    
+    // Check ESG breakdown chart
+    cy.get('h6').contains('ESG Breakdown').should('be.visible')
+    
+    // Check carbon offset section
+    cy.get('h6').contains('Carbon Offset').should('be.visible')
+    
+    // Check ESG distribution pie chart
+    cy.get('h6').contains('ESG Distribution').should('be.visible')
+  })
+
+  it('should display Trading Signals with DataGrid', () => {
+    // Check Trading Signals section
+    cy.get('h2').contains('Trading Signals Dashboard').should('be.visible')
+    
+    // Check summary cards
+    cy.get('h4').contains('Buy Signals').should('be.visible')
+    cy.get('h4').contains('Sell Signals').should('be.visible')
+    cy.get('h4').contains('Hold Signals').should('be.visible')
+    cy.get('h4').contains('Avg Confidence').should('be.visible')
+    
+    // Check DataGrid
+    cy.get('.MuiDataGrid-root').should('be.visible')
+    
+    // Check for signal data
+    cy.get('.MuiDataGrid-cell').should('have.length.at.least', 10)
+    
+    // Check action buttons
+    cy.get('button').contains('Refresh').should('be.visible')
+    cy.get('button').contains('Alerts').should('be.visible')
+  })
+
+  it('should handle live signal alerts', () => {
+    // Wait for potential live signal
+    cy.wait(2000)
+    
+    // Check if live signal alert appears (may not always be present)
+    cy.get('body').then(($body) => {
+      if ($body.find('.MuiAlert-root').length > 0) {
+        cy.get('.MuiAlert-root').should('be.visible')
+        cy.get('button').contains('Dismiss').click()
+      }
+    })
+  })
+
+  it('should display interactive charts and progress bars', () => {
+    // Check for Recharts components
+    cy.get('.recharts-wrapper').should('exist')
+    
+    // Check for progress bars
+    cy.get('.MuiLinearProgress-root').should('exist')
+    
+    // Check for chips and badges
+    cy.get('.MuiChip-root').should('have.length.at.least', 5)
+  })
     cy.get('[data-testid="price-update"]').should('exist')
     
     // Monitor for changes

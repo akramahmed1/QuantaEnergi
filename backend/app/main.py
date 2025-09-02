@@ -274,6 +274,10 @@ app.add_middleware(
 # Add rate limiting middleware
 app.middleware("http")(rate_limit_middleware)
 
+# Add security middleware
+from app.middleware.security import security_middleware_func
+app.middleware("http")(security_middleware_func)
+
 # Add monitoring middleware
 @app.middleware("http")
 async def monitoring_middleware(request: Request, call_next):
