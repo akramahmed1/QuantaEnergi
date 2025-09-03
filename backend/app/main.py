@@ -309,6 +309,37 @@ async def monitoring_middleware(request: Request, call_next):
 # Include authentication router
 app.include_router(auth_router)
 
+# Include new ETRM/CTRM API routers
+from app.api.v1.trade_lifecycle import router as trade_lifecycle_router
+from app.api.v1.credit_management import router as credit_management_router
+from app.api.v1.regulatory_compliance import router as regulatory_compliance_router
+from app.api.v1.risk_analytics import router as risk_analytics_router
+from app.api.v1.supply_chain import router as supply_chain_router
+from app.api.v1.options import router as options_router
+from app.api.v1.quantum_risk import router as quantum_risk_router
+from app.api.v1.logistics import router as logistics_router
+from app.api.v1.market_intelligence import router as market_intelligence_router
+from app.api.v1.digital_autonomous import router as digital_autonomous_router
+from app.api.v1.agi_quantum import router as agi_quantum_router
+from app.api.v1.blockchain_carbon import router as blockchain_carbon_router
+from app.api.v1.health import router as health_router
+from app.api.v1.metrics import router as metrics_router
+
+app.include_router(trade_lifecycle_router, prefix="/api/v1")
+app.include_router(credit_management_router, prefix="/api/v1")
+app.include_router(regulatory_compliance_router, prefix="/api/v1")
+app.include_router(risk_analytics_router, prefix="/api/v1")
+app.include_router(supply_chain_router, prefix="/api/v1")
+app.include_router(options_router, prefix="/api/v1")
+app.include_router(quantum_risk_router, prefix="/api/v1")
+app.include_router(logistics_router, prefix="/api/v1")
+app.include_router(market_intelligence_router, prefix="/api/v1")
+app.include_router(digital_autonomous_router, prefix="/api/v1")
+app.include_router(agi_quantum_router, prefix="/api/v1")
+app.include_router(blockchain_carbon_router, prefix="/api/v1")
+app.include_router(health_router, prefix="/api/v1")
+app.include_router(metrics_router, prefix="/api/v1")
+
 # Include disruptive features router
 # app.include_router(disruptive_router)  # Commented out for now
 

@@ -27,7 +27,7 @@ islamic_algo_validator = IslamicAlgoValidator()
 async def price_option(option_spec: OptionCreate):
     """Price an option using Black-Scholes or Islamic-compliant models"""
     try:
-        result = options_engine.price_option(option_spec.dict())
+        result = options_engine.price_option(option_spec.model_dump())
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Option pricing failed: {str(e)}")
@@ -85,7 +85,7 @@ async def get_option_portfolio(user_id: str):
 async def create_structured_product(product_spec: StructuredProductCreate):
     """Create a new structured product"""
     try:
-        result = structured_products_engine.create_structured_product(product_spec.dict())
+        result = structured_products_engine.create_structured_product(product_spec.model_dump())
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Product creation failed: {str(e)}")
@@ -146,7 +146,7 @@ async def get_structured_portfolio(user_id: str):
 async def execute_algorithm(algo_spec: AlgoStrategyCreate):
     """Execute an algorithmic trading strategy"""
     try:
-        result = algo_trading_engine.execute_algorithm(algo_spec.dict())
+        result = algo_trading_engine.execute_algorithm(algo_spec.model_dump())
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Algorithm execution failed: {str(e)}")

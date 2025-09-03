@@ -11,7 +11,7 @@ import logging
 from app.services.deal_capture import DealCaptureService, DealValidationService
 from app.services.position_manager import PositionManager
 from app.services.sharia import ShariaScreeningEngine, IslamicTradingValidator
-from app.schemas.trade import DealCreate, DealUpdate, DealResponse, PositionResponse
+from app.schemas.trade import TradeCreate, TradeUpdate, TradeResponse, PositionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,8 @@ sharia_engine = ShariaScreeningEngine()
 islamic_validator = IslamicTradingValidator()
 
 
-@router.post("/deals/capture", response_model=DealResponse)
-async def capture_deal(deal: DealCreate):
+@router.post("/deals/capture", response_model=TradeResponse)
+async def capture_deal(deal: TradeCreate):
     """
     Capture a new trading deal with Islamic compliance validation
     """
@@ -74,16 +74,11 @@ async def capture_deal(deal: DealCreate):
         # Create position
         position_result = position_manager.create_position(result["deal"])
         
-        return DealResponse(
-            deal_id=result["deal_id"],
+        return TradeResponse(
+            trade_id=result["deal_id"],
             status="captured",
-            commodity=deal.commodity,
-            quantity=deal.quantity,
-            price=deal.price,
-            currency=deal.currency,
-            sharia_compliant=True,
-            position_id=position_result.get("position_id"),
-            captured_at=datetime.now().isoformat()
+            message="Deal captured successfully",
+            timestamp=datetime.now().isoformat()
         )
         
     except HTTPException:
@@ -113,7 +108,7 @@ async def get_deal(deal_id: str):
 
 
 @router.put("/deals/{deal_id}", response_model=Dict[str, Any])
-async def update_deal(deal_id: str, updates: DealUpdate):
+async def update_deal(deal_id: str, updates: TradeUpdate):
     """
     Update existing deal
     """

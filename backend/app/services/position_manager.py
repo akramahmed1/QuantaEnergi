@@ -155,6 +155,109 @@ class PositionManager:
             "position": position
         }
     
+    async def calculate_positions(self, commodity: str, period: str) -> List[Dict[str, Any]]:
+        """
+        Calculate net positions for commodity and period
+        
+        Args:
+            commodity: Commodity type
+            period: Time period for position calculation
+            
+        Returns:
+            List of position calculations
+        """
+        try:
+            # TODO: Implement real position calculation with database
+            positions = [p for p in self.positions.values() if p.get("commodity") == commodity]
+            
+            # Group by period and calculate net positions
+            net_positions = []
+            for position in positions:
+                net_position = {
+                    "commodity": commodity,
+                    "period": period,
+                    "net_volume": position.get("quantity", 0),
+                    "avg_entry_price": position.get("entry_price", 0.0),
+                    "notional_value": position.get("notional_value", 0),
+                    "position_id": position.get("position_id"),
+                    "calculated_at": datetime.now().isoformat()
+                }
+                net_positions.append(net_position)
+            
+            return net_positions
+            
+        except Exception as e:
+            logger.error(f"Position calculation failed: {str(e)}")
+            raise
+    
+    def mark_to_market(self, positions: List[Dict[str, Any]]) -> float:
+        """
+        Calculate mark-to-market value for positions using multithreading
+        
+        Args:
+            positions: List of positions to calculate MTM for
+            
+        Returns:
+            MTM value
+        """
+        def compute_mtm():
+            try:
+                # TODO: Implement real market price fetching
+                mock_prices = {
+                    "crude_oil": 85.0,
+                    "natural_gas": 3.50,
+                    "electricity": 45.0,
+                    "coal": 120.0,
+                    "renewables": 25.0
+                }
+                
+                total_mtm = 0.0
+                for position in positions:
+                    commodity = position.get("commodity", "crude_oil")
+                    quantity = position.get("net_volume", 0)
+                    market_price = mock_prices.get(commodity, 85.0)
+                    total_mtm += quantity * market_price
+                
+                return total_mtm
+                
+            except Exception as e:
+                logger.error(f"MTM calculation failed: {str(e)}")
+                raise
+        
+        # Use threading for compute-heavy MTM calculations
+        import threading
+        thread = threading.Thread(target=compute_mtm)
+        thread.start()
+        thread.join()
+        
+        return compute_mtm()
+    
+    async def hedge_accounting(self, hedge_data: Dict[str, Any]) -> bool:
+        """
+        Perform hedge accounting effectiveness testing
+        
+        Args:
+            hedge_data: Hedge relationship data
+            
+        Returns:
+            Whether hedge is effective
+        """
+        try:
+            # TODO: Implement real hedge effectiveness testing
+            hedge_ratio = hedge_data.get("hedge_ratio", 0.8)
+            correlation = hedge_data.get("correlation", 0.85)
+            effectiveness_threshold = 0.8
+            
+            # Basic effectiveness test
+            is_effective = (hedge_ratio >= effectiveness_threshold and 
+                          correlation >= effectiveness_threshold)
+            
+            return is_effective
+            
+        except Exception as e:
+            logger.error(f"Hedge accounting failed: {str(e)}")
+            raise
+    
     def calculate_pnl(self, position_id: str, current_price: float) -> Dict[str, Any]:
         """
         Calculate unrealized P&L for position

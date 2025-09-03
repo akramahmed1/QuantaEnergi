@@ -1,56 +1,75 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: quantaenergi-backend
+  name: quantaenergi-api
   namespace: quantaenergi
   labels:
-    app: quantaenergi-backend
+    app: quantaenergi
     version: v1.0.0
+    environment: production
 spec:
   replicas: 3
-  selector:
-    matchLabels:
-      app: quantaenergi-backend
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: quantaenergi
+      tier: api
   template:
     metadata:
       labels:
-        app: quantaenergi-backend
+        app: quantaenergi
+        tier: api
         version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
     spec:
+      serviceAccountName: quantaenergi-api-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
       containers:
-      - name: quantaenergi-backend
-        image: quantaenergi/backend:latest
+      - name: api
+        image: quantaenergi/api:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 8000
-          name: http
-        - containerPort: 8001
-          name: metrics
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        - name: metrics
+          containerPort: 8000
+          protocol: TCP
         env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: quantaenergi-secrets
-              key: database-url
-        - name: REDIS_URL
-          valueFrom:
-            secretKeyRef:
-              name: quantaenergi-secrets
-              key: redis-url
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: quantaenergi-secrets
-              key: jwt-secret
         - name: ENVIRONMENT
           value: "production"
         - name: LOG_LEVEL
           value: "INFO"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-db-secret
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-redis-secret
+              key: redis-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-jwt-secret
+              key: jwt-secret
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-api-secret
+              key: api-key
         resources:
           requests:
             memory: "512Mi"
@@ -68,60 +87,129 @@ spec:
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /health
+            path: /ready
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
         volumeMounts:
-        - name: logs
+        - name: config-volume
+          mountPath: /app/config
+          readOnly: true
+        - name: logs-volume
           mountPath: /app/logs
+        - name: ssl-certs
+          mountPath: /app/ssl
+          readOnly: true
       volumes:
-      - name: logs
+      - name: config-volume
+        configMap:
+          name: quantaenergi-config
+      - name: logs-volume
         emptyDir: {}
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+      - name: ssl-certs
+        secret:
+          secretName: quantaenergi-ssl-secret
+      imagePullSecrets:
+      - name: quantaenergi-registry-secret
+      nodeSelector:
+        node-type: production
+      tolerations:
+      - key: "node-role"
+        operator: "Equal"
+        value: "production"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - quantaenergi
+              topologyKey: kubernetes.io/hostname
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: quantaenergi-backend-service
+  name: quantaenergi-api-service
   namespace: quantaenergi
   labels:
-    app: quantaenergi-backend
+    app: quantaenergi
+    tier: api
 spec:
   type: ClusterIP
   ports:
-  - port: 80
+  - name: http
+    port: 80
     targetPort: 8000
     protocol: TCP
-    name: http
-  - port: 8001
-    targetPort: 8001
+  - name: metrics
+    port: 8000
+    targetPort: 8000
     protocol: TCP
-    name: metrics
   selector:
-    app: quantaenergi-backend
+    app: quantaenergi
+    tier: api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-api-external
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi
+    tier: api
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+    service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-12345678,subnet-87654321"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app: quantaenergi
+    tier: api
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: quantaenergi-ingress
   namespace: quantaenergi
+  labels:
+    app: quantaenergi
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/rate-limit: "100"
     nginx.ingress.kubernetes.io/rate-limit-window: "1m"
 spec:
   tls:
   - hosts:
     - api.quantaenergi.com
-    - app.quantaenergi.com
-    secretName: quantaenergi-tls
+    - trading.quantaenergi.com
+    secretName: quantaenergi-tls-secret
   rules:
   - host: api.quantaenergi.com
     http:
@@ -130,109 +218,109 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: quantaenergi-backend-service
+            name: quantaenergi-api-service
             port:
               number: 80
-  - host: app.quantaenergi.com
+  - host: trading.quantaenergi.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: quantaenergi-frontend-service
+            name: quantaenergi-api-service
             port:
               number: 80
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: quantaenergi-frontend
+  name: quantaenergi-config
   namespace: quantaenergi
   labels:
-    app: quantaenergi-frontend
-    version: v1.0.0
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: quantaenergi-frontend
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  template:
-    metadata:
-      labels:
-        app: quantaenergi-frontend
-        version: v1.0.0
-    spec:
-      containers:
-      - name: quantaenergi-frontend
-        image: quantaenergi/frontend:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 3000
-          name: http
-        env:
-        - name: NEXT_PUBLIC_BACKEND_API_URL
-          value: "https://api.quantaenergi.com"
-        - name: NODE_ENV
-          value: "production"
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
-            memory: "512Mi"
-            cpu: "200m"
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+    app: quantaenergi
+data:
+  app.config: |
+    [APP]
+    name = QuantaEnergi API
+    version = 1.0.0
+    environment = production
+    
+    [DATABASE]
+    pool_size = 20
+    max_overflow = 30
+    pool_timeout = 30
+    
+    [REDIS]
+    pool_size = 10
+    connection_timeout = 5
+    
+    [LOGGING]
+    level = INFO
+    format = json
+    output = file
+    
+    [SECURITY]
+    cors_origins = ["https://quantaenergi.com", "https://trading.quantaenergi.com"]
+    rate_limit = 100
+    rate_limit_window = 60
+    
+    [MONITORING]
+    metrics_enabled = true
+    health_check_interval = 30
+    prometheus_endpoint = /metrics
 ---
 apiVersion: v1
-kind: Service
+kind: ServiceAccount
 metadata:
-  name: quantaenergi-frontend-service
+  name: quantaenergi-api-sa
   namespace: quantaenergi
   labels:
-    app: quantaenergi-frontend
-spec:
-  type: ClusterIP
-  ports:
-  - port: 80
-    targetPort: 3000
-    protocol: TCP
-    name: http
-  selector:
-    app: quantaenergi-frontend
+    app: quantaenergi
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: quantaenergi-api-role
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: quantaenergi-api-rolebinding
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi
+subjects:
+- kind: ServiceAccount
+  name: quantaenergi-api-sa
+  namespace: quantaenergi
+roleRef:
+  kind: Role
+  name: quantaenergi-api-role
+  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: quantaenergi-backend-hpa
+  name: quantaenergi-api-hpa
   namespace: quantaenergi
+  labels:
+    app: quantaenergi
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: quantaenergi-backend
+    name: quantaenergi-api
   minReplicas: 3
   maxReplicas: 10
   metrics:

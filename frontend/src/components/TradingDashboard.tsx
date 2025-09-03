@@ -1,481 +1,466 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import { Chart, registerables } from 'chart.js';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Button, 
-  Input, 
-  Textarea, 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  Brain, 
-  Zap, 
-  Shield, 
-  Globe,
-  MessageSquare,
-  Send,
-  RefreshCw
-} from 'lucide-react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { getPredictions, getPortfolioData, getMarketData } from '../services/api';
 
 // Register Chart.js components
-Chart.register(...registerables);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
-interface MarketData {
+interface TradingData {
   timestamp: string;
   price: number;
   volume: number;
-  volatility: number;
+  commodity: string;
+}
+
+interface PortfolioPosition {
+  commodity: string;
+  quantity: number;
+  avgPrice: number;
+  currentPrice: number;
+  pnl: number;
+  pnlPercentage: number;
 }
 
 interface AGIPrediction {
-  id: string;
   timestamp: string;
-  prediction: number;
+  predictedPrice: number;
   confidence: number;
   strategy: string;
-  reasoning: string;
-}
-
-interface QuantumOptimization {
-  id: string;
-  timestamp: string;
-  optimalWeights: number[];
-  expectedReturn: number;
-  risk: number;
-  sharpeRatio: number;
-  speedup: number;
-}
-
-interface TradingMessage {
-  id: string;
-  timestamp: string;
-  type: 'user' | 'agi' | 'system';
-  content: string;
-  confidence?: number;
-  strategy?: string;
 }
 
 const TradingDashboard: React.FC = () => {
   // State management
-  const [marketData, setMarketData] = useState<MarketData[]>([]);
-  const [agiPredictions, setAgiPredictions] = useState<AGIPrediction[]>([]);
-  const [quantumOptimizations, setQuantumOptimizations] = useState<QuantumOptimization[]>([]);
-  const [tradingMessages, setTradingMessages] = useState<TradingMessage[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [selectedAsset, setSelectedAsset] = useState('WTI_Crude');
-  const [isLoading, setIsLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
-  
-  // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  const [predictions, setPredictions] = useState<AGIPrediction[]>([]);
+  const [portfolioData, setPortfolioData] = useState<PortfolioPosition[]>([]);
+  const [marketData, setMarketData] = useState<TradingData[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+  const [selectedCommodity, setSelectedCommodity] = useState('crude_oil');
+  const [timeframe, setTimeframe] = useState('1D');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // WebSocket connection for real-time data
+  // WebSocket connection
+  const [ws, setWs] = useState<WebSocket | null>(null);
+
+  // Initialize WebSocket connection
   useEffect(() => {
     const connectWebSocket = () => {
       try {
-        // Mock WebSocket connection - in production, connect to real WebSocket
-        setConnectionStatus('connecting');
-        
-        // Simulate connection
-        setTimeout(() => {
-          setConnectionStatus('connected');
-          // Mock real-time data updates
-          startMockDataUpdates();
-        }, 1000);
-        
-      } catch (error) {
-        console.error('WebSocket connection failed:', error);
-        setConnectionStatus('disconnected');
+        // TODO: Replace with real WebSocket endpoint
+        const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+        const websocket = new WebSocket(wsUrl);
+
+        websocket.onopen = () => {
+          console.log('WebSocket connected');
+          setIsConnected(true);
+          setConnectionStatus('Connected');
+          setError(null);
+        };
+
+        websocket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+          } catch (err) {
+            console.error('Failed to parse WebSocket message:', err);
+          }
+        };
+
+        websocket.onclose = () => {
+          console.log('WebSocket disconnected');
+          setIsConnected(false);
+          setConnectionStatus('Disconnected');
+          // Attempt to reconnect after 5 seconds
+          setTimeout(connectWebSocket, 5000);
+        };
+
+        websocket.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setError('WebSocket connection failed');
+          setIsConnected(false);
+          setConnectionStatus('Error');
+        };
+
+        setWs(websocket);
+
+        return () => {
+          websocket.close();
+        };
+      } catch (err) {
+        console.error('Failed to create WebSocket:', err);
+        setError('Failed to establish WebSocket connection');
       }
     };
 
     connectWebSocket();
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
   }, []);
 
-  // Mock real-time data updates
-  const startMockDataUpdates = () => {
-    const interval = setInterval(() => {
-      // Update market data
-      const newMarketData: MarketData = {
-        timestamp: new Date().toISOString(),
-        price: 75.5 + Math.random() * 10,
-        volume: 1000000 + Math.random() * 500000,
-        volatility: 0.02 + Math.random() * 0.01
-      };
-      
-      setMarketData(prev => [...prev.slice(-19), newMarketData]);
-      
-      // Update AGI predictions
-      if (Math.random() > 0.7) {
-        const newPrediction: AGIPrediction = {
-          id: `pred_${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          prediction: 75.5 + Math.random() * 10,
-          confidence: 0.7 + Math.random() * 0.3,
-          strategy: ['Momentum', 'Mean Reversion', 'Breakout'][Math.floor(Math.random() * 3)],
-          reasoning: 'AI analysis suggests potential price movement based on market sentiment and technical indicators.'
-        };
-        setAgiPredictions(prev => [...prev.slice(-9), newPrediction]);
-      }
-      
-      // Update quantum optimizations
-      if (Math.random() > 0.8) {
-        const newOptimization: QuantumOptimization = {
-          id: `opt_${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          optimalWeights: [0.3, 0.25, 0.2, 0.15, 0.1],
-          expectedReturn: 0.08 + Math.random() * 0.04,
-          risk: 0.12 + Math.random() * 0.03,
-          sharpeRatio: 0.6 + Math.random() * 0.4,
-          speedup: 5 + Math.random() * 5
-        };
-        setQuantumOptimizations(prev => [...prev.slice(-4), newOptimization]);
-      }
-    }, 2000);
+  // Handle WebSocket messages
+  const handleWebSocketMessage = useCallback((data: any) => {
+    if (data.type === 'market_update') {
+      setMarketData(prev => [...prev, data.data].slice(-100)); // Keep last 100 data points
+    } else if (data.type === 'prediction_update') {
+      setPredictions(prev => [...prev, data.data].slice(-50)); // Keep last 50 predictions
+    } else if (data.type === 'portfolio_update') {
+      setPortfolioData(data.data);
+    }
+  }, []);
 
-    return () => clearInterval(interval);
-  };
-
-  // Auto-scroll to bottom of messages
+  // Fetch initial data
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [tradingMessages]);
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch AGI predictions
+        const predictionsData = await getPredictions();
+        setPredictions(predictionsData.predictions || []);
 
-  // Send message to AGI
-  const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+        // Fetch portfolio data
+        const portfolio = await getPortfolioData();
+        setPortfolioData(portfolio.positions || []);
 
-    const userMessage: TradingMessage = {
-      id: `msg_${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      type: 'user',
-      content: newMessage
+        // Fetch market data
+        const market = await getMarketData();
+        setMarketData(market.data || []);
+
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch initial data:', err);
+        setError('Failed to load trading data');
+        setLoading(false);
+      }
     };
 
-    setTradingMessages(prev => [...prev, userMessage]);
-    setNewMessage('');
-    setIsLoading(true);
-
-    try {
-      // Mock AGI response - in production, call real AGI API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const agiResponse: TradingMessage = {
-        id: `msg_${Date.now() + 1}`,
-        timestamp: new Date().toISOString(),
-        type: 'agi',
-        content: `Based on your question about "${newMessage}", I recommend analyzing the current market conditions and considering a diversified approach. The quantum optimization suggests optimal portfolio weights, and our risk metrics indicate moderate volatility.`,
-        confidence: 0.85,
-        strategy: 'Balanced Portfolio'
-      };
-
-      setTradingMessages(prev => [...prev, agiResponse]);
-    } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    fetchInitialData();
+  }, []);
 
   // Chart data preparation
-  const priceChartData = {
+  const priceChartData = useMemo(() => ({
     labels: marketData.map(d => new Date(d.timestamp).toLocaleTimeString()),
-    datasets: [{
-      label: 'Price',
-      data: marketData.map(d => d.price),
-      borderColor: 'rgb(59, 130, 246)',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      tension: 0.4
-    }]
+    datasets: [
+      {
+        label: 'Market Price',
+        data: marketData.map(d => d.price),
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        fill: true,
+        tension: 0.4,
+      },
+      {
+        label: 'AGI Prediction',
+        data: predictions.map(p => p.predictedPrice),
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+        fill: false,
+        tension: 0.4,
+        borderDash: [5, 5],
+      },
+    ],
+  }), [marketData, predictions]);
+
+  const volumeChartData = useMemo(() => ({
+    labels: marketData.map(d => new Date(d.timestamp).toLocaleTimeString()),
+    datasets: [
+      {
+        label: 'Trading Volume',
+        data: marketData.map(d => d.volume),
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgb(54, 162, 235)',
+        borderWidth: 1,
+      },
+    ],
+  }), [marketData]);
+
+  const portfolioChartData = useMemo(() => ({
+    labels: portfolioData.map(p => p.commodity),
+    datasets: [
+      {
+        label: 'Portfolio Value',
+        data: portfolioData.map(p => p.quantity * p.currentPrice),
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.6)',
+          'rgba(54, 162, 235, 0.6)',
+          'rgba(255, 206, 86, 0.6)',
+          'rgba(75, 192, 192, 0.6)',
+          'rgba(153, 102, 255, 0.6)',
+        ],
+        borderColor: [
+          'rgba(255, 99, 132, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)',
+        ],
+        borderWidth: 2,
+      },
+    ],
+  }), [portfolioData]);
+
+  // Chart options
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'QuantaEnergi Trading Dashboard',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+      },
+    },
   };
 
-  const volumeChartData = {
-    labels: marketData.map(d => new Date(d.timestamp).toLocaleTimeString()),
-    datasets: [{
-      label: 'Volume',
-      data: marketData.map(d => d.volume),
-      backgroundColor: 'rgba(34, 197, 94, 0.8)'
-    }]
+  // Calculate portfolio metrics
+  const portfolioMetrics = useMemo(() => {
+    const totalValue = portfolioData.reduce((sum, pos) => sum + (pos.quantity * pos.currentPrice), 0);
+    const totalPnL = portfolioData.reduce((sum, pos) => sum + pos.pnl, 0);
+    const totalPnLPercentage = totalValue > 0 ? (totalPnL / totalValue) * 100 : 0;
+    
+    return {
+      totalValue,
+      totalPnL,
+      totalPnLPercentage,
+      positionCount: portfolioData.length,
+    };
+  }, [portfolioData]);
+
+  // Handle commodity selection
+  const handleCommodityChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCommodity(event.target.value);
   };
 
-  const quantumWeightsData = {
-    labels: ['WTI', 'Brent', 'Natural Gas', 'Heating Oil', 'Gasoline'],
-    datasets: [{
-      data: quantumOptimizations[0]?.optimalWeights || [0.2, 0.2, 0.2, 0.2, 0.2],
-      backgroundColor: [
-        'rgba(255, 99, 132, 0.8)',
-        'rgba(54, 162, 235, 0.8)',
-        'rgba(255, 205, 86, 0.8)',
-        'rgba(75, 192, 192, 0.8)',
-        'rgba(153, 102, 255, 0.8)'
-      ]
-    }]
+  // Handle timeframe change
+  const handleTimeframeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setTimeframe(event.target.value);
   };
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+        <span className="ml-4 text-lg">Loading trading dashboard...</span>
+      </div>
+    );
+  }
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{error}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            QuantaEnergi Trading Dashboard
-          </h1>
-          <div className="flex items-center gap-4">
-            <Badge variant={connectionStatus === 'connected' ? 'default' : 'destructive'}>
-              <Activity className="w-4 h-4 mr-1" />
-              {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
-            </Badge>
-            <Badge variant="outline">
-              <Brain className="w-4 h-4 mr-1" />
-              AGI Active
-            </Badge>
-            <Badge variant="outline">
-              <Zap className="w-4 h-4 mr-1" />
-              Quantum Ready
-            </Badge>
+    <div className="trading-dashboard bg-gray-50 min-h-screen p-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          QuantaEnergi Trading Dashboard
+        </h1>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <span className="text-sm text-gray-600">{connectionStatus}</span>
+          </div>
+          <span className="text-sm text-gray-500">
+            Last updated: {new Date().toLocaleTimeString()}
+          </span>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="mb-6 flex flex-wrap gap-4">
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium text-gray-700">Commodity:</label>
+          <select
+            value={selectedCommodity}
+            onChange={handleCommodityChange}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+          >
+            <option value="crude_oil">Crude Oil</option>
+            <option value="natural_gas">Natural Gas</option>
+            <option value="electricity">Electricity</option>
+            <option value="coal">Coal</option>
+            <option value="renewables">Renewables</option>
+          </select>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium text-gray-700">Timeframe:</label>
+          <select
+            value={timeframe}
+            onChange={handleTimeframeChange}
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+          >
+            <option value="1H">1 Hour</option>
+            <option value="1D">1 Day</option>
+            <option value="1W">1 Week</option>
+            <option value="1M">1 Month</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Portfolio Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Portfolio Value</h3>
+          <p className="text-3xl font-bold text-blue-600">
+            ${portfolioMetrics.totalValue.toLocaleString()}
+          </p>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total P&L</h3>
+          <p className={`text-3xl font-bold ${portfolioMetrics.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            ${portfolioMetrics.totalPnL.toLocaleString()}
+          </p>
+          <p className={`text-sm ${portfolioMetrics.totalPnLPercentage >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {portfolioMetrics.totalPnLPercentage.toFixed(2)}%
+          </p>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Positions</h3>
+          <p className="text-3xl font-bold text-purple-600">{portfolioMetrics.positionCount}</p>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">AGI Confidence</h3>
+          <p className="text-3xl font-bold text-orange-600">
+            {predictions.length > 0 ? (predictions[predictions.length - 1]?.confidence * 100).toFixed(1) : 0}%
+          </p>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Price Chart */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Price & Predictions</h3>
+          <div className="h-80">
+            <Line data={priceChartData} options={chartOptions} />
           </div>
         </div>
 
-        {/* Main Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Market Data Chart */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Real-Time Market Data
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <Line 
-                  data={priceChartData} 
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { display: true }
-                    },
-                    scales: {
-                      y: { beginAtZero: false }
-                    }
-                  }} 
-                />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Volume Chart */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Trading Volume</h3>
+          <div className="h-80">
+            <Bar data={volumeChartData} options={chartOptions} />
+          </div>
+        </div>
+      </div>
 
-          {/* Quantum Optimization */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="w-5 h-5" />
-                Quantum Portfolio
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <Doughnut 
-                  data={quantumWeightsData} 
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { position: 'bottom' }
-                    }
-                  }} 
-                />
-              </div>
-              {quantumOptimizations[0] && (
-                <div className="mt-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Expected Return:</span>
-                    <span className="text-sm font-medium">
-                      {(quantumOptimizations[0].expectedReturn * 100).toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Risk:</span>
-                    <span className="text-sm font-medium">
-                      {(quantumOptimizations[0].risk * 100).toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Sharpe Ratio:</span>
-                    <span className="text-sm font-medium">
-                      {quantumOptimizations[0].sharpeRatio.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Speedup:</span>
-                    <span className="text-sm font-medium">
-                      {quantumOptimizations[0].speedup.toFixed(1)}x
-                    </span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Portfolio Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Portfolio Distribution</h3>
+          <div className="h-80">
+            <Doughnut data={portfolioChartData} options={chartOptions} />
+          </div>
         </div>
 
-        {/* AGI Chat and Volume Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* AGI Trading Chat */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                AGI Trading Assistant
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 overflow-y-auto border rounded-lg p-4 mb-4 bg-gray-50">
-                {tradingMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`mb-3 p-3 rounded-lg ${
-                      message.type === 'user' 
-                        ? 'bg-blue-100 ml-8' 
-                        : message.type === 'agi'
-                        ? 'bg-green-100 mr-8'
-                        : 'bg-gray-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-500">
-                        {new Date(message.timestamp).toLocaleTimeString()}
-                      </span>
-                      {message.confidence && (
-                        <Badge variant="outline" className="text-xs">
-                          {(message.confidence * 100).toFixed(0)}% confidence
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm">{message.content}</p>
-                    {message.strategy && (
-                      <Badge variant="secondary" className="mt-1 text-xs">
-                        {message.strategy}
-                      </Badge>
-                    )}
-                  </div>
+        {/* Positions Table */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Current Positions</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2">Commodity</th>
+                  <th className="text-left py-2">Quantity</th>
+                  <th className="text-left py-2">Avg Price</th>
+                  <th className="text-left py-2">Current</th>
+                  <th className="text-left py-2">P&L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {portfolioData.map((position, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="py-2 capitalize">{position.commodity.replace('_', ' ')}</td>
+                    <td className="py-2">{position.quantity.toLocaleString()}</td>
+                    <td className="py-2">${position.avgPrice.toFixed(2)}</td>
+                    <td className="py-2">${position.currentPrice.toFixed(2)}</td>
+                    <td className={`py-2 ${position.pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${position.pnl.toLocaleString()}
+                    </td>
+                  </tr>
                 ))}
-                {isLoading && (
-                  <div className="flex items-center gap-2 text-gray-500">
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">AGI is thinking...</span>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-              
-              <div className="flex gap-2">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Ask AGI about trading strategies, market analysis..."
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  disabled={isLoading}
-                />
-                <Button 
-                  onClick={sendMessage} 
-                  disabled={isLoading || !newMessage.trim()}
-                  size="sm"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Volume Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingDown className="w-5 h-5" />
-                Trading Volume
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <Bar 
-                  data={volumeChartData} 
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { display: false }
-                    },
-                    scales: {
-                      y: { beginAtZero: true }
-                    }
-                  }} 
-                />
-              </div>
-            </CardContent>
-          </Card>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
 
-        {/* Asset Selection and Controls */}
-        <div className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                Trading Controls
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-sm font-medium">Asset:</label>
-                  <Select value={selectedAsset} onValueChange={setSelectedAsset}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="WTI_Crude">WTI Crude</SelectItem>
-                      <SelectItem value="Brent_Crude">Brent Crude</SelectItem>
-                      <SelectItem value="Natural_Gas">Natural Gas</SelectItem>
-                      <SelectItem value="Heating_Oil">Heating Oil</SelectItem>
-                      <SelectItem value="Gasoline">Gasoline</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button variant="outline" size="sm">
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                  Refresh Data
-                </Button>
-                
-                <Button variant="outline" size="sm">
-                  <Shield className="w-4 h-4 mr-1" />
-                  Risk Check
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      {/* AGI Predictions */}
+      <div className="bg-white p-6 rounded-lg shadow mb-8">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4">AGI Trading Predictions</h3>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-2">Timestamp</th>
+                <th className="text-left py-2">Predicted Price</th>
+                <th className="text-left py-2">Confidence</th>
+                <th className="text-left py-2">Strategy</th>
+              </tr>
+            </thead>
+            <tbody>
+              {predictions.slice(-10).reverse().map((prediction, index) => (
+                <tr key={index} className="border-b">
+                  <td className="py-2">{new Date(prediction.timestamp).toLocaleString()}</td>
+                  <td className="py-2">${prediction.predictedPrice.toFixed(2)}</td>
+                  <td className="py-2">{(prediction.confidence * 100).toFixed(1)}%</td>
+                  <td className="py-2">{prediction.strategy}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="text-center text-sm text-gray-500">
+        <p>QuantaEnergi Trading Platform - Powered by Advanced AI & Quantum Computing</p>
+        <p className="mt-1">Real-time data updates via WebSocket • AGI-powered predictions • Islamic-compliant trading</p>
       </div>
     </div>
   );

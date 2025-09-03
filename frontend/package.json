@@ -80,13 +80,13 @@
     "next-seo": "^6.4.0",
     
     "react-error-boundary": "^4.0.0",
-    "react-error-overlay": "^7.0.0",
+    "react-error-overlay": "^6.0.9",
     
     "workbox-webpack-plugin": "^7.0.0",
     "next-pwa": "^5.6.0"
   },
   "devDependencies": {
-    "@next/eslint-config-next": "^14.0.0",
+    "eslint-config-next": "^13.0.0",
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",

@@ -1,344 +1,281 @@
-# QuantaEnergi 🚀
+# QuantaEnergi Platform v2.0
 
-**Next-Generation Energy Trading Platform with Quantum Optimization & ESG Focus**
+A next-generation Energy Trading and Risk Management (ETRM/CTRM) platform with comprehensive features for modern energy trading, Islamic finance compliance, and advanced risk analytics.
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/quantaenergi/quantaenergi)
-[![Test Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](https://github.com/quantaenergi/quantaenergi)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9+-blue)](https://python.org)
-[![React](https://img.shields.io/badge/react-18+-blue)](https://reactjs.org)
+## 🚀 Features Overview
 
-## 🌟 **Overview**
+### Core ETRM/CTRM Features
+- **Trade Lifecycle Management**: Complete trade capture, validation, confirmation, allocation, settlement, invoicing, and payment processing
+- **Contract Management**: Comprehensive contract creation, amendment, and termination workflows
+- **Position Management**: Real-time position tracking and risk exposure monitoring
+- **Settlement Processing**: Automated settlement workflows with multi-currency support
+- **Invoice Generation**: Automated invoice creation and management
+- **Credit Management**: Advanced credit risk management and counterparty exposure monitoring
 
-QuantaEnergi is a revolutionary energy trading platform that combines cutting-edge quantum computing algorithms with comprehensive ESG (Environmental, Social, and Governance) analysis. Built with modern technologies and enterprise-grade infrastructure, it provides real-time trading capabilities, advanced forecasting, and sustainable investment strategies.
+### Advanced Trading Features
+- **Options Trading**: Complete options trading engine with Islamic compliance validation
+- **Structured Products**: Custom structured product creation and management
+- **Algorithmic Trading**: Advanced algorithmic strategies including TWAP, VWAP, and order sizing optimization
+- **Portfolio Management**: Comprehensive portfolio analytics and optimization
 
-## ✨ **Key Features**
+### Risk Management & Analytics
+- **Value at Risk (VaR)**: Monte Carlo, Parametric, and Historical VaR calculations
+- **Stress Testing**: Comprehensive stress testing with customizable scenarios
+- **Expected Shortfall**: Advanced risk metrics calculation
+- **Scenario Analysis**: Multi-dimensional scenario analysis and impact assessment
+- **Real-time Risk Monitoring**: Live risk dashboard with alerts and notifications
 
-### 🧠 **Quantum-Powered Optimization**
-- **Quantum Portfolio Optimization**: Advanced algorithms for optimal asset allocation
-- **ESG Integration**: Comprehensive sustainability scoring and analysis
-- **Risk Management**: AI-driven risk assessment and mitigation strategies
+### Islamic Finance & Compliance
+- **Sharia Compliance**: Full Islamic finance compliance validation
+- **Ramadan Restrictions**: Automated trading restrictions during Ramadan
+- **Halal Asset Validation**: Comprehensive asset screening for Islamic compliance
+- **Murabaha & Sukuk Support**: Islamic financial instrument support
 
-### 📊 **Real-Time Trading Dashboard**
-- **Live Market Data**: Real-time energy commodity prices and trends
-- **Portfolio Management**: Comprehensive portfolio tracking and analysis
-- **Trade Execution**: Seamless trade execution with compliance validation
-- **Performance Analytics**: Advanced performance metrics and reporting
-- **Interactive Charts**: Recharts-powered visualizations for market performance and ESG metrics
-- **Data Tables**: MUI DataGrid for advanced trading signals and portfolio analysis
-- **Gamification**: Progress bars, badges, and leaderboards for user engagement
-- **Real-time Updates**: WebSocket integration for live market signals and alerts
+### Regulatory Compliance
+- **Multi-Regional Support**: US, UK, EU, Middle East, Guyana compliance frameworks
+- **Automated Reporting**: CFTC, EMIR, ACER, GDPR, and regional regulatory reporting
+- **Data Anonymization**: Privacy-compliant data handling and reporting
+- **Audit Trails**: Complete audit logging and compliance history
 
-### 🔮 **AI-Powered Forecasting**
-- **Price Prediction**: Machine learning models for energy price forecasting
-- **News Integration**: Real-time news analysis and sentiment impact
-- **Anomaly Detection**: Advanced algorithms for market anomaly identification
-- **Trend Analysis**: Pattern recognition and trend prediction
+### Performance & Optimization
+- **Real-time Monitoring**: Live performance metrics and system health monitoring
+- **Advanced Caching**: Intelligent caching system with compression and TTL management
+- **Request Batching**: Optimized API request batching for improved performance
+- **Memory Management**: Efficient memory usage monitoring and optimization
 
-### 🏗️ **Enterprise Infrastructure**
-- **High Availability**: Redis Cluster with automatic failover
-- **Scalability**: Kubernetes-ready with horizontal auto-scaling
-- **Monitoring**: Prometheus + Grafana for comprehensive observability
-- **Security**: JWT authentication, rate limiting, and compliance monitoring
+## 🏗️ Architecture
 
-### 🎨 **Enhanced User Interface**
-- **Market Overview**: Interactive KPI cards with real-time market performance metrics
-- **ESG Dashboard**: Visual ESG scoring with bar charts, pie charts, and progress indicators
-- **Trading Signals**: Advanced DataGrid with live signal updates, filtering, and actions
-- **Responsive Design**: Mobile-first design with Material-UI components
-- **Toast Notifications**: User-friendly error handling and success messages
-- **Real-time Sync**: Live data updates with WebSocket integration and react-query
+### Backend Architecture
+- **FastAPI**: High-performance Python web framework with async support
+- **Microservices**: Modular service architecture for scalability
+- **PostgreSQL**: Robust relational database for transactional data
+- **Redis**: High-speed caching and session management
+- **Kubernetes Ready**: Containerized deployment with Kubernetes orchestration
 
-## 🚀 **Quick Start**
+### Frontend Architecture
+- **React 18**: Modern React with hooks and functional components
+- **TypeScript**: Full type safety and enhanced developer experience
+- **Tailwind CSS**: Utility-first CSS framework for responsive design
+- **Performance Optimization**: Advanced caching, batching, and monitoring
+
+### Design Patterns
+- **MVC Architecture**: Clear separation of concerns
+- **Observer Pattern**: Real-time updates via WebSockets
+- **Factory Pattern**: Dynamic trade type creation
+- **Decorator Pattern**: Middleware for authentication and rate limiting
+- **Strategy Pattern**: Pluggable trading algorithms
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- **Docker & Docker Compose** (for production deployment)
-- **Python 3.9+** (for backend development)
-- **Node.js 18+** (for frontend development)
-- **PostgreSQL 15+** (for database)
-- **Redis 7+** (for caching and session management)
+- Python 3.12+
+- Node.js 18+
+- PostgreSQL 14+
+- Redis 6+
+- Docker & Docker Compose (optional)
 
-### Local Development
-
-#### Backend
+### Backend Setup
 ```bash
 cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-#### Frontend
+### Frontend Setup
 ```bash
 cd frontend
 npm install
-npm run dev
+npm start
 ```
 
-### Production Deployment
-
-#### Full Production Deployment
+### Database Setup
 ```bash
-# Deploy everything with one command
-./scripts/deploy-production.sh
+# PostgreSQL setup
+createdb quantaenergi
+psql quantaenergi < backend/schema.sql
 
-# Check deployment status
-./scripts/deploy-production.sh -s
-
-# Run deployment tests
-./scripts/deploy-production.sh -t
+# Redis setup
+redis-server
 ```
 
-#### Docker Compose (Production)
+## 📊 API Endpoints
+
+### Trade Lifecycle
+- `POST /api/v1/trade-lifecycle/capture` - Capture new trade
+- `POST /api/v1/trade-lifecycle/{trade_id}/validate` - Validate trade
+- `POST /api/v1/trade-lifecycle/{trade_id}/confirm` - Confirm trade
+- `POST /api/v1/trade-lifecycle/{trade_id}/allocate` - Allocate trade
+- `POST /api/v1/trade-lifecycle/{trade_id}/settle` - Process settlement
+- `POST /api/v1/trade-lifecycle/{trade_id}/invoice` - Generate invoice
+- `POST /api/v1/trade-lifecycle/{trade_id}/payment` - Process payment
+- `GET /api/v1/trade-lifecycle/{trade_id}/status` - Get trade status
+- `GET /api/v1/trade-lifecycle/user/{user_id}/trades` - Get user trades
+
+### Risk Analytics
+- `POST /api/v1/risk-analytics/var/monte-carlo` - Monte Carlo VaR calculation
+- `POST /api/v1/risk-analytics/var/parametric` - Parametric VaR calculation
+- `POST /api/v1/risk-analytics/var/historical` - Historical VaR calculation
+- `POST /api/v1/risk-analytics/stress-test` - Portfolio stress testing
+- `POST /api/v1/risk-analytics/expected-shortfall` - Expected shortfall calculation
+- `POST /api/v1/risk-analytics/scenario-analysis` - Scenario analysis
+- `POST /api/v1/risk-analytics/risk-report` - Generate risk report
+- `POST /api/v1/risk-analytics/simulation/monte-carlo` - Monte Carlo simulation
+
+### Credit Management
+- `POST /api/v1/credit-management/limit` - Set credit limit
+- `GET /api/v1/credit-management/limit/{counterparty_id}` - Get credit limit
+- `POST /api/v1/credit-management/exposure` - Calculate exposure
+- `GET /api/v1/credit-management/exposure/{counterparty_id}` - Get exposure
+- `POST /api/v1/credit-management/availability` - Check credit availability
+- `GET /api/v1/credit-management/availability/{counterparty_id}` - Get credit availability
+
+### Options Trading
+- `POST /api/v1/options/price` - Price option
+- `POST /api/v1/options/execute` - Execute option trade
+- `GET /api/v1/options/portfolio/{user_id}` - Get options portfolio
+- `POST /api/v1/options/structured-product` - Create structured product
+- `POST /api/v1/options/algo/execute` - Execute algorithmic strategy
+- `POST /api/v1/options/algo/optimize-sizing` - Optimize order sizing
+
+### Regulatory Compliance
+- `POST /api/v1/compliance/report` - Generate compliance report
+- `POST /api/v1/compliance/bulk-reports` - Generate bulk compliance reports
+- `POST /api/v1/compliance/anonymize` - Anonymize compliance data
+- `GET /api/v1/compliance/regions` - Get supported compliance regions
+- `GET /api/v1/compliance/status` - Get compliance status
+- `GET /api/v1/compliance/history` - Get compliance history
+
+## 🧪 Testing
+
+### Backend Testing
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+cd backend
+python -m pytest test_api_endpoints.py -v
+python -m pytest test_comprehensive.py -v
 ```
 
-## 🧪 **Testing**
-
-### Comprehensive Testing Suite
-```bash
-# Run all tests (unit, integration, E2E)
-./scripts/test-all.sh
-
-# Run specific test types
-./scripts/test-all.sh -b  # Backend only
-./scripts/test-all.sh -f  # Frontend only
-./scripts/test-all.sh -e  # E2E only
-```
-
-### E2E Testing with Cypress
+### Frontend Testing
 ```bash
 cd frontend
-npx cypress open        # Interactive mode
-npx cypress run         # Headless mode
+npm test
+npm run test:coverage
 ```
 
-## 🏗️ **Architecture**
+## 📈 Performance Features
 
-### Backend Services
-- **FastAPI**: High-performance async API framework
-- **PostgreSQL**: Primary database with advanced indexing
-- **Redis Cluster**: Distributed caching and session management
-- **Celery**: Background task processing
-- **WebSockets**: Real-time data streaming
+### Caching System
+- **Intelligent Caching**: Configurable TTL and compression
+- **Memory Management**: Automatic cache eviction and size limits
+- **Cache Statistics**: Real-time hit rate and performance metrics
 
-### Frontend Components
-- **React 18**: Modern UI framework with hooks
-- **TypeScript**: Type-safe development
-- **React Query**: Server state management
-- **Tailwind CSS**: Utility-first styling
-- **Cypress**: End-to-end testing
+### Request Optimization
+- **Request Batching**: Configurable batch sizes and wait times
+- **Retry Logic**: Exponential backoff with configurable retry limits
+- **Performance Monitoring**: Real-time API response time tracking
 
-### Infrastructure
-- **Docker**: Containerized deployment
-- **Kubernetes**: Orchestration and scaling
-- **Prometheus**: Metrics collection
-- **Grafana**: Visualization and dashboards
-- **Nginx**: Load balancing and reverse proxy
+### Frontend Optimization
+- **Component Lazy Loading**: On-demand component loading
+- **Memory Monitoring**: Real-time memory usage tracking
+- **Render Performance**: Component render time optimization
 
-## 📊 **API Endpoints**
+## 🔒 Security Features
 
-### Core Trading API
-```
-GET    /api/v1/market-data          # Real-time market data
-GET    /api/v1/portfolio            # Portfolio overview
-POST   /api/v1/trades               # Execute trade
-GET    /api/v1/trades               # Trade history
-GET    /api/v1/esg-scores           # ESG analysis
-```
+- **Role-Based Access Control (RBAC)**: Granular permission management
+- **JWT Authentication**: Secure token-based authentication
+- **Rate Limiting**: API rate limiting and abuse prevention
+- **Data Encryption**: End-to-end data encryption
+- **Audit Logging**: Comprehensive audit trail maintenance
 
-### Analytics & Forecasting
-```
-GET    /api/v1/forecasts            # Price predictions
-GET    /api/v1/analytics            # Performance analytics
-GET    /api/v1/risk-metrics         # Risk assessment
-POST   /api/v1/optimize             # Portfolio optimization
-```
+## 🌍 Regional Compliance
 
-### WebSocket Endpoints
-```
-/ws/market-data/{user_id}           # Real-time market updates
-/ws/portfolio/{user_id}             # Portfolio updates
-/ws/trades/{user_id}                # Trade notifications
-```
+### Middle East & Islamic Finance
+- **Sharia Compliance**: Full Islamic finance principles adherence
+- **Ramadan Trading**: Automated trading restrictions during Ramadan
+- **Halal Asset Screening**: Comprehensive asset validation
 
-## 🔧 **Configuration**
+### United States
+- **CFTC Reporting**: Commodity Futures Trading Commission compliance
+- **FERC Regulations**: Federal Energy Regulatory Commission compliance
+- **NERC Standards**: North American Electric Reliability Corporation standards
 
-### Environment Variables
+### European Union & UK
+- **EMIR Reporting**: European Market Infrastructure Regulation compliance
+- **ACER Requirements**: Agency for the Cooperation of Energy Regulators compliance
+- **GDPR Compliance**: General Data Protection Regulation adherence
+
+### Guyana
+- **EPA Compliance**: Environmental Protection Agency requirements
+- **Petroleum Commission**: Petroleum industry regulatory compliance
+- **Bank of Guyana**: Financial regulatory compliance
+
+## 🚀 Deployment
+
+### Docker Deployment
 ```bash
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/quantaenergi_db
-
-# Redis
-REDIS_CLUSTER_NODES=redis-node-1:6379,redis-node-2:6379,...
-
-# JWT
-JWT_SECRET_KEY=your-secret-key
-JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# CORS
-CORS_ORIGINS=http://localhost:3000,https://quantaenergi.vercel.app
+docker-compose up -d
 ```
 
-### Docker Configuration
-```yaml
-# docker-compose.prod.yml
-version: '3.8'
-services:
-  backend:
-    build: ./backend
-    ports: ["8000:8000"]
-    environment:
-      - DATABASE_URL=postgresql://...
-      - REDIS_CLUSTER_NODES=...
-  
-  frontend:
-    build: ./frontend
-    ports: ["3000:80"]
-    depends_on: [backend]
-```
-
-## 📈 **Monitoring & Observability**
-
-### Metrics Collection
-- **Application Metrics**: Request rates, response times, error rates
-- **Infrastructure Metrics**: CPU, memory, disk, network usage
-- **Business Metrics**: Trade volumes, portfolio performance, ESG scores
-
-### Dashboards
-- **Production Dashboard**: Real-time system health and performance
-- **Trading Dashboard**: Market data and portfolio analytics
-- **Infrastructure Dashboard**: System resources and capacity
-
-### Alerting
-- **Performance Alerts**: Response time thresholds, error rate spikes
-- **Infrastructure Alerts**: Resource utilization, service availability
-- **Business Alerts**: Unusual trading patterns, compliance violations
-
-## 🔒 **Security & Compliance**
-
-### Authentication & Authorization
-- **JWT Tokens**: Secure token-based authentication
-- **Role-Based Access**: Granular permission management
-- **Session Management**: Secure session handling with Redis
-
-### Data Protection
-- **Encryption**: Data encryption at rest and in transit
-- **Audit Logging**: Comprehensive audit trail for compliance
-- **Rate Limiting**: DDoS protection and abuse prevention
-
-### Compliance Features
-- **ESG Reporting**: Automated sustainability reporting
-- **Regulatory Compliance**: Built-in compliance monitoring
-- **Data Privacy**: GDPR and privacy regulation compliance
-
-## 🚀 **Deployment Options**
-
-### 1. **Docker Compose (Recommended for Production)**
+### Kubernetes Deployment
 ```bash
-# Full production stack
-docker-compose -f docker-compose.prod.yml up -d
-
-# Services included:
-# - QuantaEnergi Backend (FastAPI)
-# - QuantaEnergi Frontend (React + Nginx)
-# - PostgreSQL Database
-# - Redis Cluster (6 nodes)
-# - Prometheus Monitoring
-# - Grafana Dashboards
-# - Nginx Load Balancer
+kubectl apply -f k8s/
 ```
 
-### 2. **Kubernetes (Enterprise)**
-```bash
-# Deploy to Kubernetes cluster
-kubectl apply -f kubernetes/
+### Production Considerations
+- **Load Balancing**: NGINX or HAProxy for traffic distribution
+- **SSL/TLS**: Let's Encrypt or commercial SSL certificates
+- **CDN**: CloudFront or Cloudflare for global content delivery
+- **Monitoring**: Prometheus, Grafana, and ELK stack integration
 
-# Services deployed:
-# - Backend Deployment with HPA
-# - Frontend Deployment with HPA
-# - PostgreSQL StatefulSet
-# - Redis Cluster StatefulSet
-# - Monitoring Stack
-# - Ingress with TLS
-```
+## 📚 Documentation
 
-### 3. **Cloud Platforms**
-- **Render**: Backend hosting with PostgreSQL
-- **Vercel**: Frontend hosting and CDN
-- **AWS/GCP/Azure**: Full cloud deployment
+- **API Documentation**: Available at `/docs` when running the backend
+- **Component Library**: Comprehensive React component documentation
+- **Architecture Guide**: Detailed system architecture documentation
+- **Deployment Guide**: Step-by-step deployment instructions
 
-## 📚 **Development Guide**
+## 🤝 Contributing
 
-### Project Structure
-```
-quantaenergi/
-├── backend/                 # FastAPI backend
-│   ├── app/                # Application code
-│   ├── tests/              # Backend tests
-│   └── Dockerfile.prod     # Production Dockerfile
-├── frontend/               # React frontend
-│   ├── src/                # Source code
-│   ├── cypress/            # E2E tests
-│   └── Dockerfile.prod     # Production Dockerfile
-├── shared/                 # Shared services
-│   └── services/           # Common business logic
-├── monitoring/             # Monitoring configuration
-├── kubernetes/             # K8s manifests
-├── scripts/                # Deployment scripts
-└── docs/                   # Documentation
-```
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Adding New Features
-1. **Backend**: Add API endpoints in `backend/app/api/`
-2. **Frontend**: Create React components in `frontend/src/components/`
-3. **Database**: Update models in `backend/app/models/`
-4. **Tests**: Add tests in respective test directories
-5. **Documentation**: Update API docs and README
-
-### Testing Strategy
-- **Unit Tests**: Individual component testing
-- **Integration Tests**: Service interaction testing
-- **E2E Tests**: Full user flow validation
-- **Performance Tests**: Load and stress testing
-- **Security Tests**: Vulnerability and penetration testing
-
-## 🤝 **Contributing**
-
-### Development Workflow
-1. **Fork** the repository
-2. **Create** a feature branch
-3. **Implement** your changes
-4. **Add** comprehensive tests
-5. **Submit** a pull request
-
-### Code Standards
-- **Python**: PEP 8, type hints, docstrings
-- **JavaScript/TypeScript**: ESLint, Prettier
-- **Testing**: Minimum 90% code coverage
-- **Documentation**: Clear API documentation
-
-## 📄 **License**
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 **Acknowledgments**
+## 🆘 Support
 
-- **FastAPI** team for the excellent web framework
-- **React** team for the powerful UI library
-- **Redis** team for the high-performance caching solution
-- **Prometheus** and **Grafana** teams for monitoring tools
+- **Documentation**: [Wiki](https://github.com/akramahmed1/QuantaEnergi/wiki)
+- **Issues**: [GitHub Issues](https://github.com/akramahmed1/QuantaEnergi/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/akramahmed1/QuantaEnergi/discussions)
 
-## 📞 **Support**
+## 🎯 Roadmap
 
-- **Documentation**: [docs.quantaenergi.com](https://docs.quantaenergi.com)
-- **Issues**: [GitHub Issues](https://github.com/quantaenergi/quantaenergi/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/quantaenergi/quantaenergi/discussions)
-- **Email**: support@quantaenergi.com
+### Phase 1 (Completed)
+- ✅ Core ETRM/CTRM functionality
+- ✅ Trade lifecycle management
+- ✅ Risk analytics and management
+- ✅ Islamic finance compliance
+- ✅ Multi-regional regulatory compliance
+
+### Phase 2 (Completed)
+- ✅ Options trading engine
+- ✅ Algorithmic trading strategies
+- ✅ Advanced risk analytics
+- ✅ Performance optimization
+- ✅ Frontend integration
+
+### Phase 3 (Planned)
+- 🔄 Mobile application development
+- 🔄 Advanced AI/ML integration
+- 🔄 Blockchain integration
+- 🔄 IoT device integration
+- 🔄 Advanced reporting and analytics
 
 ---
 
-**Built with ❤️ by the QuantaEnergi Team**
-
-*Revolutionizing energy trading through quantum innovation and sustainable practices.*
+**QuantaEnergi Platform v2.0** - Powering the future of energy trading with cutting-edge technology and comprehensive compliance.

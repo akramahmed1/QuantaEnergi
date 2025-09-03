@@ -20,9 +20,6 @@ RUN pip install --no-cache-dir -e .
 
 # Copy application code
 COPY backend/ ./backend/
-COPY src/ ./src/
-COPY alembic.ini .
-COPY alembic/ ./alembic/
 
 # Create logs directory
 RUN mkdir -p /app/logs
@@ -35,4 +32,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Start the application
-CMD ["gunicorn", "src.energyopti_pro.main:app", "--bind", "0.0.0.0:8000", "--worker-class", "uvicorn.workers.UvicornWorker", "--workers", "4"]
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
