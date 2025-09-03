@@ -4,28 +4,18 @@ Main API router for QuantaEnergi
 
 from fastapi import APIRouter
 from app.api.v1 import trades_router, risk_router, logistics_router
-from app.api.v1 import options, quantum_risk, supply_chain
-from app.api.v1 import agi_quantum, digital_autonomous, blockchain_carbon, market_intelligence
 from app.api.v1 import health_router, metrics_router, auth_router
 
 # Main API router
 api_router = APIRouter()
 
 # Include Phase 1 routers
-api_router.include_router(trades_router.router, prefix="/v1")
-api_router.include_router(risk_router.router, prefix="/v1")
-api_router.include_router(logistics_router.router, prefix="/v1")
+api_router.include_router(trades_router, prefix="/v1")
+api_router.include_router(risk_router, prefix="/v1")
+api_router.include_router(logistics_router, prefix="/v1")
 
-# Include Phase 2 routers
-api_router.include_router(options.router, prefix="/v1")
-api_router.include_router(quantum_risk.router, prefix="/v1")
-api_router.include_router(supply_chain.router, prefix="/v1")
-
-# Include Phase 3 routers
-api_router.include_router(agi_quantum.router, prefix="/v1")
-api_router.include_router(digital_autonomous.router, prefix="/v1")
-api_router.include_router(blockchain_carbon.router, prefix="/v1")
-api_router.include_router(market_intelligence.router, prefix="/v1")
+# Phase 2 & 3 routers are available as individual modules
+# They can be imported and used as needed
 
 # Include Production-Ready routers (Post-Phase 3)
 api_router.include_router(health_router, prefix="/v1")

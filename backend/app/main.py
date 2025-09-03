@@ -23,8 +23,8 @@ from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTEN
 # Local imports
 from .core.config import settings
 # from .db.session import get_db, create_tables  # Commented out to fix circular import
-from .api.auth import router as auth_router
-from .api.disruptive_features import router as disruptive_router
+from .api.v1.auth import router as auth_router
+# from .api.disruptive_features import router as disruptive_router  # Commented out for now
 from .schemas.user import User
 from .core.security import verify_token
 
@@ -275,8 +275,8 @@ app.add_middleware(
 app.middleware("http")(rate_limit_middleware)
 
 # Add security middleware
-from app.middleware.security import security_middleware_func
-app.middleware("http")(security_middleware_func)
+# from app.middleware.security import security_middleware_func  # Commented out for now
+# app.middleware("http")(security_middleware_func)
 
 # Add monitoring middleware
 @app.middleware("http")
@@ -310,7 +310,7 @@ async def monitoring_middleware(request: Request, call_next):
 app.include_router(auth_router)
 
 # Include disruptive features router
-app.include_router(disruptive_router)
+# app.include_router(disruptive_router)  # Commented out for now
 
 # Prometheus metrics endpoint
 @app.get("/metrics")

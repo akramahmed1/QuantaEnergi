@@ -110,7 +110,7 @@ class IslamicContractRequest(BaseModel):
 class OptionCreate(BaseModel):
     """Model for creating an option"""
     underlying_commodity: CommodityType
-    option_type: str = Field(..., regex="^(call|put)$")
+    option_type: str = Field(..., pattern="^(call|put)$")
     strike_price: float = Field(..., gt=0)
     expiry_date: str
     quantity: float = Field(..., gt=0)
@@ -133,10 +133,10 @@ class StructuredProductCreate(BaseModel):
 
 class AlgoStrategyCreate(BaseModel):
     """Model for creating an algorithmic trading strategy"""
-    strategy_type: str = Field(..., regex="^(twap|vwap|iceberg|smart_order_routing)$")
+    strategy_type: str = Field(..., pattern="^(twap|vwap|iceberg|smart_order_routing)$")
     commodity: CommodityType
     quantity: float = Field(..., gt=0)
-    execution_mode: str = Field(..., regex="^(aggressive|passive|adaptive)$")
+    execution_mode: str = Field(..., pattern="^(aggressive|passive|adaptive)$")
     risk_limits: Dict[str, float]
     islamic_compliance: bool = True
     additional_params: Optional[Dict[str, Any]] = None
@@ -145,8 +145,8 @@ class AlgoStrategyCreate(BaseModel):
 class QuantumOptimizationRequest(BaseModel):
     """Model for quantum optimization request"""
     portfolio_data: Dict[str, Any]
-    optimization_method: str = Field(..., regex="^(quantum_annealing|quantum_approximate|classical_fallback)$")
-    risk_tolerance: str = Field(..., regex="^(low|moderate|high)$")
+    optimization_method: str = Field(..., pattern="^(quantum_annealing|quantum_approximate|classical_fallback)$")
+    risk_tolerance: str = Field(..., pattern="^(low|moderate|high)$")
     constraints: Dict[str, Any]
     objectives: List[str]
 
@@ -169,7 +169,7 @@ class StressTestRequest(BaseModel):
 class SupplyChainOptimizationRequest(BaseModel):
     """Model for supply chain optimization request"""
     supply_chain_data: Dict[str, Any]
-    optimization_method: str = Field(..., regex="^(linear_programming|genetic_algorithm|simulation)$")
+    optimization_method: str = Field(..., pattern="^(linear_programming|genetic_algorithm|simulation)$")
     constraints: Dict[str, Any]
     objectives: List[str]
 
