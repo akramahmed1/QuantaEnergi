@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import Dict, List, Any, Optional, Union
 from datetime import datetime
 from enum import Enum
+import uuid
 
 # Enums
 class TradeType(str, Enum):
@@ -16,6 +17,7 @@ class TradeType(str, Enum):
     SWAP = "swap"
     MURABAHA = "murabaha"  # Islamic finance
     SUKUK = "sukuk"        # Islamic bonds
+    STRUCTURED = "structured"  # Structured products
 
 class TradeStatus(str, Enum):
     CAPTURED = "captured"
@@ -37,6 +39,9 @@ class CommodityType(str, Enum):
     CARBON_CREDITS = "carbon_credits"
     LNG = "lng"
     LPG = "lpg"
+    COAL = "coal"
+    URANIUM = "uranium"
+    BIOFUELS = "biofuels"
 
 class SettlementType(str, Enum):
     T_PLUS_1 = "T+1"
@@ -44,6 +49,17 @@ class SettlementType(str, Enum):
     T_PLUS_3 = "T+3"
     SPOT = "spot"
     FORWARD = "forward"
+
+class TradeDirection(str, Enum):
+    BUY = "buy"
+    SELL = "sell"
+    BUY_SELL = "buy_sell"  # For swaps
+
+class ComplianceStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    UNDER_REVIEW = "under_review"
 
 # Base Models
 class TradeBase(BaseModel):
@@ -56,17 +72,45 @@ class TradeBase(BaseModel):
     delivery_date: datetime = Field(..., description="Expected delivery date")
     delivery_location: str = Field(..., description="Delivery location")
     
+    # Multi-tenant support
+    organization_id: Optional[uuid.UUID] = Field(None, description="Organization ID for multi-tenancy")
+    
+    # Enhanced trade details
+    trade_direction: TradeDirection = Field(TradeDirection.BUY, description="Trade direction")
+    settlement_type: SettlementType = Field(SettlementType.T_PLUS_2, description="Settlement type")
+    
+    # Islamic finance compliance
+    is_islamic_compliant: bool = Field(False, description="Islamic finance compliance flag")
+    sharia_approval: Optional[str] = Field(None, description="Sharia board approval reference")
+    
+    # Risk and compliance
+    risk_category: Optional[str] = Field(None, description="Risk category classification")
+    compliance_notes: Optional[str] = Field(None, description="Compliance-related notes")
+    
     @field_validator('delivery_date')
     @classmethod
     def delivery_date_must_be_future(cls, v):
         if v <= datetime.now():
             raise ValueError('Delivery date must be in the future')
         return v
+    
+    @field_validator('organization_id')
+    @classmethod
+    def validate_organization_id(cls, v):
+        if v is not None:
+            try:
+                uuid.UUID(str(v))
+            except ValueError:
+                raise ValueError('Invalid organization ID format')
+        return v
 
 class TradeCreate(TradeBase):
     user_id: Optional[str] = Field(None, description="User ID (auto-filled)")
     capture_timestamp: Optional[datetime] = Field(None, description="Capture timestamp (auto-filled)")
     additional_terms: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Additional trade terms")
+    
+    # Correlation ID for event tracking
+    correlation_id: Optional[str] = Field(None, description="Correlation ID for event tracking")
     
     model_config = {
         "json_schema_extra": {
@@ -79,6 +123,10 @@ class TradeCreate(TradeBase):
                 "counterparty": "CP001",
                 "delivery_date": "2024-12-31T23:59:59",
                 "delivery_location": "Houston, TX",
+                "trade_direction": "buy",
+                "settlement_type": "T+2",
+                "is_islamic_compliant": False,
+                "organization_id": "123e4567-e89b-12d3-a456-426614174000",
                 "additional_terms": {
                     "quality_specs": "Brent Crude",
                     "incoterms": "FOB"
@@ -93,6 +141,10 @@ class TradeUpdate(BaseModel):
     delivery_date: Optional[datetime] = None
     delivery_location: Optional[str] = None
     additional_terms: Optional[Dict[str, Any]] = None
+    risk_category: Optional[str] = None
+    compliance_notes: Optional[str] = None
+    is_islamic_compliant: Optional[bool] = None
+    sharia_approval: Optional[str] = None
 
 # Response Models
 class TradeResponse(BaseModel):
@@ -101,299 +153,310 @@ class TradeResponse(BaseModel):
     message: str
     timestamp: datetime
     
+    # Enhanced response fields
+    organization_id: Optional[uuid.UUID] = None
+    correlation_id: Optional[str] = None
+    compliance_status: Optional[ComplianceStatus] = None
+    risk_score: Optional[float] = None
+    
     model_config = {
-        "json_schema_extra": {
-            "example": {
-                "trade_id": "trade_123",
-                "status": "captured",
-                "message": "Trade captured successfully",
-                "timestamp": "2024-01-15T10:30:00Z"
-            }
-        }
+        "from_attributes": True
     }
 
 class TradeStatusResponse(BaseModel):
     trade_id: str
     status: TradeStatus
-    details: Dict[str, Any]
-    timestamp: datetime
+    valid: bool
+    compliant: bool
+    sharia_result: Dict[str, Any]
+    
+    # Enhanced status fields
+    organization_id: Optional[uuid.UUID] = None
+    compliance_status: ComplianceStatus
+    risk_assessment: Optional[Dict[str, Any]] = None
+    validation_errors: Optional[List[str]] = None
     
     model_config = {
-        "json_schema_extra": {
-            "example": {
-                "trade_id": "trade_123",
-                "status": "validated",
-                "details": {
-                    "sharia_compliant": True,
-                    "credit_approved": True
-                },
-                "timestamp": "2024-01-15T10:30:00Z"
-            }
-        }
+        "from_attributes": True
     }
+
+class TradeDetails(BaseModel):
+    """Detailed trade information"""
+    trade_id: str
+    trade_type: TradeType
+    commodity: CommodityType
+    quantity: float
+    price: float
+    currency: str
+    counterparty: str
+    delivery_date: datetime
+    delivery_location: str
+    status: TradeStatus
+    trade_direction: TradeDirection
+    settlement_type: SettlementType
+    
+    # Multi-tenant fields
+    organization_id: Optional[uuid.UUID] = None
+    user_id: Optional[str] = None
+    
+    # Compliance and risk
+    is_islamic_compliant: bool
+    compliance_status: ComplianceStatus
+    risk_category: Optional[str] = None
+    risk_score: Optional[float] = None
+    
+    # Timestamps
+    created_at: datetime
+    updated_at: datetime
+    captured_at: Optional[datetime] = None
+    validated_at: Optional[datetime] = None
+    confirmed_at: Optional[datetime] = None
+    settled_at: Optional[datetime] = None
+    
+    # Additional fields
+    additional_terms: Dict[str, Any]
+    correlation_id: Optional[str] = None
+    
+    model_config = {
+        "from_attributes": True
+    }
+
+# Trade lifecycle models
+class TradeConfirmation(BaseModel):
+    trade_id: str
+    confirmation_number: str
+    confirmation_date: datetime
+    confirmed_by: str
+    confirmation_notes: Optional[str] = None
 
 class ConfirmationResponse(BaseModel):
     trade_id: str
     confirmation_id: str
     status: str
-    timestamp: datetime
+    timestamp: str
+
+class TradeAllocation(BaseModel):
+    trade_id: str
+    allocation_date: datetime
+    allocated_quantity: float
+    allocated_price: float
+    allocation_notes: Optional[str] = None
 
 class AllocationResponse(BaseModel):
     trade_id: str
     allocation_id: str
     status: str
     details: Dict[str, Any]
-    timestamp: datetime
+    timestamp: str
+
+class TradeSettlement(BaseModel):
+    trade_id: str
+    settlement_date: datetime
+    settlement_amount: float
+    settlement_currency: str
+    settlement_method: str
+    settlement_notes: Optional[str] = None
 
 class SettlementResponse(BaseModel):
     trade_id: str
     settlement_id: str
     status: str
     details: Dict[str, Any]
-    timestamp: datetime
+    timestamp: str
+
+class TradeInvoice(BaseModel):
+    trade_id: str
+    invoice_number: str
+    invoice_date: datetime
+    invoice_amount: float
+    invoice_currency: str
+    payment_terms: str
+    invoice_notes: Optional[str] = None
 
 class InvoiceResponse(BaseModel):
     trade_id: str
     invoice_id: str
     status: str
     details: Dict[str, Any]
-    timestamp: datetime
+    timestamp: str
+
+class TradePayment(BaseModel):
+    trade_id: str
+    payment_reference: str
+    payment_date: datetime
+    payment_amount: float
+    payment_currency: str
+    payment_method: str
+    payment_notes: Optional[str] = None
 
 class PaymentResponse(BaseModel):
     trade_id: str
     payment_id: str
     status: str
     details: Dict[str, Any]
-    timestamp: datetime
+    timestamp: str
 
-# Credit Management Schemas
+# Credit management schemas
 class CreditLimit(BaseModel):
     counterparty_id: str
-    limit_amount: float = Field(..., gt=0)
-    currency: str = Field(default="USD")
-    risk_rating: str = Field(..., description="Risk rating (A, B, C, D)")
-    expiry_date: datetime
-    terms: Optional[Dict[str, Any]] = None
+    limit_amount: float
+    currency: str
+    risk_rating: str
+    expiry_date: str
+    set_by: Optional[str] = None
+    set_timestamp: Optional[str] = None
 
 class CreditExposure(BaseModel):
     counterparty_id: str
     current_exposure: float
-    available_credit: float
-    utilization_percentage: float
-    risk_level: str
-    last_updated: datetime
+    available_limit: float
+    utilization_rate: float
+    last_updated: str
 
 class CreditReport(BaseModel):
     counterparty_id: str
-    credit_limit: CreditLimit
-    current_exposure: CreditExposure
+    credit_score: float
     risk_assessment: Dict[str, Any]
     recommendations: List[str]
-    generated_at: datetime
+    report_date: str
 
-# Regulatory Compliance Schemas
-class ComplianceCheck(BaseModel):
-    region: str
-    regulation_type: str
-    compliance_status: bool
-    requirements_met: List[str]
-    requirements_missing: List[str]
-    risk_level: str
-    last_check: datetime
-
-class RegulatoryReport(BaseModel):
-    report_id: str
-    region: str
-    regulation_type: str
-    report_data: Dict[str, Any]
-    submission_date: datetime
-    status: str
-    compliance_score: float
-
-# Sharia Compliance Schemas
-class ShariaValidation(BaseModel):
-    trade_id: str
-    compliant: bool
-    validation_details: Dict[str, Any]
-    sharia_board_approval: Optional[str] = None
-    validation_timestamp: datetime
-
-# Position Management Schemas
-class Position(BaseModel):
-    commodity: CommodityType
-    long_quantity: float = Field(default=0, ge=0)
-    short_quantity: float = Field(default=0, ge=0)
-    net_quantity: float
-    average_price: float
-    market_value: float
-    unrealized_pnl: float
-    last_updated: datetime
-
-class PositionResponse(BaseModel):
-    user_id: str
-    positions: List[Position]
-    total_market_value: float
-    total_unrealized_pnl: float
-    risk_metrics: Dict[str, Any]
-    last_updated: datetime
-
-# Risk Analytics Schemas
-class RiskMetrics(BaseModel):
-    var_95: float
-    var_99: float
-    expected_shortfall: float
-    stress_test_results: Dict[str, Any]
-    correlation_matrix: Dict[str, Any]
-    calculated_at: datetime
-
-# Supply Chain Schemas
-class SupplyChain(BaseModel):
-    chain_id: str
-    origin: str
-    destination: str
-    commodity: CommodityType
-    quantity: float
-    status: str
-    estimated_cost: float
-    risk_assessment: Dict[str, Any]
-    created_at: datetime
-
-# IoT Integration Schemas
-class IoTDevice(BaseModel):
-    device_id: str
-    device_type: str
-    location: str
-    status: str
-    last_data: Dict[str, Any]
-    last_updated: datetime
-
-# Mobile App Schemas
-class MobileDevice(BaseModel):
-    device_id: str
-    user_id: str
-    platform: str
-    push_token: Optional[str] = None
-    preferences: Dict[str, Any]
-    last_active: datetime
-
-# Admin Dashboard Schemas
-class SystemMetrics(BaseModel):
-    total_users: int
-    active_trades: int
-    system_health: str
-    performance_metrics: Dict[str, Any]
-    alerts: List[Dict[str, Any]]
-    last_updated: datetime
-
-class UserManagement(BaseModel):
-    user_id: str
-    username: str
-    email: str
-    role: str
-    status: str
-    permissions: List[str]
-    last_login: datetime
-    created_at: datetime
-
-# API Response Schemas
+# API response schemas
 class ApiResponse(BaseModel):
     success: bool
     data: Optional[Any] = None
     message: str
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: Optional[str] = None
 
 class ErrorResponse(BaseModel):
-    success: bool = False
+    success: bool
     error: str
-    details: Optional[Dict[str, Any]] = None
-    timestamp: datetime = Field(default_factory=datetime.now)
+    message: str
+    timestamp: Optional[str] = None
 
-class IslamicComplianceResponse(BaseModel):
-    compliant: bool
-    sharia_score: float
-    validation_details: Dict[str, Any]
+# Regulatory compliance schemas
+class ComplianceCheck(BaseModel):
+    trade_id: str
+    regulation_type: str
+    region: str
+    is_compliant: bool
+    compliance_score: float
+    violations: List[str]
     recommendations: List[str]
-    timestamp: datetime
+    check_date: str
 
-# Options Trading Schemas
+class RegulatoryReport(BaseModel):
+    report_id: str
+    regulation_type: str
+    region: str
+    report_date: str
+    trades_covered: int
+    compliance_summary: Dict[str, Any]
+    violations_found: int
+    recommendations: List[str]
+
+# Risk analytics schemas
+class RiskMetrics(BaseModel):
+    trade_id: str
+    var_value: float
+    confidence_level: float
+    time_horizon: int
+    method: str
+    portfolio_value: float
+    volatility: float
+    calculated_at: str
+
+# Options and structured products schemas
 class OptionCreate(BaseModel):
-    option_type: str = Field(..., description="Type of option (call/put)")
-    underlying: CommodityType
-    strike_price: float = Field(..., gt=0)
-    expiry_date: datetime
-    quantity: float = Field(..., gt=0)
-    premium: Optional[float] = None
-    volatility: Optional[float] = None
-    risk_free_rate: Optional[float] = None
-    islamic_compliant: bool = True
-
-class OptionResponse(BaseModel):
-    option_id: str
-    option_type: str
-    underlying: CommodityType
+    underlying_asset: str
+    option_type: str  # call/put
     strike_price: float
-    expiry_date: datetime
-    quantity: float
+    expiration_date: str
     premium: float
-    greeks: Dict[str, float]
-    islamic_compliant: bool
-    created_at: datetime
+    quantity: int
 
-# Structured Products Schemas
 class StructuredProductCreate(BaseModel):
-    product_type: str = Field(..., description="Type of structured product")
-    underlying: CommodityType
-    notional_amount: float = Field(..., gt=0)
-    maturity_date: datetime
-    payoff_structure: Dict[str, Any]
-    islamic_compliant: bool = True
-    risk_parameters: Dict[str, Any]
-
-class StructuredProductResponse(BaseModel):
-    product_id: str
+    product_name: str
     product_type: str
-    underlying: CommodityType
-    notional_amount: float
-    maturity_date: datetime
+    underlying_assets: List[str]
     payoff_structure: Dict[str, Any]
-    current_value: float
-    islamic_compliant: bool
-    created_at: datetime
+    maturity_date: str
+    notional_amount: float
 
-# Algorithmic Trading Schemas
 class AlgoStrategyCreate(BaseModel):
-    strategy_name: str
-    strategy_type: str = Field(..., description="Type of algo strategy")
-    parameters: Dict[str, Any]
-    risk_limits: Dict[str, float]
-    islamic_compliant: bool = True
-    execution_mode: str = "passive"
-
-class AlgoStrategyResponse(BaseModel):
-    strategy_id: str
     strategy_name: str
     strategy_type: str
     parameters: Dict[str, Any]
     risk_limits: Dict[str, float]
-    islamic_compliant: bool
-    execution_mode: str
-    status: str
-    created_at: datetime
+    execution_algorithm: str
 
-# Quantum Optimization Schemas
-class QuantumOptimizationRequest(BaseModel):
-    portfolio_data: Dict[str, Any]
-    optimization_method: str = "quantum_annealing"
-    constraints: Dict[str, Any]
-    risk_tolerance: str = "moderate"
-    target_return: Optional[float] = None
+# Islamic compliance schemas
+class IslamicComplianceResponse(BaseModel):
+    trade_id: str
+    is_compliant: bool
+    compliance_score: float
+    sharia_approval: str
+    restrictions: List[str]
+    recommendations: List[str]
+    approval_date: str
 
-class QuantumOptimizationResponse(BaseModel):
-    optimization_id: str
-    optimal_weights: List[float]
-    expected_return: float
-    expected_risk: float
-    improvement_over_classical: float
-    quantum_advantage: bool
-    execution_time: float
-    created_at: datetime
+# Trade search and filtering
+class TradeFilter(BaseModel):
+    """Trade filtering criteria"""
+    organization_id: Optional[uuid.UUID] = None
+    user_id: Optional[str] = None
+    trade_type: Optional[TradeType] = None
+    commodity: Optional[CommodityType] = None
+    status: Optional[TradeStatus] = None
+    trade_direction: Optional[TradeDirection] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+    price_min: Optional[float] = None
+    price_max: Optional[float] = None
+    quantity_min: Optional[float] = None
+    quantity_max: Optional[float] = None
+    counterparty: Optional[str] = None
+    is_islamic_compliant: Optional[bool] = None
+    compliance_status: Optional[ComplianceStatus] = None
+
+class TradeSearchResponse(BaseModel):
+    """Trade search response with pagination"""
+    trades: List[TradeDetails]
+    total_count: int
+    page: int
+    page_size: int
+    total_pages: int
+    filters_applied: TradeFilter
+
+# Trade analytics and reporting
+class TradeAnalytics(BaseModel):
+    """Trade analytics data"""
+    total_trades: int
+    total_volume: float
+    total_value: float
+    average_price: float
+    trade_count_by_type: Dict[TradeType, int]
+    trade_count_by_commodity: Dict[CommodityType, int]
+    trade_count_by_status: Dict[TradeStatus, int]
+    compliance_rate: float
+    islamic_compliance_rate: float
+    risk_distribution: Dict[str, int]
+
+# Islamic finance specific models
+class ShariaComplianceCheck(BaseModel):
+    """Sharia compliance check result"""
+    trade_id: str
+    is_compliant: bool
+    compliance_score: float
+    restrictions: List[str]
+    recommendations: List[str]
+    sharia_board_approval: Optional[str] = None
+    approval_date: Optional[datetime] = None
+
+class IslamicTradeTerms(BaseModel):
+    """Islamic trade specific terms"""
+    murabaha_markup: Optional[float] = None
+    asset_backing: Optional[str] = None
+    profit_sharing_ratio: Optional[float] = None
+    riba_free: bool = True
+    gharar_free: bool = True
+    haram_asset_free: bool = True

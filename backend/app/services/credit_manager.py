@@ -18,6 +18,31 @@ class CreditManager:
         self.exposure_records = {}
         self.credit_counter = 1000
         
+        # Initialize with sample credit limits for testing
+        self._initialize_sample_credit_limits()
+    
+    def _initialize_sample_credit_limits(self):
+        """Initialize sample credit limits for testing"""
+        sample_limits = {
+            "CP001": {
+                "limit_id": "CREDIT-000001",
+                "counterparty_id": "CP001",
+                "credit_limit": 1000000.0,  # $1M limit
+                "limit_amount": 1000000.0,
+                "currency": "USD",
+                "effective_date": datetime.now().isoformat(),
+                "expiry_date": (datetime.now() + timedelta(days=365)).isoformat(),
+                "limit_type": "total",
+                "collateral_required": False,
+                "collateral_value": 0.0,
+                "status": "active",
+                "set_at": datetime.now().isoformat()
+            }
+        }
+        
+        for counterparty_id, limit_data in sample_limits.items():
+            self.credit_limits[counterparty_id] = limit_data
+        
     async def set_credit_limit(self, counterparty_id: str, limit_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Set credit limit for counterparty

@@ -25,6 +25,8 @@ from .core.config import settings
 # from .db.session import get_db, create_tables  # Commented out to fix circular import
 from .api.v1.auth import router as auth_router
 # from .api.disruptive_features import router as disruptive_router  # Commented out for now
+from .api.v1.enhanced_trade_lifecycle import router as enhanced_trade_router
+from .api.v1.websocket import router as websocket_router
 from .schemas.user import User
 from .core.security import verify_token
 
@@ -186,12 +188,23 @@ async def lifespan(app: FastAPI):
     await market_service.get_session()
     log_message("Market data service initialized")
     
+    # Start event bus
+    from app.core.event_bus import event_bus
+    await event_bus.start()
+    log_message("Event bus started")
+    
     log_message("QuantaEnergi backend started successfully")
     
     yield
     
     # Shutdown
     log_message("Shutting down QuantaEnergi backend...")
+    
+    # Stop event bus
+    from app.core.event_bus import event_bus
+    await event_bus.stop()
+    log_message("Event bus stopped")
+    
     log_message("Backend shutdown complete")
 
 # Create FastAPI app with enhanced OpenAPI documentation
@@ -339,6 +352,10 @@ app.include_router(agi_quantum_router, prefix="/api/v1")
 app.include_router(blockchain_carbon_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(metrics_router, prefix="/api/v1")
+
+# Enhanced trade lifecycle and WebSocket routers
+app.include_router(enhanced_trade_router, prefix="/api/v1")
+app.include_router(websocket_router, prefix="/api/v1")
 
 # Include disruptive features router
 # app.include_router(disruptive_router)  # Commented out for now

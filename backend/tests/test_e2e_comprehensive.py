@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Import application modules
-from app import app
+from app.main import app
 from app.db.session import get_db, create_tables
 
 # Test configuration

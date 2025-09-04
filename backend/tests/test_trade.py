@@ -229,7 +229,7 @@ class TestTradeBusinessLogic:
         high_esg_trade = TradeCreate(
             commodity="renewables",
             quantity=1000.0,
-            "price": 85.50,
+            price=85.50,
             trade_type="buy",
             region="US",
             esg_score=90.0
