@@ -22,7 +22,7 @@ from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTEN
 
 # Local imports
 from .core.config import settings
-# from .db.session import get_db, create_tables  # Commented out to fix circular import
+from .db.session import get_db, create_tables
 from .api.v1.auth import router as auth_router
 # from .api.disruptive_features import router as disruptive_router  # Commented out for now
 from .api.v1.enhanced_trade_lifecycle import router as enhanced_trade_router
@@ -30,26 +30,7 @@ from .api.v1.websocket import router as websocket_router
 from .schemas.user import User
 from .core.security import verify_token
 
-# Mock database session for now
-class MockSession:
-    def query(self, *args):
-        return self
-    def filter(self, *args):
-        return self
-    def first(self):
-        return None
-    def all(self):
-        return []
-    def add(self, *args):
-        pass
-    def commit(self):
-        pass
-    def close(self):
-        pass
-
-def get_db():
-    """Mock database session"""
-    return iter([MockSession()])
+# Database session is now properly imported from db.session
 
 # Add shared services to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'shared', 'services'))

@@ -76,10 +76,10 @@ class Organization(Base):
     deleted_at = Column(DateTime)
     deleted_by = Column(UUID(as_uuid=True))
     
-    # Relationships - commented out for now to avoid circular imports
-    # users = relationship("User", back_populates="organization")
-    # trades = relationship("Trade", back_populates="organization")
-    # credit_limits = relationship("CreditLimit", back_populates="organization")
+    # Relationships
+    trades = relationship("Trade", back_populates="organization")
+    trade_allocations = relationship("TradeAllocation", back_populates="organization")
+    trade_settlements = relationship("TradeSettlement", back_populates="organization")
     
     def __repr__(self):
         return f"<Organization(id={self.id}, name='{self.name}', code='{self.code}')>"

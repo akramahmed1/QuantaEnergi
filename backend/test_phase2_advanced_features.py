@@ -7,7 +7,10 @@ import pytest
 import asyncio
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 # Import the services to test
 from app.services.advanced_risk_analytics import AdvancedRiskAnalytics

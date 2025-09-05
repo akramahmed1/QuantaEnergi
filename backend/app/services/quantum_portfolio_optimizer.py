@@ -5,8 +5,14 @@ Handles quantum-inspired portfolio optimization, quantum annealing simulation, a
 
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
-import numpy as np
-import pandas as pd
+try:
+    import numpy as np
+except ImportError:
+    np = None
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 import logging
 from fastapi import HTTPException
 import asyncio

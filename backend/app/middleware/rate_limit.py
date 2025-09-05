@@ -22,7 +22,9 @@ class RateLimiter:
     
     def __init__(self):
         # In production, use Redis for distributed rate limiting
+        # Fallback to in-memory store if Redis unavailable
         self.rate_limit_store: Dict[str, Dict[str, Any]] = {}
+        self.redis_available = False
         self.blocked_ips: Dict[str, datetime] = {}
         
         # Rate limiting configurations

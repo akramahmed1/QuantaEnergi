@@ -58,6 +58,8 @@ class GlobalEnergyDigitalTwin:
                     print("✅ MQTT IoT connection established")
                 except Exception as e:
                     print(f"⚠️ MQTT connection failed: {e}")
+                    self.mqtt_client = None
+                    print(f"⚠️ MQTT connection failed: {e}")
             
             if REDIS_AVAILABLE:
                 # Initialize Redis for real-time data storage

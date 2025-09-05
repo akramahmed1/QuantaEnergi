@@ -10,9 +10,18 @@ import json
 import hashlib
 import hmac
 import base64
-import numpy as np
-import pandas as pd
-import requests
+try:
+    import numpy as np
+except ImportError:
+    np = None
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+try:
+    import requests
+except ImportError:
+    requests = None
 from decimal import Decimal
 import warnings
 warnings.filterwarnings('ignore')

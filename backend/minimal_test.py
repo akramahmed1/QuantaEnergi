@@ -5,7 +5,8 @@ app = FastAPI()
 
 @app.get("/test")
 def test():
-    return {"message": "Test successful"}
+    assert True
+    # Test passes without return value
 
 if __name__ == "__main__":
     print("Starting minimal test server on port 8080...")

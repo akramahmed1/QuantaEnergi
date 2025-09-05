@@ -13,8 +13,13 @@ import base64
 import numpy as np
 import pandas as pd
 import requests
-from sklearn.ensemble import RandomForestRegressor, IsolationForest
-from sklearn.preprocessing import StandardScaler
+try:
+    from sklearn.ensemble import RandomForestRegressor, IsolationForest
+    from sklearn.preprocessing import StandardScaler
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    print("Warning: sklearn not available, using fallback ML")
 import warnings
 warnings.filterwarnings('ignore')
 
