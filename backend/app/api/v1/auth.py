@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import logging
 
-from app.middleware.auth import (
+from ...middleware.auth import (
     auth_service, 
     get_current_user, 
     get_current_active_user,

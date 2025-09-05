@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from fastapi import WebSocket, WebSocketDisconnect
-from app.core.event_bus import EventType, BaseEvent
+from .event_bus import EventType, BaseEvent
 
 logger = logging.getLogger(__name__)
 
@@ -205,20 +205,8 @@ class EnhancedWebSocketManager:
     
     def _start_background_tasks(self):
         """Start background tasks for real-time data"""
-        # Market data feed task
-        market_task = asyncio.create_task(self._market_data_feed())
-        self.background_tasks.add(market_task)
-        market_task.add_done_callback(self.background_tasks.discard)
-        
-        # Trade feed task
-        trade_task = asyncio.create_task(self._trade_feed())
-        self.background_tasks.add(trade_task)
-        trade_task.add_done_callback(self.background_tasks.discard)
-        
-        # Risk monitoring task
-        risk_task = asyncio.create_task(self._risk_monitoring_feed())
-        self.background_tasks.add(risk_task)
-        risk_task.add_done_callback(self.background_tasks.discard)
+        # Background tasks will be started when needed
+        pass
     
     async def connect(self, websocket: WebSocket, user_id: str, organization_id: str) -> str:
         """Accept a new WebSocket connection"""

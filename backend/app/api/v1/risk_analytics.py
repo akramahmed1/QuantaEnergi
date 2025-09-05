@@ -8,8 +8,8 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import logging
 
-from app.services.advanced_risk_analytics import AdvancedRiskAnalytics
-from app.schemas.trade import (
+from ...services.advanced_risk_analytics import AdvancedRiskAnalytics
+from ...schemas.trade import (
     RiskMetrics, ApiResponse, ErrorResponse
 )
 

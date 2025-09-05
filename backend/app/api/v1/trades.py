@@ -8,10 +8,10 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import logging
 
-from app.services.deal_capture import DealCaptureService, DealValidationService
-from app.services.position_manager import PositionManager
-from app.services.sharia import ShariaScreeningEngine, IslamicTradingValidator
-from app.schemas.trade import TradeCreate, TradeUpdate, TradeResponse
+from ...services.deal_capture import DealCaptureService, DealValidationService
+from ...services.position_manager import PositionManager
+from ...services.sharia import ShariaScreeningEngine, IslamicTradingValidator
+from ...schemas.trade import TradeCreate, TradeUpdate, TradeResponse
 
 logger = logging.getLogger(__name__)
 

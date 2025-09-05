@@ -8,9 +8,9 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import logging
 
-from app.services.market_risk_engine import MarketRiskEngine, RiskLimitsManager
-from app.services.compliance_engine import ComplianceEngine
-from app.services.position_manager import PositionManager
+from ...services.market_risk_engine import MarketRiskEngine, RiskLimitsManager
+from ...services.compliance_engine import ComplianceEngine
+from ...services.position_manager import PositionManager
 
 logger = logging.getLogger(__name__)
 

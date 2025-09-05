@@ -7,9 +7,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from app.services.digital_twin import GlobalEnergyDigitalTwin, DigitalTwinComplianceValidator
-from app.services.autonomous_trading import AutonomousTradingEcosystem, AutonomousTradingValidator
-from app.schemas.trade import (
+from ...services.digital_twin import GlobalEnergyDigitalTwin, DigitalTwinComplianceValidator
+from ...services.autonomous_trading import AutonomousTradingEcosystem, AutonomousTradingValidator
+from ...schemas.trade import (
     ApiResponse, ErrorResponse, IslamicComplianceResponse
 )
 

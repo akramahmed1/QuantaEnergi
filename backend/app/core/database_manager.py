@@ -14,8 +14,8 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from fastapi import HTTPException, status
 
-from app.models.organization import Organization
-from app.models.trade import Trade, TradeAllocation, TradeSettlement
+from ..models.organization import Organization
+from ..models.trade import Trade, TradeAllocation, TradeSettlement
 
 logger = logging.getLogger(__name__)
 

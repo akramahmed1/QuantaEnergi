@@ -7,8 +7,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from app.services.market_intelligence import GlobalMarketIntelligenceNetwork, MarketIntelligenceValidator
-from app.schemas.trade import (
+from ...services.market_intelligence import GlobalMarketIntelligenceNetwork, MarketIntelligenceValidator
+from ...schemas.trade import (
     ApiResponse, ErrorResponse, IslamicComplianceResponse
 )
 

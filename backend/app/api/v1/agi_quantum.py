@@ -7,9 +7,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from app.services.agi_trading import AGITradingAssistant, AGIComplianceValidator
-from app.services.quantum_trading import QuantumTradingEngine, QuantumComplianceValidator
-from app.schemas.trade import (
+from ...services.agi_trading import AGITradingAssistant, AGIComplianceValidator
+from ...services.quantum_trading import QuantumTradingEngine, QuantumComplianceValidator
+from ...schemas.trade import (
     ApiResponse, ErrorResponse, IslamicComplianceResponse
 )
 

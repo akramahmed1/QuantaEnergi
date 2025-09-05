@@ -12,7 +12,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from pydantic import BaseModel, Field, validator
 import uuid
 
-from app.db.database import Base
+from ..db.database import Base
 
 class Organization(Base):
     """Organization model for multi-tenant support"""
@@ -76,10 +76,10 @@ class Organization(Base):
     deleted_at = Column(DateTime)
     deleted_by = Column(UUID(as_uuid=True))
     
-    # Relationships
-    trades = relationship("Trade", back_populates="organization")
-    trade_allocations = relationship("TradeAllocation", back_populates="organization")
-    trade_settlements = relationship("TradeSettlement", back_populates="organization")
+    # Relationships - will be set up after Trade models are defined
+    # trades = relationship("Trade", back_populates="organization")
+    # trade_allocations = relationship("TradeAllocation", back_populates="organization")
+    # trade_settlements = relationship("TradeSettlement", back_populates="organization")
     
     def __repr__(self):
         return f"<Organization(id={self.id}, name='{self.name}', code='{self.code}')>"

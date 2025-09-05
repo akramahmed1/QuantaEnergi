@@ -7,7 +7,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, HTTPExcept
 from typing import Optional
 import logging
 
-from app.core.websocket_manager import WebSocketEndpoint, connection_manager
+from ...core.websocket_manager import WebSocketEndpoint, connection_manager
 
 logger = logging.getLogger(__name__)
 

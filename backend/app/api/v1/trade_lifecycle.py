@@ -9,10 +9,10 @@ from datetime import datetime
 import logging
 import uuid
 
-from app.services.trade_lifecycle import TradeLifecycle, TradeStage
-from app.services.sharia import ShariaScreeningEngine
-from app.services.credit_manager import CreditManager
-from app.schemas.trade import (
+from ...services.trade_lifecycle import TradeLifecycle, TradeStage
+from ...services.sharia import ShariaScreeningEngine
+from ...services.credit_manager import CreditManager
+from ...schemas.trade import (
     TradeCreate, TradeUpdate, TradeResponse, TradeStatusResponse,
     ConfirmationResponse, AllocationResponse, SettlementResponse,
     InvoiceResponse, PaymentResponse

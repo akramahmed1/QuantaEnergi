@@ -8,8 +8,8 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import logging
 
-from app.services.regulatory_reporting import RegulatoryReporting
-from app.schemas.trade import (
+from ...services.regulatory_reporting import RegulatoryReporting
+from ...schemas.trade import (
     ComplianceCheck, RegulatoryReport, ApiResponse, ErrorResponse
 )
 

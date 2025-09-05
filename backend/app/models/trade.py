@@ -13,7 +13,7 @@ from sqlalchemy.future import select
 import uuid
 import logging
 
-from app.db.database import Base
+from ..db.database import Base
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +86,8 @@ class Trade(Base):
     deleted_at = Column(DateTime, nullable=True)
     deleted_by = Column(String(100), nullable=True)
     
-    # Relationships
-    organization = relationship("Organization", back_populates="trades")
+    # Relationships - will be set up after Organization model is defined
+    # organization = relationship("Organization", back_populates="trades")
     
     def __repr__(self):
         return f"<Trade(id={self.id}, trade_id='{self.trade_id}', commodity='{self.commodity}')>"
@@ -151,9 +151,9 @@ class TradeAllocation(Base):
     allocated_at = Column(DateTime, default=datetime.utcnow)
     allocated_by = Column(String(100), nullable=False)
     
-    # Relationships
-    trade = relationship("Trade")
-    organization = relationship("Organization")
+    # Relationships - will be set up after models are defined
+    # trade = relationship("Trade")
+    # organization = relationship("Organization")
     
     def __repr__(self):
         return f"<TradeAllocation(id={self.id}, trade_id={self.trade_id}, type='{self.allocation_type}')>"
@@ -186,9 +186,9 @@ class TradeSettlement(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by = Column(String(100), nullable=False)
     
-    # Relationships
-    trade = relationship("Trade")
-    organization = relationship("Organization")
+    # Relationships - will be set up after models are defined
+    # trade = relationship("Trade")
+    # organization = relationship("Organization")
     
     def __repr__(self):
         return f"<TradeSettlement(id={self.id}, trade_id={self.trade_id}, amount={self.settlement_amount})>"

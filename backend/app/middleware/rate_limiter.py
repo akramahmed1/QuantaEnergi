@@ -96,8 +96,12 @@ class RateLimiter:
     
     def start_cleanup_task(self):
         """Start background cleanup task"""
-        if self.cleanup_task is None or self.cleanup_task.done():
-            self.cleanup_task = asyncio.create_task(self._cleanup_expired_entries())
+        try:
+            if self.cleanup_task is None or self.cleanup_task.done():
+                self.cleanup_task = asyncio.create_task(self._cleanup_expired_entries())
+        except RuntimeError:
+            # No event loop running, skip cleanup task initialization
+            pass
     
     async def _cleanup_expired_entries(self):
         """Clean up expired rate limit entries"""

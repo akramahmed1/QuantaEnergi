@@ -8,9 +8,9 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import logging
 
-from app.services.logistics_manager import LogisticsManager
-from app.services.inventory_manager import InventoryManager
-from app.services.regional_pricing_engine import RegionalPricingEngine
+from ...services.logistics_manager import LogisticsManager
+from ...services.inventory_manager import InventoryManager
+from ...services.regional_pricing_engine import RegionalPricingEngine
 
 logger = logging.getLogger(__name__)
 

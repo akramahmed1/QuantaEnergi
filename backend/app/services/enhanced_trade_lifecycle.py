@@ -10,17 +10,17 @@ from typing import Dict, List, Optional, Any, Tuple
 from uuid import uuid4
 import json
 
-from app.core.event_bus import event_bus, EventType, create_event, publish_event
-from app.schemas.trade import (
+from ..core.event_bus import event_bus, EventType, create_event, publish_event
+from ..schemas.trade import (
     TradeCreate, TradeUpdate, TradeResponse, TradeStatusResponse,
     TradeDetails, TradeConfirmation, TradeAllocation, TradeSettlement,
     TradeInvoice, TradePayment, TradeFilter, TradeSearchResponse,
     TradeAnalytics, ShariaComplianceCheck, ComplianceStatus
 )
-from app.models.organization import Organization
-from app.services.sharia_compliance import ShariaComplianceService
-from app.services.credit_manager import CreditManager
-from app.services.risk_manager import RiskManager
+from ..models.organization import Organization
+from .sharia_compliance import ShariaComplianceService
+from .credit_manager import CreditManager
+from .risk_manager import RiskManager
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from app.services.decentralized_trading import DecentralizedTradingProtocol, DecentralizedTradingValidator
-from app.services.carbon_trading import CarbonCreditTradingPlatform, CarbonTradingValidator
-from app.schemas.trade import (
+from ...services.decentralized_trading import DecentralizedTradingProtocol, DecentralizedTradingValidator
+from ...services.carbon_trading import CarbonCreditTradingPlatform, CarbonTradingValidator
+from ...schemas.trade import (
     ApiResponse, ErrorResponse, IslamicComplianceResponse
 )
 

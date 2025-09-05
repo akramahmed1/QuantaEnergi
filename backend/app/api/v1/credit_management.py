@@ -8,8 +8,8 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 import logging
 
-from app.services.credit_manager import CreditManager
-from app.schemas.trade import (
+from ...services.credit_manager import CreditManager
+from ...schemas.trade import (
     CreditLimit, CreditExposure, CreditReport, ApiResponse, ErrorResponse
 )
 

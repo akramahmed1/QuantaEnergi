@@ -3,8 +3,8 @@ Main API router for QuantaEnergi
 """
 
 from fastapi import APIRouter
-from app.api.v1 import trades_router, risk_router, logistics_router
-from app.api.v1 import health_router, metrics_router, auth_router
+from .v1 import trades_router, risk_router, logistics_router
+from .v1 import health_router, metrics_router, auth_router
 
 # Main API router
 api_router = APIRouter()

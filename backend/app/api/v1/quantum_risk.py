@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from app.services.quantum_optimizer import QuantumPortfolioOptimizer, QuantumComplianceValidator
-from app.services.advanced_risk import AdvancedRiskAnalytics, IslamicRiskValidator
+from ...services.quantum_optimizer import QuantumPortfolioOptimizer, QuantumComplianceValidator
+from ...services.advanced_risk import AdvancedRiskAnalytics, IslamicRiskValidator
 
 router = APIRouter(prefix="/quantum-risk", tags=["Quantum Optimization & Advanced Risk"])
 

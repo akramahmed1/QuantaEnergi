@@ -12,7 +12,7 @@ from uuid import uuid4
 import weakref
 
 from fastapi import WebSocket, WebSocketDisconnect
-from app.core.event_bus import EventType, BaseEvent
+from .event_bus import EventType, BaseEvent
 
 logger = logging.getLogger(__name__)
 

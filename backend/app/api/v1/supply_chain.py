@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from app.services.supply_chain import SupplyChainManager, IslamicSupplyChainValidator
+from ...services.supply_chain import SupplyChainManager, IslamicSupplyChainValidator
 
 router = APIRouter(prefix="/supply-chain", tags=["Supply Chain Management"])
 

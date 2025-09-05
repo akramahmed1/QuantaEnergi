@@ -6,10 +6,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from app.services.options import OptionsEngine, IslamicOptionsValidator
-from app.services.structured_products import StructuredProductsEngine, IslamicStructuredValidator
-from app.services.algo_trading import AlgorithmicTradingEngine, IslamicAlgoValidator
-from app.schemas.trade import OptionCreate, StructuredProductCreate, AlgoStrategyCreate
+from ...services.options import OptionsEngine, IslamicOptionsValidator
+from ...services.structured_products import StructuredProductsEngine, IslamicStructuredValidator
+from ...services.algo_trading import AlgorithmicTradingEngine, IslamicAlgoValidator
+from ...schemas.trade import OptionCreate, StructuredProductCreate, AlgoStrategyCreate
 
 router = APIRouter(prefix="/options", tags=["Options Trading"])
 

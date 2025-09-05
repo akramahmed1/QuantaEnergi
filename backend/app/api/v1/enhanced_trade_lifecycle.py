@@ -8,15 +8,15 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
-from app.services.enhanced_trade_lifecycle import enhanced_trade_service, EnhancedTradeLifecycleService
-from app.schemas.trade import (
+from ...services.enhanced_trade_lifecycle import enhanced_trade_service, EnhancedTradeLifecycleService
+from ...schemas.trade import (
     TradeCreate, TradeUpdate, TradeResponse, TradeStatusResponse,
     TradeDetails, TradeConfirmation, TradeAllocation, TradeSettlement,
     TradeInvoice, TradePayment, TradeFilter, TradeSearchResponse,
     TradeAnalytics, ShariaComplianceCheck
 )
-from app.core.event_bus import event_bus, EventType
-from app.core.auth import get_current_user
+from ...core.event_bus import event_bus, EventType
+from ...core.auth import get_current_user
 
 router = APIRouter(prefix="/enhanced/trades", tags=["Enhanced Trade Lifecycle"])
 

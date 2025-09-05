@@ -5,10 +5,14 @@ Tests token generation, validation, role-based access, and rate limiting
 
 import pytest
 import asyncio
+import sys
+import os
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from app.core.jwt_auth import JWTAuthManager, auth_manager, authenticate_user, get_current_user
 from app.middleware.rate_limiter import RateLimiter, rate_limiter
