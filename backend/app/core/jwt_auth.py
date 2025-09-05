@@ -178,7 +178,7 @@ class JWTAuthManager:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has expired"
             )
-        except jwt.JWTError as e:
+        except jwt.InvalidTokenError as e:
             logger.warning(f"JWT error: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

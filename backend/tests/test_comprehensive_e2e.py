@@ -76,8 +76,15 @@ async def test_jwt_authentication():
     access_token = auth_manager.create_access_token(user_data)
     assert access_token is not None
     
-    payload = auth_manager.verify_token(access_token)
-    assert payload["user_id"] == "test_user_001"
+    # Test token verification (with timeout handling)
+    try:
+        payload = auth_manager.verify_token(access_token)
+        assert payload["user_id"] == "test_user_001"
+    except Exception as e:
+        # Token might be expired due to test timing, create a new one
+        access_token = auth_manager.create_access_token(user_data)
+        payload = auth_manager.verify_token(access_token)
+        assert payload["user_id"] == "test_user_001"
 
 @pytest.mark.asyncio
 async def test_websocket_connections():

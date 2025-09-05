@@ -9,7 +9,7 @@ from sqlalchemy import Column, String, DateTime, Boolean, JSON, Text, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declared_attr
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 import uuid
 
 from ..db.database import Base
@@ -152,14 +152,14 @@ class OrganizationBase(BaseModel):
     language: str = 'en'
     subscription_tier: str = Field('standard', pattern=r'^(standard|premium|enterprise)$')
     
-    @validator('code')
+    @field_validator('code')
     def validate_code(cls, v):
         """Validate organization code format"""
         if not v.isupper() or ' ' in v:
             raise ValueError('Code must be uppercase and contain no spaces')
         return v
     
-    @validator('operating_regions')
+    @field_validator('operating_regions')
     def validate_operating_regions(cls, v):
         """Validate operating regions"""
         if v:

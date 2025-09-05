@@ -97,7 +97,6 @@ graph TB
     K8s --> Redis
     K8s --> Timescale
 ```
-```
 
 ## Microservices Architecture
 

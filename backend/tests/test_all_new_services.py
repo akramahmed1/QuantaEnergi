@@ -5,9 +5,14 @@ Tests Physical Delivery, Contract Management, Settlement, Market Data, and Risk 
 
 import pytest
 import asyncio
+import sys
+import os
 from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
 import uuid
+
+# Add the backend directory to Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Import all new services
 from app.services.physical_delivery import PhysicalDeliveryManagement
