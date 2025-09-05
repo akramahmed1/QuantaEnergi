@@ -5,99 +5,99 @@
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        Web[🌐 Web Dashboard<br/>React + TypeScript]
-        Mobile[📱 Mobile App<br/>React Native]
-        API_Client[🔌 API Clients<br/>Third-party Integrations]
-        Admin[👨‍💼 Admin Panel<br/>Management Interface]
+        Web["Web Dashboard<br/>React + TypeScript"]
+        Mobile["Mobile App<br/>React Native"]
+        API_Client["API Clients<br/>Third-party Integrations"]
+        Admin["Admin Panel<br/>Management Interface"]
     end
     
     subgraph "Load Balancer & CDN"
-        ALB[⚖️ AWS Application<br/>Load Balancer]
-        CDN[🌍 CloudFront CDN<br/>Global Distribution]
-        WAF[🛡️ AWS WAF<br/>Web Application Firewall]
+        ALB["AWS Application<br/>Load Balancer"]
+        CDN["CloudFront CDN<br/>Global Distribution"]
+        WAF["AWS WAF<br/>Web Application Firewall"]
     end
     
     subgraph "API Gateway Layer"
-        Gateway[🚪 Kong/Envoy Gateway<br/>Rate Limiting & Auth]
-        RateLimit[⏱️ Enhanced Rate Limiter<br/>Multi-tier Limiting]
-        Auth[🔐 JWT Authentication<br/>RBAC & OAuth 2.0]
+        Gateway["Kong/Envoy Gateway<br/>Rate Limiting & Auth"]
+        RateLimit["Enhanced Rate Limiter<br/>Multi-tier Limiting"]
+        Auth["JWT Authentication<br/>RBAC & OAuth 2.0"]
     end
     
     subgraph "Microservices Layer"
         subgraph "Core Services"
-            Trading[📈 Trading Service<br/>FastAPI + Async]
-            Risk[⚠️ Risk Management<br/>Real-time Analytics]
-            Portfolio[💼 Portfolio Service<br/>Position Management]
-            User[👤 User Service<br/>Profile & Preferences]
+            Trading["Trading Service<br/>FastAPI + Async"]
+            Risk["Risk Management<br/>Real-time Analytics"]
+            Portfolio["Portfolio Service<br/>Position Management"]
+            User["User Service<br/>Profile & Preferences"]
         end
         
         subgraph "Business Services"
-            Compliance[📋 Compliance Service<br/>Regulatory & Sharia]
-            Settlement[💰 Settlement Service<br/>Clearing & Payment]
-            Reporting[📊 Reporting Service<br/>Analytics & Dashboards]
-            Notification[🔔 Notification Service<br/>Real-time Alerts]
+            Compliance["Compliance Service<br/>Regulatory & Sharia"]
+            Settlement["Settlement Service<br/>Clearing & Payment"]
+            Reporting["Reporting Service<br/>Analytics & Dashboards"]
+            Notification["Notification Service<br/>Real-time Alerts"]
         end
         
         subgraph "Advanced Services"
-            AI[🤖 AI/ML Service<br/>Market Intelligence]
-            Quantum[⚛️ Quantum Service<br/>Portfolio Optimization]
-            Blockchain[⛓️ Blockchain Service<br/>Carbon Trading]
-            IoT[🌐 IoT Service<br/>Device Integration]
+            AI["AI/ML Service<br/>Market Intelligence"]
+            Quantum["Quantum Service<br/>Portfolio Optimization"]
+            Blockchain["Blockchain Service<br/>Carbon Trading"]
+            IoT["IoT Service<br/>Device Integration"]
         end
     end
     
     subgraph "Real-time Layer"
-        WebSocket[🔌 WebSocket Manager<br/>Observer Pattern]
-        EventBus[📡 Event Bus<br/>Async Communication]
-        Celery[⚡ Celery Workers<br/>Background Tasks]
-        Kafka[📨 Apache Kafka<br/>Message Streaming]
+        WebSocket["WebSocket Manager<br/>Observer Pattern"]
+        EventBus["Event Bus<br/>Async Communication"]
+        Celery["Celery Workers<br/>Background Tasks"]
+        Kafka["Apache Kafka<br/>Message Streaming"]
     end
     
     subgraph "Data Layer"
         subgraph "Primary Databases"
-            PostgreSQL[(🐘 PostgreSQL<br/>Primary Database)]
-            Redis[(🔴 Redis<br/>Cache & Sessions)]
-            TimescaleDB[(⏰ TimescaleDB<br/>Time Series Data)]
+            PostgreSQL[("PostgreSQL<br/>Primary Database")]
+            Redis[("Redis<br/>Cache & Sessions")]
+            TimescaleDB[("TimescaleDB<br/>Time Series Data")]
         end
         
         subgraph "Message Queues"
-            RabbitMQ[🐰 RabbitMQ<br/>Task Queues]
-            MQTT[📡 MQTT Broker<br/>IoT Communication]
+            RabbitMQ["RabbitMQ<br/>Task Queues"]
+            MQTT["MQTT Broker<br/>IoT Communication"]
         end
         
         subgraph "External Data"
-            MarketAPI[📊 Market Data APIs<br/>CME, ICE, Bloomberg]
-            WeatherAPI[🌤️ Weather APIs<br/>Environmental Data]
-            NewsAPI[📰 News APIs<br/>Sentiment Analysis]
+            MarketAPI["Market Data APIs<br/>CME, ICE, Bloomberg"]
+            WeatherAPI["Weather APIs<br/>Environmental Data"]
+            NewsAPI["News APIs<br/>Sentiment Analysis"]
         end
     end
     
     subgraph "Infrastructure Layer"
         subgraph "Kubernetes Cluster"
-            K8s[☸️ EKS Cluster<br/>Container Orchestration]
-            Pods[📦 Application Pods<br/>Auto-scaling]
-            Services[🔗 K8s Services<br/>Load Balancing]
+            K8s["EKS Cluster<br/>Container Orchestration"]
+            Pods["Application Pods<br/>Auto-scaling"]
+            Services["K8s Services<br/>Load Balancing"]
         end
         
         subgraph "Monitoring & Observability"
-            Prometheus[📊 Prometheus<br/>Metrics Collection]
-            Grafana[📈 Grafana<br/>Dashboards]
-            ELK[🔍 ELK Stack<br/>Logging & Search]
-            Jaeger[🔍 Jaeger<br/>Distributed Tracing]
+            Prometheus["Prometheus<br/>Metrics Collection"]
+            Grafana["Grafana<br/>Dashboards"]
+            ELK["ELK Stack<br/>Logging & Search"]
+            Jaeger["Jaeger<br/>Distributed Tracing"]
         end
         
         subgraph "Security & Compliance"
-            Vault[🔐 HashiCorp Vault<br/>Secrets Management]
-            IAM[👤 AWS IAM<br/>Identity Management]
-            Audit[📋 Audit Logs<br/>Compliance Tracking]
+            Vault["HashiCorp Vault<br/>Secrets Management"]
+            IAM["AWS IAM<br/>Identity Management"]
+            Audit["Audit Logs<br/>Compliance Tracking"]
         end
     end
     
     subgraph "External Integrations"
-        CME[🏛️ CME Group<br/>Futures Exchange]
-        ICE[🧊 ICE<br/>Energy Exchange]
-        Banks[🏦 Banking APIs<br/>Payment Processing]
-        Regulators[📜 Regulatory Bodies<br/>Compliance Reporting]
+        CME["CME Group<br/>Futures Exchange"]
+        ICE["ICE<br/>Energy Exchange"]
+        Banks["Banking APIs<br/>Payment Processing"]
+        Regulators["Regulatory Bodies<br/>Compliance Reporting"]
     end
     
     %% Client to Load Balancer

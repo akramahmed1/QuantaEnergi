@@ -24,38 +24,38 @@ graph TB
                 end
                 
                 subgraph "Worker Nodes"
-                    Pod1[App Pod 1<br/>Trading Service]
-                    Pod2[App Pod 2<br/>Risk Service]
-                    Pod3[App Pod 3<br/>Portfolio Service]
-                    Pod4[App Pod 4<br/>Compliance Service]
+                    Pod1["App Pod 1<br/>Trading Service"]
+                    Pod2["App Pod 2<br/>Risk Service"]
+                    Pod3["App Pod 3<br/>Portfolio Service"]
+                    Pod4["App Pod 4<br/>Compliance Service"]
                 end
             end
         end
         
         subgraph "Private Subnet - Data Tier"
-            RDS[(RDS PostgreSQL<br/>Multi-AZ)]
-            ElastiCache[(ElastiCache Redis<br/>Cluster Mode)]
-            TimescaleDB[(TimescaleDB<br/>Managed Service)]
+            RDS[("RDS PostgreSQL<br/>Multi-AZ")]
+            ElastiCache[("ElastiCache Redis<br/>Cluster Mode")]
+            TimescaleDB[("TimescaleDB<br/>Managed Service")]
         end
         
         subgraph "Private Subnet - Queue Tier"
-            MSK[Amazon MSK<br/>Kafka Cluster]
-            RabbitMQ[RabbitMQ<br/>Managed Service]
+            MSK["Amazon MSK<br/>Kafka Cluster"]
+            RabbitMQ["RabbitMQ<br/>Managed Service"]
         end
     end
     
     subgraph "Monitoring & Observability"
-        Prometheus[Prometheus<br/>Metrics Collection]
-        Grafana[Grafana<br/>Dashboards]
-        ELK[Amazon OpenSearch<br/>Log Analytics]
-        XRay[AWS X-Ray<br/>Distributed Tracing]
+        Prometheus["Prometheus<br/>Metrics Collection"]
+        Grafana["Grafana<br/>Dashboards"]
+        ELK["Amazon OpenSearch<br/>Log Analytics"]
+        XRay["AWS X-Ray<br/>Distributed Tracing"]
     end
     
     subgraph "Security & Compliance"
-        WAF[AWS WAF<br/>Web Application Firewall]
-        Secrets[AWS Secrets Manager<br/>Secrets Management]
-        KMS[AWS KMS<br/>Key Management]
-        CloudTrail[AWS CloudTrail<br/>Audit Logging]
+        WAF["AWS WAF<br/>Web Application Firewall"]
+        Secrets["AWS Secrets Manager<br/>Secrets Management"]
+        KMS["AWS KMS<br/>Key Management"]
+        CloudTrail["AWS CloudTrail<br/>Audit Logging"]
     end
     
     subgraph "CI/CD Pipeline"
