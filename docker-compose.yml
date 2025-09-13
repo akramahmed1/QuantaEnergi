@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Backend API Service
   backend:
     build:
       context: ./backend
@@ -9,20 +8,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/energyopti_pro
+      - DATABASE_URL=postgresql://user:password@db:5432/quantaenergi
       - REDIS_URL=redis://redis:6379
       - SECRET_KEY=your-secret-key-here
-      - ENVIRONMENT=development
     depends_on:
-      - postgres
+      - db
       - redis
     volumes:
       - ./backend:/app
-      - /app/__pycache__
-    networks:
-      - energyopti-network
+    restart: unless-stopped
 
-  # Frontend Service
   frontend:
     build:
       context: ./frontend
@@ -30,86 +25,33 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_ENVIRONMENT=development
+      - VITE_API_BASE_URL=http://localhost:8000
     depends_on:
       - backend
     volumes:
       - ./frontend:/app
-      - /app/node_modules
-    networks:
-      - energyopti-network
+    restart: unless-stopped
 
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
+  db:
+    image: postgres:14
     environment:
-      - POSTGRES_DB=energyopti_pro
-      - POSTGRES_USER=postgres
+      - POSTGRES_DB=quantaenergi
+      - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - energyopti-network
+    restart: unless-stopped
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - energyopti-network
-
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/ssl:/etc/nginx/ssl
-    depends_on:
-      - backend
-      - frontend
-    networks:
-      - energyopti-network
-
-  # Monitoring Stack
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    networks:
-      - energyopti-network
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - prometheus
-    networks:
-      - energyopti-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
-  prometheus_data:
-  grafana_data:
-
-networks:
-  energyopti-network:
-    driver: bridge

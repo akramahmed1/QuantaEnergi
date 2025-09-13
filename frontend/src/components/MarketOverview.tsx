@@ -1,77 +1,192 @@
-import React from 'react'
-import { motion } from 'framer-motion'
-import { 
-    ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon, 
-  CurrencyDollarIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline'
+import React, { useEffect, useState } from 'react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 
-const MarketOverview: React.FC = () => {
-  const marketData = [
-    { symbol: 'WTI', price: 78.45, change: 2.34, changePercent: 3.07, volume: '1.2M' },
-    { symbol: 'BRENT', price: 82.67, change: -1.23, changePercent: -1.47, volume: '890K' },
-    { symbol: 'NATURAL_GAS', price: 3.45, change: 0.12, changePercent: 3.61, volume: '450K' },
-    { symbol: 'COAL', price: 125.80, change: 5.20, changePercent: 4.31, volume: '320K' }
-  ]
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-secondary-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-secondary-900">Market Overview</h2>
-        <div className="flex items-center space-x-2">
-          <ChartBarIcon className="w-5 h-5 text-secondary-500" />
-          <span className="text-sm text-secondary-600">Live Data</span>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {marketData.map((item, index) => (
-          <motion.div
-            key={item.symbol}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-secondary-50 rounded-lg p-4 border border-secondary-200"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-secondary-700">{item.symbol}</span>
-              <CurrencyDollarIcon className="w-4 h-4 text-secondary-500" />
-            </div>
-            
-            <div className="text-2xl font-bold text-secondary-900 mb-1">
-              ${item.price.toFixed(2)}
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className={`flex items-center space-x-1 ${
-                item.change >= 0 ? 'text-success-600' : 'text-danger-600'
-              }`}>
-                {item.change >= 0 ? (
-                  <TrendingUpIcon className="w-4 h-4" />
-                ) : (
-                  <TrendingDownIcon className="w-4 h-4" />
-                )}
-                <span className="text-sm font-medium">
-                  {item.change >= 0 ? '+' : ''}{item.change.toFixed(2)}
-                </span>
-              </div>
-              
-              <span className={`text-sm font-medium ${
-                item.change >= 0 ? 'text-success-600' : 'text-danger-600'
-              }`}>
-                {item.change >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
-              </span>
-            </div>
-            
-            <div className="text-xs text-secondary-500 mt-2">
-              Volume: {item.volume}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  )
+interface MarketData {
+  prices: Array<{
+    timestamp: string;
+    price: number;
+    volume: number;
+  }>;
+  signals: Array<{
+    type: string;
+    strength: number;
+    timestamp: string;
+  }>;
 }
 
-export default MarketOverview
+interface WeatherData {
+  temp: number;
+  humidity: number;
+  description: string;
+  wind_speed: number;
+}
+
+interface WeatherForecastData {
+  forecasts: Array<{
+    date: string;
+    temp: number;
+    description: string;
+  }>;
+}
+
+interface MarketOverviewProps {
+  data?: MarketData;
+  loading: boolean;
+  weatherData?: WeatherData | null;
+  weatherForecast?: WeatherForecastData | null;
+}
+
+const MarketOverview: React.FC<MarketOverviewProps> = ({
+  data,
+  loading,
+  weatherData,
+  weatherForecast
+}) => {
+  const [chartData, setChartData] = useState({
+    labels: [],
+    datasets: []
+  });
+
+  useEffect(() => {
+    if (data?.prices) {
+      const labels = data.prices.map(price => 
+        new Date(price.timestamp).toLocaleTimeString()
+      );
+      const prices = data.prices.map(price => price.price);
+
+      setChartData({
+        labels,
+        datasets: [
+          {
+            label: 'Energy Price',
+            data: prices,
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.1,
+          },
+        ],
+      });
+    }
+  }, [data]);
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Real-time Energy Prices',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: false,
+      },
+    },
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Market Chart */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Market Overview
+        </h2>
+        {chartData.labels.length > 0 ? (
+          <Line data={chartData} options={options} />
+        ) : (
+          <div className="h-64 flex items-center justify-center text-gray-500">
+            No market data available
+          </div>
+        )}
+      </div>
+
+      {/* Weather Information */}
+      {(weatherData || weatherForecast) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {weatherData && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Current Weather
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Temperature:</span>
+                  <span className="font-medium">{weatherData.temp}°C</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Humidity:</span>
+                  <span className="font-medium">{weatherData.humidity}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Description:</span>
+                  <span className="font-medium capitalize">{weatherData.description}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Wind Speed:</span>
+                  <span className="font-medium">{weatherData.wind_speed} m/s</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {weatherForecast && weatherForecast.forecasts.length > 0 && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Weather Forecast
+              </h3>
+              <div className="space-y-2">
+                {weatherForecast.forecasts.slice(0, 5).map((forecast, index) => (
+                  <div key={index} className="flex justify-between items-center">
+                    <span className="text-gray-600">{forecast.date}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium">{forecast.temp}°C</span>
+                      <span className="text-sm text-gray-500 capitalize">
+                        {forecast.description}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MarketOverview;
