@@ -1,0 +1,144 @@
+config:
+  target: 'http://localhost:8000'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    # Normal load phase
+    - duration: 300
+      arrivalRate: 50
+      name: "Normal load"
+    # High load phase
+    - duration: 180
+      arrivalRate: 100
+      name: "High load"
+    # Peak load phase
+    - duration: 120
+      arrivalRate: 200
+      name: "Peak load"
+    # Stress test phase
+    - duration: 60
+      arrivalRate: 500
+      name: "Stress test"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+  plugins:
+    metrics-by-endpoint: {}
+    publish-metrics:
+      - type: cloudwatch
+        region: us-east-1
+        namespace: 'QuantaEnergi/LoadTest'
+
+scenarios:
+  - name: "Trading User Workflow"
+    weight: 70
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            username: "trader_{{ $randomInt(1, 1000) }}"
+            password: "test_password_123"
+            tenant_id: "tenant_{{ $randomInt(1, 100) }}"
+          capture:
+            - json: "$.access_token"
+              as: "token"
+      - get:
+          url: "/api/market/prices?region=us"
+          headers:
+            Authorization: "Bearer {{ token }}"
+      - get:
+          url: "/api/signals?commodity=crude_oil"
+          headers:
+            Authorization: "Bearer {{ token }}"
+      - get:
+          url: "/api/portfolio/summary"
+          headers:
+            Authorization: "Bearer {{ token }}"
+      - post:
+          url: "/api/v1/trade-lifecycle/capture"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            trade_type: "spot"
+            commodity_type: "crude_oil"
+            quantity: "{{ $randomInt(100, 1000) }}"
+            price: "{{ $randomInt(80, 90) }}"
+            currency: "USD"
+            counterparty: "counterparty_{{ $randomInt(1, 100) }}"
+            trade_date: "{{ $isoTimestamp }}"
+            settlement_date: "{{ $isoTimestamp }}"
+            region: "us"
+      - post:
+          url: "/api/v1/risk-analytics/var/monte-carlo"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            portfolio_id: "portfolio_{{ $randomInt(1, 1000) }}"
+            confidence_level: 0.95
+            time_horizon: 1
+            calculation_method: "monte_carlo"
+
+  - name: "High Frequency Trading"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            username: "hft_trader_{{ $randomInt(1, 100) }}"
+            password: "hft_password_123"
+            tenant_id: "hft_tenant_{{ $randomInt(1, 10) }}"
+          capture:
+            - json: "$.access_token"
+              as: "token"
+      - loop:
+          - get:
+              url: "/api/market/prices?region=global"
+              headers:
+                Authorization: "Bearer {{ token }}"
+          - post:
+              url: "/api/v1/trade-lifecycle/capture"
+              headers:
+                Authorization: "Bearer {{ token }}"
+              json:
+                trade_type: "spot"
+                commodity_type: "crude_oil"
+                quantity: "{{ $randomInt(1000, 5000) }}"
+                price: "{{ $randomInt(80, 90) }}"
+                currency: "USD"
+                counterparty: "hft_counterparty_{{ $randomInt(1, 20) }}"
+                trade_date: "{{ $isoTimestamp }}"
+                settlement_date: "{{ $isoTimestamp }}"
+                region: "us"
+          count: 5
+
+  - name: "Compliance Officer Workflow"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            username: "compliance_{{ $randomInt(1, 50) }}"
+            password: "compliance_password_123"
+            tenant_id: "compliance_tenant_{{ $randomInt(1, 20) }}"
+          capture:
+            - json: "$.access_token"
+              as: "token"
+      - get:
+          url: "/api/v1/compliance/status"
+          headers:
+            Authorization: "Bearer {{ token }}"
+      - post:
+          url: "/api/v1/compliance/report"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            report_type: "cftc"
+            region: "us"
+            period_start: "2024-01-01T00:00:00Z"
+            period_end: "2024-01-31T23:59:59Z"
+      - get:
+          url: "/api/v1/compliance/history"
+          headers:
+            Authorization: "Bearer {{ token }}"

@@ -14,21 +14,6 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 import structlog
 
-# Local imports
-from .core.config import settings
-from .db.session import get_db, create_tables
-from .api.v1.auth import router as auth_router
-from .api.v1.energy_data import router as energy_data_router
-from .api.v1.admin import router as admin_router
-from .api.v1.trade_lifecycle import router as trade_lifecycle_router
-from .api.v1.risk_analytics import router as risk_analytics_router
-from .api.v1.credit_management import router as credit_management_router
-from .api.v1.options_trading import router as options_trading_router
-from .api.v1.compliance import router as compliance_router
-from .api.v1.websocket import router as websocket_router
-from .schemas.user import User
-from .core.security import verify_token
-
 # Configure logging
 warnings.filterwarnings("ignore")
 logger = structlog.get_logger(__name__)
@@ -38,11 +23,6 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     logger.info("Starting QuantaEnergi API")
-    try:
-        await create_tables()
-        logger.info("Database tables created successfully")
-    except Exception as e:
-        logger.error(f"Failed to create database tables: {e}")
     
     yield
     
@@ -114,22 +94,11 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],  # Configure properly in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Include routers
-app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
-app.include_router(energy_data_router, prefix="/api/energy-data", tags=["Energy Data"])
-app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
-app.include_router(trade_lifecycle_router, prefix="/api/trade-lifecycle", tags=["Trade Lifecycle"])
-app.include_router(risk_analytics_router, prefix="/api/risk-analytics", tags=["Risk Analytics"])
-app.include_router(credit_management_router, prefix="/api/credit-management", tags=["Credit Management"])
-app.include_router(options_trading_router, prefix="/api/options", tags=["Options Trading"])
-app.include_router(compliance_router, prefix="/api/compliance", tags=["Compliance"])
-app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
 @app.get("/")
 async def root():
@@ -167,25 +136,56 @@ async def api_status():
         "rate_limit": "100 requests per minute per IP"
     }
 
-# Global exception handler
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler"""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "detail": "Internal server error",
-            "error": str(exc) if settings.DEBUG else "An unexpected error occurred"
-        }
-    )
+# Import error handling middleware
+from app.middleware.error_handler import setup_error_handlers
+
+# Import GraphQL router
+from app.graphql import graphql_router
+
+# Import security middleware
+from app.middleware.waf_middleware import setup_waf_middleware
+
+# Import federated auth
+from app.security.federated_auth import get_federated_auth_manager, create_federated_auth_routes
+
+# Import tenant management
+from app.api.tenant_management import router as tenant_router
+
+# Import monitoring
+from app.monitoring.metrics import MetricsMiddleware, get_metrics, start_metrics_server
+
+# Import Celery
+from app.core.celery_app import get_celery_app
+
+# Setup comprehensive error handlers
+setup_error_handlers(app)
+
+# Setup WAF middleware
+setup_waf_middleware(app)
+
+# Setup metrics middleware
+metrics_middleware = MetricsMiddleware(get_metrics())
+app.middleware("http")(metrics_middleware)
+
+# Add GraphQL endpoint
+app.include_router(graphql_router, prefix="/api", tags=["GraphQL"])
+
+# Add tenant management routes
+app.include_router(tenant_router)
+
+# Add federated authentication routes
+auth_manager = get_federated_auth_manager()
+# Note: create_federated_auth_routes is called during app startup
+
+# Start metrics server
+start_metrics_server(port=8001)
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
         log_level="info"
     )

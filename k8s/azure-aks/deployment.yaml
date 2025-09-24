@@ -1,0 +1,305 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: quantaenergi
+  labels:
+    name: quantaenergi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quantaenergi-backend
+  namespace: quantaenergi
+  annotations:
+    aadpodidentity.beta.kubernetes.io/IdentitySelector: quantaenergi-backend-identity
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quantaenergi-frontend
+  namespace: quantaenergi
+  annotations:
+    aadpodidentity.beta.kubernetes.io/IdentitySelector: quantaenergi-frontend-identity
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: quantaenergi-backend-identity
+  namespace: quantaenergi
+spec:
+  type: 0
+  resourceID: /subscriptions/SUBSCRIPTION_ID/resourcegroups/RESOURCE_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/quantaenergi-backend
+  clientID: CLIENT_ID
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: quantaenergi-backend-identity-binding
+  namespace: quantaenergi
+spec:
+  azureIdentity: quantaenergi-backend-identity
+  selector: quantaenergi-backend
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentity
+metadata:
+  name: quantaenergi-frontend-identity
+  namespace: quantaenergi
+spec:
+  type: 0
+  resourceID: /subscriptions/SUBSCRIPTION_ID/resourcegroups/RESOURCE_GROUP/providers/Microsoft.ManagedIdentity/userAssignedIdentities/quantaenergi-frontend
+  clientID: CLIENT_ID
+---
+apiVersion: aadpodidentity.k8s.io/v1
+kind: AzureIdentityBinding
+metadata:
+  name: quantaenergi-frontend-identity-binding
+  namespace: quantaenergi
+spec:
+  azureIdentity: quantaenergi-frontend-identity
+  selector: quantaenergi-frontend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quantaenergi-backend
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-backend
+    aadpodidbinding: quantaenergi-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: quantaenergi-backend
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-backend
+        aadpodidbinding: quantaenergi-backend
+    spec:
+      serviceAccountName: quantaenergi-backend
+      containers:
+      - name: backend
+        image: quay.io/quantaenergi/quantaenergi-backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: redis-url
+        - name: AZURE_CLIENT_ID
+          value: "CLIENT_ID"
+        - name: AZURE_TENANT_ID
+          value: "TENANT_ID"
+        - name: AZURE_SUBSCRIPTION_ID
+          value: "SUBSCRIPTION_ID"
+        - name: AZURE_RESOURCE_GROUP
+          value: "RESOURCE_GROUP"
+        - name: AZURE_STORAGE_ACCOUNT
+          value: "quantaenergistorage"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+      volumes:
+      - name: config
+        configMap:
+          name: quantaenergi-config
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.kubernetes.io/instance-type: "Standard_B2s"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-backend
+  namespace: quantaenergi
+spec:
+  selector:
+    app: quantaenergi-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quantaenergi-frontend
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-frontend
+    aadpodidbinding: quantaenergi-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quantaenergi-frontend
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-frontend
+        aadpodidbinding: quantaenergi-frontend
+    spec:
+      serviceAccountName: quantaenergi-frontend
+      containers:
+      - name: frontend
+        image: quay.io/quantaenergi/quantaenergi-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_API_URL
+          value: "https://api.quantaenergi.com"
+        - name: AZURE_CLIENT_ID
+          value: "CLIENT_ID"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      nodeSelector:
+        kubernetes.io/os: linux
+        node.kubernetes.io/instance-type: "Standard_B1s"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-frontend
+  namespace: quantaenergi
+spec:
+  selector:
+    app: quantaenergi-frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: quantaenergi-ingress
+  namespace: quantaenergi
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+    appgw.ingress.kubernetes.io/health-probe-path: "/health"
+    appgw.ingress.kubernetes.io/health-probe-interval: "30"
+    appgw.ingress.kubernetes.io/health-probe-timeout: "5"
+    appgw.ingress.kubernetes.io/health-probe-unhealthy-threshold: "3"
+    appgw.ingress.kubernetes.io/health-probe-match-status: "200"
+spec:
+  rules:
+  - host: api.quantaenergi.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quantaenergi-backend
+            port:
+              number: 8000
+  - host: app.quantaenergi.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quantaenergi-frontend
+            port:
+              number: 3000
+  tls:
+  - hosts:
+    - api.quantaenergi.com
+    - app.quantaenergi.com
+    secretName: quantaenergi-tls-secret
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quantaenergi-tls-secret
+  namespace: quantaenergi
+type: kubernetes.io/tls
+data:
+  tls.crt: <base64-encoded-certificate>
+  tls.key: <base64-encoded-private-key>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: quantaenergi-config
+  namespace: quantaenergi
+data:
+  app.yaml: |
+    database:
+      host: quantaenergi-db.postgres.database.azure.com
+      port: 5432
+      name: quantaenergi
+      ssl_mode: require
+    redis:
+      host: quantaenergi-redis.redis.cache.windows.net
+      port: 6380
+      ssl: true
+    azure:
+      subscription_id: SUBSCRIPTION_ID
+      resource_group: RESOURCE_GROUP
+      location: East US
+      storage_account: quantaenergistorage
+      key_vault: quantaenergi-kv
+    monitoring:
+      prometheus_endpoint: http://prometheus:9090
+      grafana_endpoint: http://grafana:3000
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quantaenergi-secrets
+  namespace: quantaenergi
+type: Opaque
+data:
+  database-url: <base64-encoded-database-url>
+  redis-url: <base64-encoded-redis-url>
+  jwt-secret: <base64-encoded-jwt-secret>
+  api-keys: <base64-encoded-api-keys>

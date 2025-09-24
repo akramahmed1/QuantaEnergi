@@ -1,0 +1,33 @@
+{
+  "name": "quantaenergi-monorepo",
+  "version": "2.0.0",
+  "description": "QuantaEnergi - AI-Powered Energy Trading Platform Monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build --filter=!@quantaenergi/docs && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.26.2",
+    "@turbo/gen": "^1.10.12",
+    "prettier": "^3.0.0",
+    "turbo": "^1.10.12"
+  },
+  "packageManager": "npm@9.6.7",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

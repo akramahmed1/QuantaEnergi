@@ -1,227 +1,112 @@
 """
-Celery Configuration for Async Task Processing
-Handles background tasks, trade processing, and performance optimization
+Celery Configuration for QuantaEnergi
+Handles CPU-intensive tasks asynchronously
 """
 
-from celery import Celery
 import os
-from kombu import Queue
+from celery import Celery
+from celery.signals import worker_init, worker_shutdown
+import structlog
 
-# Redis configuration for Celery broker
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+logger = structlog.get_logger(__name__)
+
+# Celery configuration
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
 
 # Create Celery app
 celery_app = Celery(
     "quantaenergi",
-    broker=REDIS_URL,
-    backend=REDIS_URL,
+    broker=CELERY_BROKER_URL,
+    backend=CELERY_RESULT_BACKEND,
     include=[
-        "app.tasks.trade_processing",
-        "app.tasks.risk_calculation",
-        "app.tasks.market_data",
-        "app.tasks.notifications"
+        "app.tasks.risk_calculations",
+        "app.tasks.market_data_processing",
+        "app.tasks.compliance_reports",
+        "app.tasks.portfolio_optimization",
+        "app.tasks.esg_calculations"
     ]
 )
 
 # Celery configuration
 celery_app.conf.update(
-    # Task routing
-    task_routes={
-        "app.tasks.trade_processing.*": {"queue": "trade_processing"},
-        "app.tasks.risk_calculation.*": {"queue": "risk_calculation"},
-        "app.tasks.market_data.*": {"queue": "market_data"},
-        "app.tasks.notifications.*": {"queue": "notifications"},
-    },
-    
-    # Queue configuration
-    task_default_queue="default",
-    task_queues=(
-        Queue("default", routing_key="default"),
-        Queue("trade_processing", routing_key="trade_processing"),
-        Queue("risk_calculation", routing_key="risk_calculation"),
-        Queue("market_data", routing_key="market_data"),
-        Queue("notifications", routing_key="notifications"),
-    ),
-    
-    # Task execution
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
     
-    # Performance settings
+    # Task routing
+    task_routes={
+        "app.tasks.risk_calculations.*": {"queue": "risk_calculations"},
+        "app.tasks.market_data_processing.*": {"queue": "market_data"},
+        "app.tasks.compliance_reports.*": {"queue": "compliance"},
+        "app.tasks.portfolio_optimization.*": {"queue": "portfolio"},
+        "app.tasks.esg_calculations.*": {"queue": "esg"},
+    },
+    
+    # Worker configuration
     worker_prefetch_multiplier=1,
     task_acks_late=True,
     worker_max_tasks_per_child=1000,
     
-    # Result backend settings
+    # Result backend configuration
     result_expires=3600,  # 1 hour
-    result_persistent=True,
+    
+    # Task execution configuration
+    task_time_limit=300,  # 5 minutes
+    task_soft_time_limit=240,  # 4 minutes
     
     # Monitoring
     worker_send_task_events=True,
     task_send_sent_event=True,
     
-    # Error handling
-    task_reject_on_worker_lost=True,
-    task_ignore_result=False,
+    # Retry configuration
+    task_default_retry_delay=60,
+    task_max_retries=3,
+    
+    # Concurrency
+    worker_concurrency=4,
+    worker_pool="prefork",  # Use multiprocessing for CPU-bound tasks
 )
 
-# Task time limits
-celery_app.conf.task_soft_time_limit = 300  # 5 minutes
-celery_app.conf.task_time_limit = 600  # 10 minutes
-
-# Beat schedule for periodic tasks
+# Celery Beat configuration for scheduled tasks
 celery_app.conf.beat_schedule = {
-    "market-data-update": {
-        "task": "app.tasks.market_data.update_market_data",
+    "calculate-daily-var": {
+        "task": "app.tasks.risk_calculations.calculate_daily_var",
+        "schedule": 60.0 * 60.0 * 24.0,  # Daily
+    },
+    "process-market-data": {
+        "task": "app.tasks.market_data_processing.process_realtime_data",
         "schedule": 30.0,  # Every 30 seconds
     },
-    "risk-calculation": {
-        "task": "app.tasks.risk_calculation.calculate_portfolio_risk",
-        "schedule": 60.0,  # Every minute
+    "generate-compliance-reports": {
+        "task": "app.tasks.compliance_reports.generate_daily_reports",
+        "schedule": 60.0 * 60.0 * 24.0,  # Daily
     },
-    "cleanup-expired-tokens": {
-        "task": "app.tasks.auth.cleanup_expired_tokens",
-        "schedule": 3600.0,  # Every hour
+    "optimize-portfolios": {
+        "task": "app.tasks.portfolio_optimization.optimize_all_portfolios",
+        "schedule": 60.0 * 60.0 * 6.0,  # Every 6 hours
     },
-    "generate-daily-reports": {
-        "task": "app.tasks.reporting.generate_daily_reports",
-        "schedule": 86400.0,  # Daily at midnight
+    "calculate-esg-scores": {
+        "task": "app.tasks.esg_calculations.calculate_esg_scores",
+        "schedule": 60.0 * 60.0 * 12.0,  # Every 12 hours
     },
 }
 
-# Task priority levels
-celery_app.conf.task_default_priority = 5
-celery_app.conf.task_queue_max_priority = 10
+# Worker initialization
+@worker_init.connect
+def worker_init_handler(sender=None, **kwargs):
+    """Initialize worker"""
+    logger.info("Celery worker initialized", worker=sender)
 
-# Worker configuration
-celery_app.conf.worker_hijack_root_logger = False
-celery_app.conf.worker_log_color = False
 
-# Security
-celery_app.conf.worker_direct = True
-celery_app.conf.broker_connection_retry_on_startup = True
+@worker_shutdown.connect
+def worker_shutdown_handler(sender=None, **kwargs):
+    """Shutdown worker"""
+    logger.info("Celery worker shutting down", worker=sender)
 
-# Health check endpoint
-@celery_app.task(bind=True)
-def health_check(self):
-    """Health check task for monitoring"""
-    return {
-        "status": "healthy",
-        "worker": self.request.hostname,
-        "task_id": self.request.id,
-        "timestamp": self.request.utcnow().isoformat()
-    }
 
-# Performance monitoring
-@celery_app.task(bind=True)
-def performance_metrics(self):
-    """Collect performance metrics"""
-    from app.core.monitoring import collect_metrics
-    
-    try:
-        metrics = collect_metrics()
-        return {
-            "status": "success",
-            "metrics": metrics,
-            "timestamp": self.request.utcnow().isoformat()
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e),
-            "timestamp": self.request.utcnow().isoformat()
-        }
-
-# Trade processing task
-@celery_app.task(bind=True, queue="trade_processing")
-def process_trade_async(self, trade_data):
-    """Process trade asynchronously"""
-    from app.services.enhanced_trade_lifecycle import EnhancedTradeLifecycleService
-    
-    try:
-        service = EnhancedTradeLifecycleService()
-        result = service.process_trade(trade_data)
-        
-        return {
-            "status": "success",
-            "trade_id": result.get("trade_id"),
-            "processing_time": self.request.utcnow().isoformat()
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e),
-            "timestamp": self.request.utcnow().isoformat()
-        }
-
-# Risk calculation task
-@celery_app.task(bind=True, queue="risk_calculation")
-def calculate_risk_async(self, portfolio_data):
-    """Calculate portfolio risk asynchronously"""
-    from app.services.advanced_risk_analytics import AdvancedRiskAnalytics
-    
-    try:
-        analytics = AdvancedRiskAnalytics()
-        risk_metrics = analytics.calculate_portfolio_risk(portfolio_data)
-        
-        return {
-            "status": "success",
-            "risk_metrics": risk_metrics,
-            "timestamp": self.request.utcnow().isoformat()
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e),
-            "timestamp": self.request.utcnow().isoformat()
-        }
-
-# Market data update task
-@celery_app.task(bind=True, queue="market_data")
-def update_market_data(self):
-    """Update market data asynchronously"""
-    from app.services.market_data_integration import MarketDataService
-    
-    try:
-        service = MarketDataService()
-        updated_data = service.fetch_and_update_market_data()
-        
-        return {
-            "status": "success",
-            "updated_symbols": len(updated_data),
-            "timestamp": self.request.utcnow().isoformat()
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e),
-            "timestamp": self.request.utcnow().isoformat()
-        }
-
-# Notification task
-@celery_app.task(bind=True, queue="notifications")
-def send_notification_async(self, notification_data):
-    """Send notification asynchronously"""
-    from app.services.notification_service import NotificationService
-    
-    try:
-        service = NotificationService()
-        result = service.send_notification(notification_data)
-        
-        return {
-            "status": "success",
-            "notification_id": result.get("notification_id"),
-            "timestamp": self.request.utcnow().isoformat()
-        }
-    except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e),
-            "timestamp": self.request.utcnow().isoformat()
-        }
-
-# Export Celery app for use in other modules
-__all__ = ["celery_app"]
+def get_celery_app() -> Celery:
+    """Get Celery app instance"""
+    return celery_app

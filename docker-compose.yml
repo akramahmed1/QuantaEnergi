@@ -1,57 +1,32 @@
-version: '3.8'
-
 services:
   backend:
     build:
-      context: ./backend
+      context: ./apps/backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://user:password@db:5432/quantaenergi
-      - REDIS_URL=redis://redis:6379
-      - SECRET_KEY=your-secret-key-here
-    depends_on:
-      - db
-      - redis
+      - DATABASE_URL=sqlite:///./quanta.db
+      - SECRET_KEY=your-secret-key-here-change-in-production
     volumes:
-      - ./backend:/app
+      - ./apps/backend:/app
+      - sqlite_data:/app/data
     restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build:
-      context: ./frontend
+      context: ./apps/frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "5173:5173"
     environment:
       - VITE_API_BASE_URL=http://localhost:8000
-    depends_on:
-      - backend
     volumes:
-      - ./frontend:/app
+      - ./apps/frontend:/app
+      - /app/node_modules
     restart: unless-stopped
-
-  db:
-    image: postgres:14
-    environment:
-      - POSTGRES_DB=quantaenergi
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
+    command: npm run dev
 
 volumes:
-  postgres_data:
-  redis_data:
+  sqlite_data:

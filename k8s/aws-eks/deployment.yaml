@@ -1,0 +1,247 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: quantaenergi
+  labels:
+    name: quantaenergi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quantaenergi-backend
+  namespace: quantaenergi
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/QuantaEnergiBackendRole
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quantaenergi-frontend
+  namespace: quantaenergi
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/QuantaEnergiFrontendRole
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quantaenergi-backend
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: quantaenergi-backend
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-backend
+    spec:
+      serviceAccountName: quantaenergi-backend
+      containers:
+      - name: backend
+        image: YOUR_ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/quantaenergi-backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: quantaenergi-secrets
+              key: redis-url
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: AWS_S3_BUCKET
+          value: "quantaenergi-data"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+      volumes:
+      - name: config
+        configMap:
+          name: quantaenergi-config
+      nodeSelector:
+        node.kubernetes.io/instance-type: "t3.medium"
+      tolerations:
+      - key: "node.kubernetes.io/instance-type"
+        operator: "Equal"
+        value: "t3.medium"
+        effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-backend
+  namespace: quantaenergi
+spec:
+  selector:
+    app: quantaenergi-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quantaenergi-frontend
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: quantaenergi-frontend
+  template:
+    metadata:
+      labels:
+        app: quantaenergi-frontend
+    spec:
+      serviceAccountName: quantaenergi-frontend
+      containers:
+      - name: frontend
+        image: YOUR_ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/quantaenergi-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_API_URL
+          value: "https://api.quantaenergi.com"
+        - name: AWS_REGION
+          value: "us-east-1"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      nodeSelector:
+        node.kubernetes.io/instance-type: "t3.small"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quantaenergi-frontend
+  namespace: quantaenergi
+spec:
+  selector:
+    app: quantaenergi-frontend
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: quantaenergi-ingress
+  namespace: quantaenergi
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:REGION:ACCOUNT_ID:certificate/CERTIFICATE_ID
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
+spec:
+  rules:
+  - host: api.quantaenergi.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quantaenergi-backend
+            port:
+              number: 8000
+  - host: app.quantaenergi.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quantaenergi-frontend
+            port:
+              number: 3000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: quantaenergi-config
+  namespace: quantaenergi
+data:
+  app.yaml: |
+    database:
+      host: quantaenergi-db.cluster-xyz.us-east-1.rds.amazonaws.com
+      port: 5432
+      name: quantaenergi
+      ssl_mode: require
+    redis:
+      host: quantaenergi-redis.xyz.cache.amazonaws.com
+      port: 6379
+      ssl: true
+    aws:
+      region: us-east-1
+      s3_bucket: quantaenergi-data
+      cloudwatch_log_group: /aws/eks/quantaenergi
+    monitoring:
+      prometheus_endpoint: http://prometheus:9090
+      grafana_endpoint: http://grafana:3000
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quantaenergi-secrets
+  namespace: quantaenergi
+type: Opaque
+data:
+  database-url: <base64-encoded-database-url>
+  redis-url: <base64-encoded-redis-url>
+  jwt-secret: <base64-encoded-jwt-secret>
+  api-keys: <base64-encoded-api-keys>

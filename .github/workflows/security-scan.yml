@@ -1,0 +1,134 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Monday at 2 AM
+
+jobs:
+  zap-baseline-scan:
+    runs-on: ubuntu-latest
+    name: OWASP ZAP Baseline Scan
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Start application for scanning
+      run: |
+        docker-compose up -d
+        sleep 30  # Wait for application to start
+        
+    - name: Run OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.10.0
+      with:
+        target: 'http://localhost:8000'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+        
+    - name: Upload ZAP results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'zap-results.sarif'
+        
+    - name: Comment PR with ZAP results
+      uses: actions/github-script@v7
+      if: github.event_name == 'pull_request'
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Read ZAP results and create comment
+          const resultsPath = 'zap-results.json';
+          if (fs.existsSync(resultsPath)) {
+            const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
+            const alerts = results.site?.[0]?.alerts || [];
+            
+            let comment = '## 🔒 OWASP ZAP Security Scan Results\n\n';
+            
+            if (alerts.length === 0) {
+              comment += '✅ **No security vulnerabilities found!**\n\n';
+            } else {
+              comment += `⚠️ **Found ${alerts.length} security alerts:**\n\n`;
+              
+              alerts.forEach(alert => {
+                const risk = alert.riskcode;
+                const riskEmoji = risk === '3' ? '🔴' : risk === '2' ? '🟡' : '🟢';
+                comment += `${riskEmoji} **${alert.name}** (Risk: ${alert.riskdesc})\n`;
+                comment += `- URL: ${alert.url}\n`;
+                comment += `- Description: ${alert.desc}\n\n`;
+              });
+            }
+            
+            comment += '📊 Full report available in the Security tab.';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
+
+  dependency-scan:
+    runs-on: ubuntu-latest
+    name: Dependency Security Scan
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Python dependency scan
+      run: |
+        cd apps/backend
+        pip install safety
+        safety check --json --output safety-results.json || true
+        
+    - name: Node.js dependency scan
+      run: |
+        cd apps/frontend
+        npm audit --json > npm-audit-results.json || true
+        
+    - name: Upload dependency scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-scan-results
+        path: |
+          apps/backend/safety-results.json
+          apps/frontend/npm-audit-results.json
+
+  code-security-scan:
+    runs-on: ubuntu-latest
+    name: Code Security Analysis
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Run Bandit security linter
+      run: |
+        cd apps/backend
+        pip install bandit
+        bandit -r . -f json -o bandit-results.json || true
+        
+    - name: Run Semgrep security scanner
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/secrets
+          p/owasp-top-ten
+        generateSarif: "1"
+        
+    - name: Upload security scan results
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-security-results
+        path: |
+          apps/backend/bandit-results.json
+          semgrep.sarif

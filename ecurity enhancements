@@ -1,0 +1,190 @@
+[1mdiff --git a/backend/.coverage b/backend/.coverage[m
+[1mdeleted file mode 100644[m
+[1mindex 285a02fb4..000000000[m
+Binary files a/backend/.coverage and /dev/null differ
+[1mdiff --git a/backend/app/core/celery_app.py b/backend/app/core/celery_app.py[m
+[1mindex eb85cfdc8..553f6f6d7 100644[m
+[1m--- a/backend/app/core/celery_app.py[m
+[1m+++ b/backend/app/core/celery_app.py[m
+[36m@@ -1,227 +1,112 @@[m
+ """[m
+[31m-Celery Configuration for Async Task Processing[m
+[31m-Handles background tasks, trade processing, and performance optimization[m
+[32m+[m[32mCelery Configuration for QuantaEnergi[m
+[32m+[m[32mHandles CPU-intensive tasks asynchronously[m
+ """[m
+ [m
+[31m-from celery import Celery[m
+ import os[m
+[31m-from kombu import Queue[m
+[32m+[m[32mfrom celery import Celery[m
+[32m+[m[32mfrom celery.signals import worker_init, worker_shutdown[m
+[32m+[m[32mimport structlog[m
+ [m
+[31m-# Redis configuration for Celery broker[m
+[31m-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")[m
+[32m+[m[32mlogger = structlog.get_logger(__name__)[m
+[32m+[m
+[32m+[m[32m# Celery configuration[m
+[32m+[m[32mCELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")[m
+[32m+[m[32mCELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")[m
+ [m
+ # Create Celery app[m
+ celery_app = Celery([m
+     "quantaenergi",[m
+[31m-    broker=REDIS_URL,[m
+[31m-    backend=REDIS_URL,[m
+[32m+[m[32m    broker=CELERY_BROKER_URL,[m
+[32m+[m[32m    backend=CELERY_RESULT_BACKEND,[m
+     include=[[m
+[31m-        "app.tasks.trade_processing",[m
+[31m-        "app.tasks.risk_calculation",[m
+[31m-        "app.tasks.market_data",[m
+[31m-        "app.tasks.notifications"[m
+[32m+[m[32m        "app.tasks.risk_calculations",[m
+[32m+[m[32m        "app.tasks.market_data_processing",[m
+[32m+[m[32m        "app.tasks.compliance_reports",[m
+[32m+[m[32m        "app.tasks.portfolio_optimization",[m
+[32m+[m[32m        "app.tasks.esg_calculations"[m
+     ][m
+ )[m
+ [m
+ # Celery configuration[m
+ celery_app.conf.update([m
+[31m-    # Task routing[m
+[31m-    task_routes={[m
+[31m-        "app.tasks.trade_processing.*": {"queue": "trade_processing"},[m
+[31m-        "app.tasks.risk_calculation.*": {"queue": "risk_calculation"},[m
+[31m-        "app.tasks.market_data.*": {"queue": "market_data"},[m
+[31m-        "app.tasks.notifications.*": {"queue": "notifications"},[m
+[31m-    },[m
+[31m-    [m
+[31m-    # Queue configuration[m
+[31m-    task_default_queue="default",[m
+[31m-    task_queues=([m
+[31m-        Queue("default", routing_key="default"),[m
+[31m-        Queue("trade_processing", routing_key="trade_processing"),[m
+[31m-        Queue("risk_calculation", routing_key="risk_calculation"),[m
+[31m-        Queue("market_data", routing_key="market_data"),[m
+[31m-        Queue("notifications", routing_key="notifications"),[m
+[31m-    ),[m
+[31m-    [m
+[31m-    # Task execution[m
+     task_serializer="json",[m
+     accept_content=["json"],[m
+     result_serializer="json",[m
+     timezone="UTC",[m
+     enable_utc=True,[m
+     [m
+[31m-    # Performance settings[m
+[32m+[m[32m    # Task routing[m
+[32m+[m[32m    task_routes={[m
+[32m+[m[32m        "app.tasks.risk_calculations.*": {"queue": "risk_calculations"},[m
+[32m+[m[32m        "app.tasks.market_data_processing.*": {"queue": "market_data"},[m
+[32m+[m[32m        "app.tasks.compliance_reports.*": {"queue": "compliance"},[m
+[32m+[m[32m        "app.tasks.portfolio_optimization.*": {"queue": "portfolio"},[m
+[32m+[m[32m        "app.tasks.esg_calculations.*": {"queue": "esg"},[m
+[32m+[m[32m    },[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Worker configuration[m
+     worker_prefetch_multiplier=1,[m
+     task_acks_late=True,[m
+     worker_max_tasks_per_child=1000,[m
+     [m
+[31m-    # Result backend settings[m
+[32m+[m[32m    # Result backend configuration[m
+     result_expires=3600,  # 1 hour[m
+[31m-    result_persistent=True,[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Task execution configuration[m
+[32m+[m[32m    task_time_limit=300,  # 5 minutes[m
+[32m+[m[32m    task_soft_time_limit=240,  # 4 minutes[m
+     [m
+     # Monitoring[m
+     worker_send_task_events=True,[m
+     task_send_sent_event=True,[m
+     [m
+[31m-    # Error handling[m
+[31m-    task_reject_on_worker_lost=True,[m
+[31m-    task_ignore_result=False,[m
+[32m+[m[32m    # Retry configuration[m
+[32m+[m[32m    task_default_retry_delay=60,[m
+[32m+[m[32m    task_max_retries=3,[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Concurrency[m
+[32m+[m[32m    worker_concurrency=4,[m
+[32m+[m[32m    worker_pool="prefork",  # Use multiprocessing for CPU-bound tasks[m
+ )[m
+ [m
+[31m-# Task time limits[m
+[31m-celery_app.conf.task_soft_time_limit = 300  # 5 minutes[m
+[31m-celery_app.conf.task_time_limit = 600  # 10 minutes[m
+[31m-[m
+[31m-# Beat schedule for periodic tasks[m
+[32m+[m[32m# Celery Beat configuration for scheduled tasks[m
+ celery_app.conf.beat_schedule = {[m
+[31m-    "market-data-update": {[m
+[31m-        "task": "app.tasks.market_data.update_market_data",[m
+[32m+[m[32m    "calculate-daily-var": {[m
+[32m+[m[32m        "task": "app.tasks.risk_calculations.calculate_daily_var",[m
+[32m+[m[32m        "schedule": 60.0 * 60.0 * 24.0,  # Daily[m
+[32m+[m[32m    },[m
+[32m+[m[32m    "process-market-data": {[m
+[32m+[m[32m        "task": "app.tasks.market_data_processing.process_realtime_data",[m
+         "schedule": 30.0,  # Every 30 seconds[m
+     },[m
+[31m-    "risk-calculation": {[m
+[31m-        "task": "app.tasks.risk_calculation.calculate_portfolio_risk",[m
+[31m-        "schedule": 60.0,  # Every minute[m
+[32m+[m[32m    "generate-compliance-reports": {[m
+[32m+[m[32m        "task": "app.tasks.compliance_reports.generate_daily_reports",[m
+[32m+[m[32m        "schedule": 60.0 * 60.0 * 24.0,  # Daily[m
+     },[m
+[31m-    "cleanup-expired-tokens": {[m
+[31m-        "task": "app.tasks.auth.cleanup_expired_tokens",[m
+[31m-        "schedule": 3600.0,  # Every hour[m
+[32m+[m[32m    "optimize-portfolios": {[m
+[32m+[m[32m        "task": "app.tasks.portfolio_optimization.optimize_all_portfolios",[m
+[32m+[m[32m        "schedule": 60.0 * 60.0 * 6.0,  # Every 6 hours[m
+     },[m
+[31m-    "generate-daily-reports": {[m
+[31m-        "task": "app.tasks.reporting.generate_daily_reports",[m
+[31m-        "schedule": 86400.0,  # Daily at midnight[m
+[32m+[m[32m    "calculate-esg-scores": {[m
+[32m+[m[32m        "task": "app.tasks.esg_calculations.calculate_esg_scores",[m
+[32m+[m[32m        "schedule": 60.0 * 60.0 * 12.0,  # Every 12 hours[m
+     },[m
+ }[m
+ [m
+[31m-# Task priority levels[m
+[31m-celery_app.conf.task_default_priority = 5[m
+[31m-celery_app.conf.task_queue_max_priority = 10[m
+[31m-[m
+[31m-# Worker configuration[m
+[31m-celery_app.conf.worker_hijack_root_logger = False[m
+[31m-celery_app.conf.worker_log_color = False[m
+[32m+[m[32m# Worker initialization[m
+[32m+[m[32m@worker_init.connect[m
+[32m+[m[32mdef worker_init_handler(sender=None, **kwargs):[m
+[32m+[m[32m    """Initialize worker"""[m
+[32m+[m[32m    logger.info("Celery worker initialized", worker=sender)[m
+ [m
+[31m-# Security[m
+[31m-celery_app.conf.worker_direct = True[m
+[31m-celery_app.conf.broker_connection_retry_on_startup = True[m
+ [m
+[31m-# Health check endpoint[m
+[31m-@celery_app.task(bind=True)[m
+[31m-def health_check(self):[m
+[31m-    """Health check task for monitoring"""[m
+[31m-    return {[m
+[31m-        "status": "healthy",[m
+[31m-        "worker": self.request.hostname,[m
+[31m-        "task_id": self.request.id,[m
+[31m-        "timestamp": self.request.utcnow().isoformat()[m
+[31m-    }[m
+[32m+[m[32m@worker_shutdown.connect[m
+[32m+[m[32mdef worker_shutdown_handler(sender=None, **kwargs):[m
+[32m+[m[32m    """Shutdown worker"""[m
+[32m+[m[32m    logger.info("Celery worker shutting down", worker=sender)[m
+ 
