@@ -14,7 +14,7 @@ import structlog
 
 from app.services.tenant_service import TenantService, get_tenant_service
 from app.core.tenant_router import get_tenant_router
-from app.security.authentication import get_current_user
+from app.core.security import get_current_user
 
 logger = structlog.get_logger(__name__)
 

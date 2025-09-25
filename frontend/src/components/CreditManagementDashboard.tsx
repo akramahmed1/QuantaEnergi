@@ -127,7 +127,6 @@ const CreditManagementDashboard: React.FC<CreditManagementDashboardProps> = ({ u
     } finally {
       setLoading(false);
     }
-    }
   };
 
   const handleCheckCreditAvailability = async (counterpartyId: string, tradeAmount: number) => {

@@ -112,9 +112,9 @@ const PortfolioSummary: React.FC = () => {
                       position.pnl >= 0 ? 'text-success-600' : 'text-danger-600'
                     }`}>
                       {position.pnl >= 0 ? (
-                        <TrendingUpIcon className="w-4 h-4 mr-1" />
+                        <ArrowTrendingUpIcon className="w-4 h-4 mr-1" />
                       ) : (
-                        <TrendingDownIcon className="w-4 h-4 mr-1" />
+                        <ArrowTrendingDownIcon className="w-4 h-4 mr-1" />
                       )}
                       <span className="text-sm font-medium">
                         {position.pnl >= 0 ? '+' : ''}${position.pnl.toLocaleString()}

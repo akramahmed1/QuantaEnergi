@@ -10,7 +10,7 @@ import logging
 
 from ...services.deal_capture import DealCaptureService, DealValidationService
 from ...services.position_manager import PositionManager
-from ...services.sharia import ShariaScreeningEngine, IslamicTradingValidator
+from ...services.sharia_compliance import ShariaComplianceService
 from ...schemas.trade import TradeCreate, TradeUpdate, TradeResponse
 
 logger = logging.getLogger(__name__)
@@ -21,8 +21,8 @@ router = APIRouter(prefix="/trades", tags=["trading"])
 deal_service = DealCaptureService()
 deal_validator = DealValidationService()
 position_manager = PositionManager()
-sharia_engine = ShariaScreeningEngine()
-islamic_validator = IslamicTradingValidator()
+sharia_service = ShariaComplianceService()
+# Islamic validator is now part of ShariaComplianceService
 
 
 @router.post("/deals/capture", response_model=TradeResponse)

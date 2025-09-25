@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 import logging
 
-from ...services.logistics_manager import LogisticsManager
+from ...services.supply_chain import SupplyChainService
 from ...services.inventory_manager import InventoryManager
 from ...services.regional_pricing_engine import RegionalPricingEngine
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/logistics", tags=["logistics_inventory"])
 
 # Initialize services
-logistics_manager = LogisticsManager()
+supply_chain_service = SupplyChainService()
 inventory_manager = InventoryManager()
 pricing_engine = RegionalPricingEngine()
 

@@ -1,6 +1,0 @@
-line-length = 119
-target-version = "py312"
-select = ["E", "W", "F", "I", "C", "B", "N", "UP", "RUF"]
-ignore = ["E501"]
-[isort]
-known-first-party = ["app", "main"]

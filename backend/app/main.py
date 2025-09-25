@@ -142,6 +142,10 @@ from app.middleware.error_handler import setup_error_handlers
 # Import GraphQL router
 from app.graphql import graphql_router
 
+# Import new API routers
+from app.api.v1.risk_forecast import router as risk_forecast_router
+from app.api.v1.quantum_var import router as quantum_var_router
+
 # Import security middleware
 from app.middleware.waf_middleware import setup_waf_middleware
 
@@ -169,6 +173,10 @@ app.middleware("http")(metrics_middleware)
 
 # Add GraphQL endpoint
 app.include_router(graphql_router, prefix="/api", tags=["GraphQL"])
+
+# Add new API routers
+app.include_router(risk_forecast_router, tags=["AI/ML Risk Forecast"])
+app.include_router(quantum_var_router, tags=["Quantum VaR"])
 
 # Add tenant management routes
 app.include_router(tenant_router)

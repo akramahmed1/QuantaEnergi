@@ -2,8 +2,8 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { 
   LightBulbIcon, 
-  TrendingUpIcon, 
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 
@@ -75,9 +75,9 @@ const TradingSignals: React.FC = () => {
                     : 'bg-danger-100 text-danger-700'
                 }`}>
                   {signal.type === 'BUY' ? (
-                    <TrendingUpIcon className="w-4 h-4" />
+                    <ArrowTrendingUpIcon className="w-4 h-4" />
                   ) : (
-                    <TrendingDownIcon className="w-4 h-4" />
+                    <ArrowTrendingDownIcon className="w-4 h-4" />
                   )}
                   <span>{signal.type}</span>
                 </div>

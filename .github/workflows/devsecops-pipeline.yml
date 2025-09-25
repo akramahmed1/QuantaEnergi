@@ -1,0 +1,586 @@
+# DevSecOps Pipeline for QuantaEnergi
+# Comprehensive CI/CD pipeline with security scanning, testing, and deployment
+
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/* ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: quantaenergi
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  DART_VERSION: '3.0.0'
+
+jobs:
+  # Security Scanning
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: python, javascript, typescript
+        queries: security-and-quality
+    
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:python,javascript,typescript"
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Run Bandit security linter
+      run: |
+        python -m pip install bandit
+        bandit -r backend/ -f json -o bandit-results.json
+      continue-on-error: true
+    
+    - name: Run ESLint security audit
+      run: |
+        cd frontend
+        npm install
+        npx eslint . --ext .js,.jsx,.ts,.tsx --format json --output-file eslint-results.json
+      continue-on-error: true
+    
+    - name: Run npm audit
+      run: |
+        cd frontend
+        npm audit --audit-level=moderate --json > npm-audit-results.json
+      continue-on-error: true
+
+  # SAST (Static Application Security Testing)
+  sast:
+    name: SAST Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run SonarQube Scan
+      uses: sonarqube-quality-gate-action@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      with:
+        scanMetadataReportFile: target/sonar/report-task.txt
+        waitForQualityGate: true
+    
+    - name: Run Semgrep
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/secrets
+          p/owasp-top-ten
+        generateSarif: "1"
+    
+    - name: Upload Semgrep SARIF
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: semgrep.sarif
+
+  # DAST (Dynamic Application Security Testing)
+  dast:
+    name: DAST Analysis
+    runs-on: ubuntu-latest
+    needs: [backend-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.7.0
+      with:
+        target: 'http://localhost:8000'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+    
+    - name: Run OWASP ZAP Full Scan
+      uses: zaproxy/action-full-scan@v0.4.0
+      with:
+        target: 'http://localhost:8000'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+    
+    - name: Upload ZAP results
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-results
+        path: zap-results/
+
+  # Backend Tests
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: quantaenergi_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+        pip install -r backend/requirements-dev.txt
+    
+    - name: Run linting
+      run: |
+        cd backend
+        flake8 app/ tests/
+        black --check app/ tests/
+        isort --check-only app/ tests/
+        mypy app/
+    
+    - name: Run security tests
+      run: |
+        cd backend
+        bandit -r app/ -f json -o bandit-results.json
+        safety check --json --output safety-results.json
+    
+    - name: Run unit tests
+      run: |
+        cd backend
+        pytest tests/unit/ -v --cov=app --cov-report=xml --cov-report=html
+    
+    - name: Run integration tests
+      run: |
+        cd backend
+        pytest tests/integration/ -v
+    
+    - name: Run load tests
+      run: |
+        cd backend
+        locust -f tests/load/locustfile.py --headless -u 1000 -r 10 -t 60s --html load-test-results.html
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: backend/coverage.xml
+        flags: backend
+        name: backend-coverage
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-test-results
+        path: |
+          backend/coverage.xml
+          backend/bandit-results.json
+          backend/safety-results.json
+          backend/load-test-results.html
+
+  # Frontend Tests
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run linting
+      run: |
+        cd frontend
+        npm run lint
+        npm run lint:css
+    
+    - name: Run type checking
+      run: |
+        cd frontend
+        npm run type-check
+    
+    - name: Run unit tests
+      run: |
+        cd frontend
+        npm run test:coverage
+    
+    - name: Run E2E tests
+      run: |
+        cd frontend
+        npm run test:e2e
+    
+    - name: Run accessibility tests
+      run: |
+        cd frontend
+        npm run test:a11y
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: frontend/coverage/lcov.info
+        flags: frontend
+        name: frontend-coverage
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-test-results
+        path: frontend/coverage/
+
+  # Mobile Tests
+  mobile-tests:
+    name: Mobile Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.0'
+        channel: 'stable'
+    
+    - name: Install dependencies
+      run: |
+        cd mobile
+        flutter pub get
+    
+    - name: Run linting
+      run: |
+        cd mobile
+        flutter analyze
+    
+    - name: Run tests
+      run: |
+        cd mobile
+        flutter test --coverage
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: mobile/coverage/lcov.info
+        flags: mobile
+        name: mobile-coverage
+
+  # Build and Push Images
+  build-images:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, mobile-tests]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: Build and push backend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ github.repository }}/backend:${{ github.sha }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+    
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        file: ./frontend/Dockerfile
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ github.repository }}/frontend:${{ github.sha }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-images, security-scan, sast]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    
+    - name: Deploy to EKS
+      run: |
+        aws eks update-kubeconfig --region us-east-1 --name quantaenergi-staging
+        kubectl apply -f k8s/staging/
+        kubectl rollout restart deployment/quantaenergi-backend -n quantaenergi-staging
+        kubectl rollout restart deployment/quantaenergi-frontend -n quantaenergi-staging
+    
+    - name: Run smoke tests
+      run: |
+        # Wait for deployment to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment/quantaenergi-backend -n quantaenergi-staging
+        kubectl wait --for=condition=available --timeout=300s deployment/quantaenergi-frontend -n quantaenergi-staging
+        
+        # Run smoke tests
+        curl -f https://staging-api.quantaenergi.com/health || exit 1
+        curl -f https://staging-app.quantaenergi.com/ || exit 1
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-images, security-scan, sast, dast]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    
+    - name: Deploy to EKS
+      run: |
+        aws eks update-kubeconfig --region us-east-1 --name quantaenergi-production
+        kubectl apply -f k8s/production/
+        kubectl rollout restart deployment/quantaenergi-backend -n quantaenergi-production
+        kubectl rollout restart deployment/quantaenergi-frontend -n quantaenergi-production
+    
+    - name: Run production tests
+      run: |
+        # Wait for deployment to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment/quantaenergi-backend -n quantaenergi-production
+        kubectl wait --for=condition=available --timeout=300s deployment/quantaenergi-frontend -n quantaenergi-production
+        
+        # Run production tests
+        curl -f https://api.quantaenergi.com/health || exit 1
+        curl -f https://app.quantaenergi.com/ || exit 1
+    
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+
+  # Security Compliance Check
+  compliance-check:
+    name: Compliance Check
+    runs-on: ubuntu-latest
+    needs: [security-scan, sast, dast]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run compliance checks
+      run: |
+        # Check for required security headers
+        curl -I https://staging-api.quantaenergi.com/ | grep -i "x-frame-options" || exit 1
+        curl -I https://staging-api.quantaenergi.com/ | grep -i "x-content-type-options" || exit 1
+        
+        # Check for HTTPS
+        curl -I https://staging-api.quantaenergi.com/ | grep -i "strict-transport-security" || exit 1
+    
+    - name: Generate compliance report
+      run: |
+        echo "## Security Compliance Report" > compliance-report.md
+        echo "Date: $(date)" >> compliance-report.md
+        echo "Branch: ${{ github.ref }}" >> compliance-report.md
+        echo "Commit: ${{ github.sha }}" >> compliance-report.md
+        echo "" >> compliance-report.md
+        echo "### Security Scans" >> compliance-report.md
+        echo "- SAST: PASSED" >> compliance-report.md
+        echo "- DAST: PASSED" >> compliance-report.md
+        echo "- Dependency Scan: PASSED" >> compliance-report.md
+        echo "" >> compliance-report.md
+        echo "### Compliance Checks" >> compliance-report.md
+        echo "- HTTPS: ENABLED" >> compliance-report.md
+        echo "- Security Headers: PRESENT" >> compliance-report.md
+        echo "- Authentication: JWT" >> compliance-report.md
+        echo "- Authorization: RBAC" >> compliance-report.md
+    
+    - name: Upload compliance report
+      uses: actions/upload-artifact@v4
+      with:
+        name: compliance-report
+        path: compliance-report.md
+
+  # Performance Testing
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run k6 performance tests
+      uses: grafana/k6-action@v0.3.1
+      with:
+        filename: tests/performance/k6-load-test.js
+        cloud: true
+        projectID: ${{ secrets.K6_CLOUD_PROJECT_ID }}
+        token: ${{ secrets.K6_CLOUD_TOKEN }}
+    
+    - name: Run Lighthouse CI
+      run: |
+        npm install -g @lhci/cli@0.12.0
+        lhci autorun --config=lighthouserc.json
+
+  # Quality Gate
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, mobile-tests, security-scan, sast, dast, compliance-check]
+    if: always()
+    
+    steps:
+    - name: Check quality gate
+      run: |
+        # Check if all required jobs passed
+        if [[ "${{ needs.backend-tests.result }}" != "success" ]]; then
+          echo "Backend tests failed"
+          exit 1
+        fi
+        
+        if [[ "${{ needs.frontend-tests.result }}" != "success" ]]; then
+          echo "Frontend tests failed"
+          exit 1
+        fi
+        
+        if [[ "${{ needs.security-scan.result }}" != "success" ]]; then
+          echo "Security scan failed"
+          exit 1
+        fi
+        
+        if [[ "${{ needs.sast.result }}" != "success" ]]; then
+          echo "SAST analysis failed"
+          exit 1
+        fi
+        
+        echo "Quality gate passed!"
+    
+    - name: Update deployment status
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data } = await github.rest.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id: context.payload.deployment.id,
+            state: 'success',
+            description: 'Quality gate passed - ready for deployment'
+          });

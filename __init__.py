@@ -1,1 +1,0 @@
-# QuantaEnergi Root Package

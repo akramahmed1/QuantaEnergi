@@ -1,0 +1,431 @@
+# Istio Service Mesh Configuration for Zero-Trust Security
+# Provides mTLS, traffic management, and security policies for QuantaEnergi
+
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: quantaenergi-istio
+  namespace: istio-system
+spec:
+  values:
+    global:
+      # Enable mTLS by default
+      mtls:
+        enabled: true
+      # Security settings
+      proxy:
+        autoInject: enabled
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+      # Pilot configuration
+      pilot:
+        autoscaleEnabled: true
+        autoscaleMin: 2
+        autoscaleMax: 5
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      # Gateway configuration
+      gateways:
+        istio-ingressgateway:
+          autoscaleEnabled: true
+          autoscaleMin: 2
+          autoscaleMax: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+        istio-egressgateway:
+          autoscaleEnabled: true
+          autoscaleMin: 2
+          autoscaleMax: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+---
+# PeerAuthentication for strict mTLS
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: quantaenergi
+spec:
+  mtls:
+    mode: STRICT
+
+---
+# AuthorizationPolicy for fine-grained access control
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: quantaenergi-authz
+  namespace: quantaenergi
+spec:
+  rules:
+  # Allow ingress traffic from Istio gateway
+  - from:
+    - source:
+        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT", "DELETE"]
+        paths: ["/api/*", "/graphql", "/health"]
+  
+  # Allow internal service communication
+  - from:
+    - source:
+        namespaces: ["quantaenergi"]
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT", "DELETE"]
+  
+  # Deny all other traffic
+  - to:
+    - operation:
+        methods: ["*"]
+
+---
+# RequestAuthentication for JWT validation
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: quantaenergi-jwt
+  namespace: quantaenergi
+spec:
+  jwtRules:
+  - issuer: "https://quantaenergi.com/auth"
+    jwksUri: "https://quantaenergi.com/.well-known/jwks.json"
+    audiences: ["quantaenergi-api"]
+    fromHeaders:
+    - name: "Authorization"
+      prefix: "Bearer "
+    fromParams:
+    - "access_token"
+
+---
+# AuthorizationPolicy for JWT-based access control
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: quantaenergi-jwt-authz
+  namespace: quantaenergi
+spec:
+  action: ALLOW
+  rules:
+  - when:
+    - key: request.auth.claims[iss]
+      values: ["https://quantaenergi.com/auth"]
+    - key: request.auth.claims[aud]
+      values: ["quantaenergi-api"]
+    - key: request.auth.claims[role]
+      values: ["trader", "admin", "compliance_officer"]
+    to:
+    - operation:
+        methods: ["GET", "POST", "PUT", "DELETE"]
+        paths: ["/api/*"]
+
+---
+# Gateway for external access
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: quantaenergi-gateway
+  namespace: quantaenergi
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: quantaenergi-tls-secret
+    hosts:
+    - api.quantaenergi.com
+    - trading.quantaenergi.com
+    - app.quantaenergi.com
+  
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - api.quantaenergi.com
+    - trading.quantaenergi.com
+    - app.quantaenergi.com
+    tls:
+      httpsRedirect: true
+
+---
+# VirtualService for traffic routing
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: quantaenergi-vs
+  namespace: quantaenergi
+spec:
+  hosts:
+  - api.quantaenergi.com
+  - trading.quantaenergi.com
+  - app.quantaenergi.com
+  gateways:
+  - quantaenergi-gateway
+  http:
+  # API routes
+  - match:
+    - uri:
+        prefix: /api/
+    route:
+    - destination:
+        host: quantaenergi-backend-service
+        port:
+          number: 8000
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+  
+  # GraphQL routes
+  - match:
+    - uri:
+        prefix: /graphql
+    route:
+    - destination:
+        host: quantaenergi-backend-service
+        port:
+          number: 8000
+    timeout: 30s
+  
+  # WebSocket routes
+  - match:
+    - uri:
+        prefix: /ws
+    route:
+    - destination:
+        host: quantaenergi-backend-service
+        port:
+          number: 8000
+    timeout: 0s  # No timeout for WebSocket
+  
+  # Frontend routes
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: quantaenergi-frontend-service
+        port:
+          number: 3000
+
+---
+# DestinationRule for load balancing and circuit breaking
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: quantaenergi-backend-dr
+  namespace: quantaenergi
+spec:
+  host: quantaenergi-backend-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        maxRequestsPerConnection: 10
+        maxRetries: 3
+        consecutiveGatewayErrors: 5
+        interval: 30s
+        baseEjectionTime: 30s
+        maxEjectionPercent: 50
+    loadBalancer:
+      simple: LEAST_CONN
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# DestinationRule for frontend service
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: quantaenergi-frontend-dr
+  namespace: quantaenergi
+spec:
+  host: quantaenergi-frontend-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        maxRequestsPerConnection: 10
+    loadBalancer:
+      simple: ROUND_ROBIN
+    tls:
+      mode: ISTIO_MUTUAL
+
+---
+# EnvoyFilter for custom security headers
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: quantaenergi-security-headers
+  namespace: quantaenergi
+spec:
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.local_reply
+        typedConfig:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.local_reply.v3.LocalReply
+          mappers:
+          - filter:
+              statusCodeFilter:
+                comparison:
+                  op: GE
+                  value:
+                    defaultValue: 400
+                    runtimeKey: "bootstrap.http_local_reply.status_code"
+            headers:
+            - header:
+                key: "X-Content-Type-Options"
+                value: "nosniff"
+            - header:
+                key: "X-Frame-Options"
+                value: "DENY"
+            - header:
+                key: "X-XSS-Protection"
+                value: "1; mode=block"
+            - header:
+                key: "Strict-Transport-Security"
+                value: "max-age=31536000; includeSubDomains"
+            - header:
+                key: "Content-Security-Policy"
+                value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss: ws:; frame-ancestors 'none';"
+
+---
+# ServiceEntry for external services
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: external-apis
+  namespace: quantaenergi
+spec:
+  hosts:
+  - api.ice.com
+  - api.cme.com
+  - api.eex.com
+  - api.openweathermap.org
+  - api.etherscan.io
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  - number: 80
+    name: http
+    protocol: HTTP
+  location: MESH_EXTERNAL
+  resolution: DNS
+
+---
+# DestinationRule for external services
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: external-apis-dr
+  namespace: quantaenergi
+spec:
+  host: "*.com"
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+    connectionPool:
+      tcp:
+        maxConnections: 50
+      http:
+        http1MaxPendingRequests: 25
+        maxRequestsPerConnection: 5
+
+---
+# Telemetry configuration for security monitoring
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: quantaenergi-telemetry
+  namespace: quantaenergi
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+  accessLogging:
+  - providers:
+    - name: otel
+  tracing:
+  - providers:
+    - name: jaeger
+
+---
+# Sidecar configuration for resource optimization
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: default
+  namespace: quantaenergi
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - "istio-system/*"
+    - "external-apis/*"
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY
+
+---
+# WorkloadEntry for external workloads
+apiVersion: networking.istio.io/v1beta1
+kind: WorkloadEntry
+metadata:
+  name: external-database
+  namespace: quantaenergi
+spec:
+  address: database.quantaenergi.com
+  ports:
+    http: 5432
+    https: 5432
+  labels:
+    app: postgresql
+    version: "14"
+  serviceAccount: database-service-account

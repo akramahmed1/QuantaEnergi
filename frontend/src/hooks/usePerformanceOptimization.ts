@@ -62,7 +62,7 @@ export const usePerformanceOptimization = (
   }, [enableMonitoring]);
 
   // Record render time
-  const recordRenderTime = useCallback(() => {
+  const recordRenderTimeCallback = useCallback(() => {
     if (recordRenderTime && renderStartTime.current > 0) {
       const renderTime = performance.now() - renderStartTime.current;
       performanceOptimizer.recordRenderTime(renderTime);
@@ -145,7 +145,7 @@ export const usePerformanceOptimization = (
   // Effect for recording render end time
   useEffect(() => {
     if (recordRenderTime) {
-      const timer = setTimeout(recordRenderTime, 0);
+      const timer = setTimeout(recordRenderTimeCallback, 0);
       return () => clearTimeout(timer);
     }
   }, [recordRenderTime]);

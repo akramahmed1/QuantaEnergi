@@ -39,7 +39,7 @@ class Trade:
     created_by: str
     created_at: datetime
     updated_at: Optional[datetime]
-    metadata: Dict[str, Any]
+    metadata: str  # JSON string representation
 
 
 @strawberry.type
@@ -81,8 +81,8 @@ class Portfolio:
     yearly_change: Decimal
     total_return: Decimal
     positions: List[PortfolioPosition]
-    allocation: Dict[str, Decimal]
-    risk_metrics: Dict[str, Decimal]
+    allocation: str  # JSON string representation
+    risk_metrics: str  # JSON string representation
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -147,7 +147,7 @@ class ESGMetrics:
 @strawberry.type
 class WeatherData:
     """GraphQL Weather Data type"""
-    location: Dict[str, Decimal]
+    location: str  # JSON string representation
     temp: Decimal
     humidity: int
     description: str
@@ -567,7 +567,7 @@ class Mutation:
     async def create_trade(
         self,
         info: Info,
-        trade_data: Dict[str, Any]
+        trade_data: str  # JSON string representation
     ) -> Trade:
         """Create a new trade"""
         from app.services.trade_service import TradeService

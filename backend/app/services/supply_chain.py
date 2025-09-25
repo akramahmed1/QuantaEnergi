@@ -1,17 +1,38 @@
 """
-Supply Chain Manager for Advanced ETRM Features
-Phase 2: Advanced ETRM Features & Market Expansion
+Consolidated Supply Chain Service for ETRM/CTRM Trading
+Merged from: supply_chain_manager.py, supply_chain.py, logistics_manager.py
+Handles logistics, inventory tracking, delivery scheduling, and supply chain optimization
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime, timedelta
 import logging
+from fastapi import HTTPException
+import asyncio
+import uuid
+import math
 import random
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+class SupplyChainStatus(Enum):
+    """Supply chain status enumeration"""
+    PLANNED = "planned"
+    IN_TRANSIT = "in_transit"
+    DELIVERED = "delivered"
+    DELAYED = "delayed"
+    CANCELLED = "cancelled"
 
-class SupplyChainManager:
+class InventoryStatus(Enum):
+    """Inventory status enumeration"""
+    AVAILABLE = "available"
+    RESERVED = "reserved"
+    IN_TRANSIT = "in_transit"
+    LOW_STOCK = "low_stock"
+    OUT_OF_STOCK = "out_of_stock"
+
+class SupplyChainService:
     """Advanced supply chain optimization and management for energy commodities"""
     
     def __init__(self):

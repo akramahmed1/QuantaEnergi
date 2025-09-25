@@ -813,16 +813,6 @@ export const calculatePnLPercentage = (currentPrice: number, entryPrice: number)
 // EXPORT ALL APIs
 // ============================================================================
 
-export {
-  tradeLifecycleAPI,
-  riskAnalyticsAPI,
-  creditManagementAPI,
-  algorithmicTradingAPI,
-  optionsTradingAPI,
-  regulatoryComplianceAPI,
-  performanceMonitoringAPI
-};
-
 export default {
   tradeLifecycle: tradeLifecycleAPI,
   riskAnalytics: riskAnalyticsAPI,

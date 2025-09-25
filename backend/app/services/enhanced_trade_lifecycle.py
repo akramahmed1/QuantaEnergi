@@ -1,6 +1,7 @@
 """
-Enhanced Trade Lifecycle Service
-Integrates with event bus and supports multi-tenant architecture
+Consolidated Trade Lifecycle Service
+Merged from: trade_lifecycle.py and enhanced_trade_lifecycle.py
+Integrates with event bus, supports multi-tenant architecture, and handles complete trade lifecycle
 """
 
 import asyncio
@@ -662,6 +663,170 @@ class EnhancedTradeLifecycleService:
         except Exception as e:
             logger.error(f"Error cancelling trade {trade_id}: {e}")
             raise
+    
+    # ==================== ADDITIONAL LIFECYCLE METHODS (from trade_lifecycle.py) ====================
+    
+    async def generate_invoice(self, trade_id: str, user_id: str) -> Dict[str, Any]:
+        """
+        Generate invoice for completed trade
+        
+        Args:
+            trade_id: Unique trade identifier
+            user_id: User generating the invoice
+            
+        Returns:
+            Dict with invoice details
+        """
+        try:
+            if trade_id not in self.trades:
+                raise ValueError(f"Trade {trade_id} not found")
+            
+            trade = self.trades[trade_id]
+            
+            # Generate invoice
+            invoice = {
+                "invoice_id": f"INV-{self.trade_counter:06d}",
+                "trade_id": trade_id,
+                "generated_at": datetime.utcnow().isoformat(),
+                "due_date": (datetime.utcnow() + timedelta(days=30)).isoformat(),
+                "line_items": [
+                    {
+                        "description": f"{trade['commodity']} - {trade['quantity']} units",
+                        "quantity": trade["quantity"],
+                        "unit_price": trade["price"],
+                        "total": trade["quantity"] * trade["price"]
+                    }
+                ],
+                "subtotal": trade["quantity"] * trade["price"],
+                "taxes": 0.0,  # TODO: Calculate applicable taxes
+                "total_amount": trade["quantity"] * trade["price"],
+                "currency": trade["currency"],
+                "status": "generated"
+            }
+            
+            # Store invoice
+            self.invoices[trade_id] = invoice
+            
+            # Update trade status
+            trade["status"] = "invoiced"
+            trade["invoiced_at"] = datetime.utcnow()
+            trade["updated_at"] = datetime.utcnow()
+            
+            # Publish trade invoiced event
+            await publish_event(
+                event_type=EventType.TRADE_INVOICED,
+                payload={
+                    "trade_id": trade_id,
+                    "invoice": invoice
+                },
+                correlation_id=trade.get("correlation_id"),
+                user_id=user_id,
+                organization_id=trade.get("organization_id"),
+                source_service="trade_lifecycle"
+            )
+            
+            logger.info(f"Invoice generated for trade {trade_id}")
+            
+            return {
+                "success": True,
+                "invoice": invoice,
+                "trade": trade
+            }
+            
+        except Exception as e:
+            logger.error(f"Invoice generation failed: {str(e)}")
+            raise
+    
+    async def process_payment(self, trade_id: str, user_id: str, payment_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Process payment for trade invoice
+        
+        Args:
+            trade_id: Unique trade identifier
+            user_id: User processing the payment
+            payment_data: Payment information including amount and method
+            
+        Returns:
+            Dict with payment details
+        """
+        try:
+            if trade_id not in self.trades:
+                raise ValueError(f"Trade {trade_id} not found")
+            
+            trade = self.trades[trade_id]
+            
+            # Create payment record
+            payment = {
+                "payment_id": f"PAY-{self.trade_counter:06d}",
+                "trade_id": trade_id,
+                "processed_at": datetime.utcnow().isoformat(),
+                "amount": payment_data.get("amount", trade["quantity"] * trade["price"]),
+                "payment_method": payment_data.get("payment_method", "wire_transfer"),
+                "reference_number": payment_data.get("reference_number"),
+                "status": "processed"
+            }
+            
+            # Store payment
+            self.payments[trade_id] = payment
+            
+            # Update trade status
+            trade["status"] = "paid"
+            trade["paid_at"] = datetime.utcnow()
+            trade["updated_at"] = datetime.utcnow()
+            
+            # Mark trade as completed
+            trade["status"] = "completed"
+            trade["completed_at"] = datetime.utcnow()
+            
+            # Publish trade paid event
+            await publish_event(
+                event_type=EventType.TRADE_PAID,
+                payload={
+                    "trade_id": trade_id,
+                    "payment": payment
+                },
+                correlation_id=trade.get("correlation_id"),
+                user_id=user_id,
+                organization_id=trade.get("organization_id"),
+                source_service="trade_lifecycle"
+            )
+            
+            logger.info(f"Payment processed for trade {trade_id}")
+            
+            return {
+                "success": True,
+                "payment": payment,
+                "trade": trade
+            }
+            
+        except Exception as e:
+            logger.error(f"Payment processing failed: {str(e)}")
+            raise
+    
+    def _calculate_trade_risk(self, trade_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Calculate basic risk metrics for trade"""
+        quantity = trade_data.get("quantity", 0)
+        price = trade_data.get("price", 0.0)
+        notional_value = quantity * price
+        
+        return {
+            "notional_value": notional_value,
+            "max_loss": notional_value * 0.1,  # 10% max loss
+            "risk_level": "high" if notional_value > 5000000 else "medium" if notional_value > 1000000 else "low"
+        }
+    
+    def _validate_delivery_date(self, delivery_date) -> bool:
+        """Validate delivery date is in the future"""
+        try:
+            if isinstance(delivery_date, str):
+                delivery_dt = datetime.fromisoformat(delivery_date)
+            elif isinstance(delivery_date, datetime):
+                delivery_dt = delivery_date
+            else:
+                return False
+            return delivery_dt > datetime.utcnow()
+        except (ValueError, TypeError):
+            return False
 
 # Global service instance
 enhanced_trade_service = EnhancedTradeLifecycleService()
