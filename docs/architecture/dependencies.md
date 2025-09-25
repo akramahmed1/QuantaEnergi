@@ -156,17 +156,17 @@ sequenceDiagram
     Frontend->>API: POST /api/v1/trades
     API->>TradeLifecycle: create_trade()
     TradeLifecycle->>ShariaCompliance: validate_trade()
-    ShariaCompliance-->>TradeLifecycle: validation_result
-    TradeLifecycle->>RiskManager: assess_risk()
-    RiskManager-->>TradeLifecycle: risk_assessment
-    TradeLifecycle->>WorkflowManager: create_workflow_instance()
-    WorkflowManager->>Database: store_workflow
-    WorkflowManager->>SendGrid: send_notification()
-    WorkflowManager-->>TradeLifecycle: workflow_created
-    TradeLifecycle->>Database: store_trade
-    TradeLifecycle-->>API: trade_created
-    API-->>Frontend: success_response
-    Frontend-->>User: trade_confirmed
+    ShariaCompliance-->>TradeLifecycle: "validation_result"
+    TradeLifecycle->>RiskManager: "assess_risk()"
+    RiskManager-->>TradeLifecycle: "risk_assessment"
+    TradeLifecycle->>WorkflowManager: "create_workflow_instance()"
+    WorkflowManager->>Database: "store_workflow"
+    WorkflowManager->>SendGrid: "send_notification()"
+    WorkflowManager-->>TradeLifecycle: "workflow_created"
+    TradeLifecycle->>Database: "store_trade"
+    TradeLifecycle-->>API: "trade_created"
+    API-->>Frontend: "success_response"
+    Frontend-->>User: "trade_confirmed"
 ```
 
 ## Data Flow Architecture

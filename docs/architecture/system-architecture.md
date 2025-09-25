@@ -189,12 +189,12 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    A[Raw Market Data] --> B[Data Preprocessing]
-    B --> C[Feature Engineering]
-    C --> D[Model Training]
-    D --> E[Model Validation]
-    E --> F[Model Deployment]
-    F --> G[Real-time Inference]
+    A["Raw Market Data"] --> B["Data Preprocessing"]
+    B --> C["Feature Engineering"]
+    C --> D["Model Training"]
+    D --> E["Model Validation"]
+    E --> F["Model Deployment"]
+    F --> G["Real-time Inference"]
     G --> H[Results Storage]
     H --> I[User Interface]
     
@@ -230,16 +230,16 @@ graph TD
 ```mermaid
 graph TB
     subgraph "User Authentication"
-        A[User Login] --> B[Password Verification]
-        B --> C[JWT Token Generation]
-        C --> D[Token Storage]
+        A["User Login"] --> B["Password Verification"]
+        B --> C["JWT Token Generation"]
+        C --> D["Token Storage"]
     end
     
     subgraph "Request Authorization"
-        E[API Request] --> F[Token Validation]
-        F --> G[Role Check]
-        G --> H[Permission Check]
-        H --> I[Resource Access]
+        E["API Request"] --> F["Token Validation"]
+        F --> G["Role Check"]
+        G --> H["Permission Check"]
+        H --> I["Resource Access"]
     end
     
     subgraph "Security Features"
@@ -263,21 +263,21 @@ graph TB
 ```mermaid
 graph LR
     subgraph "Encryption Layers"
-        A[Application Data] --> B[Kyber1024 Encryption]
-        B --> C[Quantum-Resistant Keys]
-        C --> D[Secure Transmission]
+        A["Application Data"] --> B["Kyber1024 Encryption"]
+        B --> C["Quantum-Resistant Keys"]
+        C --> D["Secure Transmission"]
     end
     
     subgraph "Fallback Security"
-        E[Classical Encryption] --> F[RSA-4096]
-        F --> G[AES-256]
-        G --> H[Secure Storage]
+        E["Classical Encryption"] --> F["RSA-4096"]
+        F --> G["AES-256"]
+        G --> H["Secure Storage"]
     end
     
     subgraph "Key Management"
-        I[Key Generation] --> J[Key Storage]
-        J --> K[Key Rotation]
-        K --> L[Key Revocation]
+        I["Key Generation"] --> J["Key Storage"]
+        J --> K["Key Rotation"]
+        K --> L["Key Revocation"]
     end
     
     B --> I
@@ -291,10 +291,10 @@ graph LR
 ```mermaid
 graph TB
     subgraph "Compliance Engine"
-        A[Input Data] --> B[Region Detection]
-        B --> C[Rule Selection]
-        C --> D[Compliance Check]
-        D --> E[Validation Result]
+        A["Input Data"] --> B["Region Detection"]
+        B --> C["Rule Selection"]
+        C --> D["Compliance Check"]
+        D --> E["Validation Result"]
     end
     
     subgraph "Regional Rules"
@@ -464,27 +464,27 @@ graph TB
 ```mermaid
 graph LR
     subgraph "Horizontal Scaling"
-        A[Load Balancer] --> B[API Instance 1]
-        A --> C[API Instance 2]
-        A --> D[API Instance N]
+        A["Load Balancer"] --> B["API Instance 1"]
+        A --> C["API Instance 2"]
+        A --> D["API Instance N"]
     end
     
     subgraph "Database Scaling"
-        E[Primary DB] --> F[Read Replica 1]
-        E --> G[Read Replica 2]
-        E --> H[Read Replica N]
+        E["Primary DB"] --> F["Read Replica 1"]
+        E --> G["Read Replica 2"]
+        E --> H["Read Replica N"]
     end
     
     subgraph "Cache Scaling"
-        I[Redis Cluster] --> J[Node 1]
-        I --> K[Node 2]
-        I --> L[Node N]
+        I["Redis Cluster"] --> J["Node 1"]
+        I --> K["Node 2"]
+        I --> L["Node N"]
     end
     
     subgraph "Auto Scaling"
-        M[CPU Threshold] --> N[Scale Up]
-        O[Memory Threshold] --> P[Scale Out]
-        Q[Traffic Spike] --> R[Instant Scaling]
+        M["CPU Threshold"] --> N["Scale Up"]
+        O["Memory Threshold"] --> P["Scale Out"]
+        Q["Traffic Spike"] --> R["Instant Scaling"]
     end
 ```
 
@@ -495,22 +495,22 @@ graph LR
 ```mermaid
 graph TB
     subgraph "Backup Strategy"
-        A[Database Backups] --> B[Daily Full Backup]
-        B --> C[Hourly Incremental]
-        C --> D[Point-in-Time Recovery]
+        A["Database Backups"] --> B["Daily Full Backup"]
+        B --> C["Hourly Incremental"]
+        C --> D["Point-in-Time Recovery"]
     end
     
     subgraph "Data Replication"
-        E[Primary Region] --> F[Secondary Region]
-        F --> G[Cross-Region Sync]
-        G --> H[Failover Ready]
+        E["Primary Region"] --> F["Secondary Region"]
+        F --> G["Cross-Region Sync"]
+        G --> H["Failover Ready"]
     end
     
     subgraph "Recovery Procedures"
-        I[Automated Recovery]
-        J[Manual Recovery]
-        K[Data Validation]
-        L[Service Restoration]
+        I["Automated Recovery"]
+        J["Manual Recovery"]
+        K["Data Validation"]
+        L["Service Restoration"]
     end
     
     D --> I

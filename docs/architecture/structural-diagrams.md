@@ -117,15 +117,15 @@ classDiagram
     FastAPI --> User
     FastAPI --> EnergyData
     User ||--o{ EnergyData : has
-    OptimizationEngine --> EnergyData : analyzes
-    ForecastingService --> EnergyData : forecasts
-    QuantumOptimizationService --> EnergyData : optimizes
-    GenerativeAIService --> EnergyData : simulates
-    BillingService --> User : bills
-    DataIntegrationService --> EnergyData : provides
-    AuthService --> User : authenticates
-    DatabaseSession --> User : manages
-    DatabaseSession --> EnergyData : manages
+    OptimizationEngine --> EnergyData : "analyzes"
+    ForecastingService --> EnergyData : "forecasts"
+    QuantumOptimizationService --> EnergyData : "optimizes"
+    GenerativeAIService --> EnergyData : "simulates"
+    BillingService --> User : "bills"
+    DataIntegrationService --> EnergyData : "provides"
+    AuthService --> User : "authenticates"
+    DatabaseSession --> User : "manages"
+    DatabaseSession --> EnergyData : "manages"
 ```
 
 ## Database Schema Diagram

@@ -15,14 +15,14 @@ sequenceDiagram
     F->>A: POST /api/auth/login
     A->>B: Forward request
     B->>DB: Query user by email
-    DB-->>B: User data
-    B->>B: Verify password hash
-    B->>JWT: Generate access token
-    JWT-->>B: JWT token
-    B-->>A: Token response
-    A-->>F: Authentication success
-    F->>F: Store token in localStorage
-    F-->>U: Redirect to dashboard
+    DB-->>B: "User data"
+    B->>B: "Verify password hash"
+    B->>JWT: "Generate access token"
+    JWT-->>B: "JWT token"
+    B-->>A: "Token response"
+    A-->>F: "Authentication success"
+    F->>F: "Store token in localStorage"
+    F-->>U: "Redirect to dashboard"
 ```
 
 ## Energy Data Optimization Flow
@@ -42,16 +42,16 @@ sequenceDiagram
     F->>API: GET /api/energy-data/optimize
     API->>OE: Analyze market conditions
     OE->>DI: Get real-time market data
-    DI-->>OE: Market data
-    OE->>FS: Get forecasting data
-    FS-->>OE: Forecast results
-    OE->>QS: Quantum optimization
-    QS-->>OE: Optimization results
-    OE->>DB: Store recommendations
-    DB-->>OE: Confirmation
-    OE-->>API: Optimization results
-    API-->>F: Recommendations data
-    F-->>U: Display recommendations
+    DI-->>OE: "Market data"
+    OE->>FS: "Get forecasting data"
+    FS-->>OE: "Forecast results"
+    OE->>QS: "Quantum optimization"
+    QS-->>OE: "Optimization results"
+    OE->>DB: "Store recommendations"
+    DB-->>OE: "Confirmation"
+    OE-->>API: "Optimization results"
+    API-->>F: "Recommendations data"
+    F-->>U: "Display recommendations"
 ```
 
 ## AI-Powered Scenario Simulation
@@ -70,15 +70,15 @@ sequenceDiagram
     F->>API: POST /api/energy-data/scenarios/simulate
     API->>AI: Generate scenario
     AI->>Grok: Request AI analysis
-    Grok-->>AI: AI insights
-    AI->>FS: Get historical data
-    FS-->>AI: Historical patterns
-    AI->>AI: Apply scenario modifications
-    AI->>DB: Store scenario results
-    DB-->>AI: Confirmation
-    AI-->>API: Scenario results
-    API-->>F: Simulation data
-    F-->>U: Display scenario analysis
+    Grok-->>AI: "AI insights"
+    AI->>FS: "Get historical data"
+    FS-->>AI: "Historical patterns"
+    AI->>AI: "Apply scenario modifications"
+    AI->>DB: "Store scenario results"
+    DB-->>AI: "Confirmation"
+    AI-->>API: "Scenario results"
+    API-->>F: "Simulation data"
+    F-->>U: "Display scenario analysis"
 ```
 
 ## Real-Time Market Data Flow
@@ -99,21 +99,21 @@ sequenceDiagram
     F->>API: GET /api/energy-data/real-time
     API->>Cache: Check cache
     alt Cache hit
-        Cache-->>API: Cached data
+        Cache-->>API: "Cached data"
     else Cache miss
-        API->>DI: Fetch fresh data
-        DI->>CME: Get crude oil prices
-        CME-->>DI: Price data
-        DI->>ICE: Get natural gas prices
-        ICE-->>DI: Gas data
-        DI->>Weather: Get weather data
-        Weather-->>DI: Weather info
-        DI->>Cache: Store in cache
-        DI-->>API: Aggregated data
+        API->>DI: "Fetch fresh data"
+        DI->>CME: "Get crude oil prices"
+        CME-->>DI: "Price data"
+        DI->>ICE: "Get natural gas prices"
+        ICE-->>DI: "Gas data"
+        DI->>Weather: "Get weather data"
+        Weather-->>DI: "Weather info"
+        DI->>Cache: "Store in cache"
+        DI-->>API: "Aggregated data"
     end
-    API->>DB: Log data access
-    API-->>F: Market data
-    F-->>U: Display real-time data
+    API->>DB: "Log data access"
+    API-->>F: "Market data"
+    F-->>U: "Display real-time data"
 ```
 
 ## Billing and Subscription Flow
@@ -132,15 +132,15 @@ sequenceDiagram
     F->>API: POST /api/admin/billing/subscribe
     API->>BS: Create subscription
     BS->>Stripe: Create customer
-    Stripe-->>BS: Customer ID
-    BS->>Stripe: Create subscription
-    Stripe-->>BS: Subscription ID
-    BS->>DB: Store subscription
-    DB-->>BS: Confirmation
-    BS->>Email: Send confirmation
-    BS-->>API: Subscription created
-    API-->>F: Success response
-    F-->>U: Subscription confirmed
+    Stripe-->>BS: "Customer ID"
+    BS->>Stripe: "Create subscription"
+    Stripe-->>BS: "Subscription ID"
+    BS->>DB: "Store subscription"
+    DB-->>BS: "Confirmation"
+    BS->>Email: "Send confirmation"
+    BS-->>API: "Subscription created"
+    API-->>F: "Success response"
+    F-->>U: "Subscription confirmed"
 ```
 
 ## Quantum Portfolio Optimization
@@ -161,16 +161,16 @@ sequenceDiagram
     QS->>QS: Check quantum availability
     alt Quantum available
         QS->>IBMQ: Submit quantum job
-        IBMQ-->>QS: Quantum results
+        IBMQ-->>QS: "Quantum results"
     else Quantum unavailable
-        QS->>CS: Use classical optimization
-        CS-->>QS: Classical results
+        QS->>CS: "Use classical optimization"
+        CS-->>QS: "Classical results"
     end
-    QS->>DB: Store optimization
-    DB-->>QS: Confirmation
-    QS-->>API: Optimization results
-    API-->>F: Portfolio allocation
-    F-->>U: Display optimized portfolio
+    QS->>DB: "Store optimization"
+    DB-->>QS: "Confirmation"
+    QS-->>API: "Optimization results"
+    API-->>F: "Portfolio allocation"
+    F-->>U: "Display optimized portfolio"
 ```
 
 ## System Health Monitoring
@@ -187,13 +187,13 @@ sequenceDiagram
     loop Every 30 seconds
         M->>API: GET /health
         API->>DB: Check database connection
-        DB-->>API: Connection status
-        API->>Redis: Check cache health
-        Redis-->>API: Cache status
-        API->>Ext: Check external APIs
-        Ext-->>API: API status
-        API->>Log: Log health metrics
-        API-->>M: Health report
+        DB-->>API: "Connection status"
+        API->>Redis: "Check cache health"
+        Redis-->>API: "Cache status"
+        API->>Ext: "Check external APIs"
+        Ext-->>API: "API status"
+        API->>Log: "Log health metrics"
+        API-->>M: "Health report"
     end
 ```
 
@@ -214,16 +214,16 @@ sequenceDiagram
     API->>B: Forward request
     B->>DB: Database operation
     alt Database error
-        DB-->>B: Error response
-        B->>Log: Log error
-        B->>Alert: Send alert
-        B-->>API: Error response
-        API-->>F: Error message
-        F-->>U: Display error
+        DB-->>B: "Error response"
+        B->>Log: "Log error"
+        B->>Alert: "Send alert"
+        B-->>API: "Error response"
+        API-->>F: "Error message"
+        F-->>U: "Display error"
     else Success
-        DB-->>B: Success response
-        B-->>API: Success response
-        API-->>F: Success data
-        F-->>U: Display success
+        DB-->>B: "Success response"
+        B-->>API: "Success response"
+        API-->>F: "Success data"
+        F-->>U: "Display success"
     end
 ```

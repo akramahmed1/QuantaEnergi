@@ -172,7 +172,7 @@ graph LR
     subgraph "Feature Categories"
         Auth[Authentication]
         Trading[Trading]
-        AI[AI/ML]
+        AI["AI/ML"]
         Quantum[Quantum]
         Admin[Admin]
         Billing[Billing]
@@ -224,31 +224,31 @@ gantt
     title EnergyOpti-Pro Feature Development Roadmap
     dateFormat  YYYY-MM-DD
     section Phase 1: Foundation
-    Authentication           :done, auth, 2025-01-01, 2025-01-15
-    User Management         :done, usermgmt, 2025-01-16, 2025-01-30
-    Basic Trading           :done, trading, 2025-02-01, 2025-02-15
-    Market Data             :done, marketdata, 2025-02-16, 2025-03-01
+    Authentication           :done, auth, 2024-01-01, 2024-01-15
+    User Management         :done, usermgmt, 2024-01-16, 2024-01-30
+    Basic Trading           :done, trading, 2024-02-01, 2024-02-15
+    Market Data             :done, marketdata, 2024-02-16, 2024-03-01
 
     section Phase 2: AI/ML
-    Forecasting Models      :done, forecasting, 2025-03-01, 2025-03-15
-    Optimization Engine     :done, optimization, 2025-03-16, 2025-04-01
-    AI Insights             :done, aiinsights, 2025-04-01, 2025-04-15
-    Scenario Simulation     :done, scenarios, 2025-04-16, 2025-05-01
+    Forecasting Models      :done, forecasting, 2024-03-01, 2024-03-15
+    Optimization Engine     :done, optimization, 2024-03-16, 2024-04-01
+    AI Insights             :done, aiinsights, 2024-04-01, 2024-04-15
+    Scenario Simulation     :done, scenarios, 2024-04-16, 2024-05-01
 
     section Phase 3: Quantum
-    Quantum Integration     :active, quantum, 2025-05-01, 2025-05-15
-    Portfolio Optimization  :quantum_opt, 2025-05-16, 2025-06-01
-    Risk Modeling           :quantum_risk, 2025-06-01, 2025-06-15
+    Quantum Integration     :active, quantum, 2024-05-01, 2024-05-15
+    Portfolio Optimization  :quantum_opt, 2024-05-16, 2024-06-01
+    Risk Modeling           :quantum_risk, 2024-06-01, 2024-06-15
 
     section Phase 4: Business
-    Billing System          :billing, 2025-06-15, 2025-07-01
-    Subscription Management :subscription, 2025-07-01, 2025-07-15
-    Admin Dashboard         :admin, 2025-07-16, 2025-08-01
+    Billing System          :billing, 2024-06-15, 2024-07-01
+    Subscription Management :subscription, 2024-07-01, 2024-07-15
+    Admin Dashboard         :admin, 2024-07-16, 2024-08-01
 
     section Phase 5: Advanced
-    Mobile App             :mobile, 2025-08-01, 2025-08-15
-    Advanced Analytics     :analytics, 2025-08-16, 2025-09-01
-    Compliance Automation  :compliance, 2025-09-01, 2025-09-15
+    Mobile App             :mobile, 2024-08-01, 2024-08-15
+    Advanced Analytics     :analytics, 2024-08-16, 2024-09-01
+    Compliance Automation  :compliance, 2024-09-01, 2024-09-15
 ```
 
 ## Feature Usage Analytics
@@ -270,16 +270,16 @@ pie title Feature Usage Distribution
 ```mermaid
 graph TB
     subgraph "Performance Metrics"
-        ResponseTime[Response Time < 200ms]
-        Throughput[Throughput > 1000 req/s]
-        Uptime[Uptime > 99.9%]
-        Accuracy[AI Accuracy > 85%]
+        ResponseTime["Response Time < 200ms"]
+        Throughput["Throughput > 1000 req/s"]
+        Uptime["Uptime > 99.9%"]
+        Accuracy["AI Accuracy > 85%"]
     end
 
     subgraph "Features"
         Auth[Authentication]
         Trading[Trading]
-        AI[AI/ML]
+        AI["AI/ML"]
         Quantum[Quantum]
     end
 

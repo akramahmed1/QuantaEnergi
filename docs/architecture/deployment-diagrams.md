@@ -28,8 +28,8 @@ graph TB
     end
 
     subgraph "🗄️ Database Layer"
-        PostgreSQL[(PostgreSQL Database)]
-        Redis[(Redis Cache)]
+        PostgreSQL[("PostgreSQL Database")]
+        Redis[("Redis Cache")]
         File_Storage[File Storage]
     end
 
@@ -270,7 +270,7 @@ graph TB
     classDef cicd fill:#f3e5f5
     classDef monitoring fill:#e8f5e8
 
-    class Vercel_Edge,Vercel_Static,Vercel_CDN,Render_Web,Render_Workers,Render_DB,Render_Redis,S3,CloudFront,Route53 cloud
+    class Vercel_Edge,Vercel_Static,Vercel_CDN,Render_Web,Render_Workers,Render_DB,Render_Redis cloud
     class GitHub,GitHub_Actions,Docker_Registry,Deployment cicd
     class Vercel_Analytics,Render_Monitoring,Custom_Metrics,Alerting monitoring
 ```
@@ -363,7 +363,7 @@ graph TB
 
         subgraph "Authentication & Authorization"
             JWT_Tokens[JWT Tokens]
-            OAuth2[OAuth 2.0]
+            OAuth2["OAuth 2.0"]
             RBAC[Role-Based Access Control]
             MFA[Multi-Factor Authentication]
         end
@@ -377,7 +377,7 @@ graph TB
     end
 
     subgraph "🔐 Security Services"
-        SSL_Certificates[SSL/TLS Certificates]
+        SSL_Certificates["SSL/TLS Certificates"]
         Secrets_Manager[Secrets Manager]
         Key_Management[Key Management]
         Security_Monitoring[Security Monitoring]
