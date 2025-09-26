@@ -146,6 +146,9 @@ from app.graphql import graphql_router
 from app.api.v1.risk_forecast import router as risk_forecast_router
 from app.api.v1.quantum_var import router as quantum_var_router
 
+# Import simple API endpoints
+from app.simple_endpoints import router as main_api_router
+
 # Import security middleware
 from app.middleware.waf_middleware import setup_waf_middleware
 
@@ -177,6 +180,9 @@ app.include_router(graphql_router, prefix="/api", tags=["GraphQL"])
 # Add new API routers
 app.include_router(risk_forecast_router, tags=["AI/ML Risk Forecast"])
 app.include_router(quantum_var_router, tags=["Quantum VaR"])
+
+# Add main API endpoints (includes trade capture and risk management)
+app.include_router(main_api_router)
 
 # Add tenant management routes
 app.include_router(tenant_router)
