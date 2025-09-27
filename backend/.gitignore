@@ -1,3 +1,11 @@
 "*.bak"  
 "0.*"  
 "poetry"  
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+venv/
+.env  # If secrets"*.bak" 
+"0.*"   # For version floats
+"poetry"   # Temp Poetry file
