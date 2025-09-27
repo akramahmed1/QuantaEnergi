@@ -18,6 +18,8 @@ EnergyOpti-Pro is a **revolutionary SaaS platform** that transforms energy tradi
 - **Prophet Integration**: Advanced time series forecasting
 - **Grok AI Insights**: AI-powered trading recommendations
 - **ESG Scoring**: Environmental, Social, Governance metrics
+- **Load Forecasting**: Energy demand prediction
+- **Quantum Optimization**: Portfolio optimization with quantum algorithms
 - **Real-time Training**: Continuous model improvement
 
 ### ⚛️ Quantum Computing Integration
@@ -112,6 +114,10 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 2. **Install Dependencies**
 ```bash
 pip install -r requirements.txt
+# Additional dependencies for new features:
+# - qiskit (quantum computing stub)
+# - xgboost (ensemble forecasting)
+# - prometheus-client (metrics)
 ```
 
 3. **Environment Configuration**
@@ -195,6 +201,8 @@ IOT_SENSOR_UPDATE_INTERVAL=60
 ```http
 POST /api/disruptive/ai/forecast
 POST /api/disruptive/ai/train
+POST /forecast/price
+POST /forecast/load
 ```
 
 ### Quantum Optimization
@@ -202,6 +210,7 @@ POST /api/disruptive/ai/train
 POST /api/disruptive/quantum/optimize-portfolio
 GET /api/disruptive/quantum/risk-assessment
 GET /api/disruptive/quantum/status
+POST /optimize/portfolio
 ```
 
 ### Blockchain Smart Contracts
@@ -228,6 +237,13 @@ GET /api/disruptive/iot/status
 POST /api/disruptive/compliance/check
 GET /api/disruptive/compliance/history
 GET /api/disruptive/compliance/status
+```
+
+### ESG & Settlement
+```http
+POST /esg/track
+GET /integrate/erp
+GET /metrics
 ```
 
 ## 🧪 Testing

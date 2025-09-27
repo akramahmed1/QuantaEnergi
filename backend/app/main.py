@@ -1,205 +1,155 @@
 """
-QuantaEnergi - AI-Powered Energy Trading Platform
-Main FastAPI Application - Production Ready
+QuantaEnergi - Minimal FastAPI Application
 """
 
-import os
-import warnings
-from contextlib import asynccontextmanager
-from typing import Optional
-
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Body, Depends
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session
-import structlog
+from app.core.config import settings
+from app.db.session import engine, get_db
+from app.models import Base
+from app.services.trade_service import reconcile_position
+from app.services.risk_service import calculate_var
+from app.services.ai_service import forecast_price, quantum_optimize_portfolio, forecast_load, ensemble_forecast
+from app.services.market_service import market_data_broadcaster
+from app.services.compliance_service import ComplianceService, ComplianceFramework
+from app.services.esg_service import track_esg
+from app.services.integration_service import fetch_erp_data
+from app.security.auth import create_access_token, verify_token
+import numpy as np
+import websockets
+from typing import List
+from prometheus_client import Counter
 
-# Configure logging
-warnings.filterwarnings("ignore")
-logger = structlog.get_logger(__name__)
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan manager"""
-    # Startup
-    logger.info("Starting QuantaEnergi API")
-    
-    yield
-    
-    # Shutdown
-    logger.info("Shutting down QuantaEnergi API")
+c = Counter('test')
 
 # Create FastAPI application
 app = FastAPI(
-    title="QuantaEnergi - AI-Powered Energy Trading Platform",
-    description="""
-    ## 🌟 QuantaEnergi: Revolutionary Energy Trading SaaS
-    
-    **Transform your energy trading with AI, Quantum Computing, and Blockchain technology.**
-    
-    ### 🚀 Key Features
-    
-    * **AI-Powered Forecasting** with real-time market data
-    * **Quantum Portfolio Optimization** for maximum returns
-    * **Blockchain Smart Contracts** for transparent trading
-    * **Multi-Region Compliance** (FERC, Dodd-Frank, REMIT, Islamic Finance)
-    * **Real-time IoT Integration** for grid and weather data
-    * **ESG Scoring & Sustainability** metrics
-    
-    ### 🔐 Security
-    
-    * JWT-based authentication with post-quantum cryptography
-    * OWASP Top 10 compliance
-    * Rate limiting and threat detection
-    * Multi-factor authentication support
-    
-    ### 📊 Market Data
-    
-    * Real-time prices from CME, ICE, NYMEX
-    * Weather correlation analysis
-    * Renewable energy capacity tracking
-    * Oilfield production data
-    * Tariff impact analysis
-    
-    ### 🎯 Getting Started
-    
-    1. **Register**: Use `/api/auth/register` to create an account
-    2. **Login**: Use `/api/auth/login` to get access token
-    3. **Trade**: Access market data and execute trades
-    4. **Optimize**: Use AI and quantum optimization
-    5. **Comply**: Ensure regulatory compliance
-    
-    ### 🔗 API Endpoints
-    
-    * **Authentication**: `/api/auth/*`
-    * **Market Data**: `/api/energy-data/*`
-    * **Trading**: `/api/trade-lifecycle/*`
-    * **Analytics**: `/api/risk-analytics/*`
-    * **Compliance**: `/api/compliance/*`
-    * **WebSocket**: `/ws/*`
-    """,
-    version="2.0.0",
-    contact={
-        "name": "QuantaEnergi Team",
-        "email": "support@quantaenergi.com",
-        "url": "https://quantaenergi.com"
-    },
-    license_info={
-        "name": "MIT License",
-        "url": "https://opensource.org/licenses/MIT"
-    },
-    lifespan=lifespan
+    title="QuantaEnergi API",
+    version="0.1.0"
 )
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure properly in production
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    """Root endpoint"""
-    return {
-        "message": "QuantaEnergi API v2.0",
-        "status": "operational",
-        "version": "2.0.0",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
-
 @app.get("/health")
-async def health_check():
+def health():
     """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": "QuantaEnergi API",
-        "version": "2.0.0",
-        "timestamp": "2024-01-01T00:00:00Z"
-    }
+    return {"status": "healthy"}
 
-@app.get("/api/status")
-async def api_status():
-    """API status endpoint"""
-    return {
-        "api_status": "operational",
-        "features": {
-            "authentication": "enabled",
-            "trade_lifecycle": "enabled",
-            "risk_analytics": "enabled",
-            "compliance": "enabled",
-            "websocket": "enabled"
-        },
-        "rate_limit": "100 requests per minute per IP"
-    }
+@app.post("/auth/login")
+async def login(credentials: dict = Body(...)):
+    """Login endpoint to generate JWT token"""
+    username = credentials.get("username")
+    password = credentials.get("password")
+    
+    # TODO: Implement proper user authentication
+    if username == "admin" and password == "password":
+        access_token = create_access_token(subject=username)
+        return {"access_token": access_token, "token_type": "bearer"}
+    else:
+        return {"error": "Invalid credentials"}
 
-# Import error handling middleware
-from app.middleware.error_handler import setup_error_handlers
+@app.post("/trades")
+async def create_trade(trade: dict = Body(...), authorization: str = None):
+    """Create a new trade (requires JWT authentication)"""
+    if not authorization or not authorization.startswith("Bearer "):
+        return {"error": "Authentication required"}
+    
+    token = authorization.split(" ")[1]
+    current_user = verify_token(token)
+    
+    if not current_user:
+        return {"error": "Authentication failed"}
+    
+    # TODO: Implement actual trade creation with user context
+    return {"id": 1, "trade": trade, "user": current_user}
 
-# Import GraphQL router
-from app.graphql import graphql_router
+@app.get("/trades/{id}/position")
+def get_position(id: int, db=Depends(get_db)):
+    """Get position for a trade"""
+    return reconcile_position(db, id)
 
-# Import new API routers
-from app.api.v1.risk_forecast import router as risk_forecast_router
-from app.api.v1.quantum_var import router as quantum_var_router
+@app.post("/risk/var")
+def var_endpoint(prices: List[float] = Body(...)):
+    """Calculate Value at Risk for given price series"""
+    return {"var": calculate_var(prices)}
 
-# Import simple API endpoints
-from app.simple_endpoints import router as main_api_router
+@app.post("/forecast/price")
+def forecast(historical: List[float] = Body(...)):
+    """Forecast next price using AI/ML ensemble"""
+    ensemble_result = ensemble_forecast(historical)
+    return {"prediction": ensemble_result['pred'], "accuracy": ensemble_result['accuracy']}
 
-# Import security middleware
-from app.middleware.waf_middleware import setup_waf_middleware
+@app.post("/esg/track")
+async def track_esg_endpoint(trade_id: int, db=Depends(get_db), token: str = Depends(verify_token)):
+    """Track ESG metrics for a trade"""
+    return track_esg(trade_id, db)
 
-# Import federated auth
-from app.security.federated_auth import get_federated_auth_manager, create_federated_auth_routes
+class OptRequest(BaseModel):
+    returns: list[float]
+    risks: list[float]
 
-# Import tenant management
-from app.api.tenant_management import router as tenant_router
+@app.post("/optimize/portfolio")
+async def opt_endpoint(req: OptRequest, token: str = Depends(verify_token)):
+    """Quantum portfolio optimization"""
+    return quantum_optimize_portfolio(req.returns, req.risks)
 
-# Import monitoring
-from app.monitoring.metrics import MetricsMiddleware, get_metrics, start_metrics_server
+@app.get("/integrate/erp")
+async def integrate_erp(token: str = Depends(verify_token)):
+    """ERP integration endpoint"""
+    return fetch_erp_data("mock_endpoint")
 
-# Import Celery
-from app.core.celery_app import get_celery_app
+@app.post("/forecast/load")
+def forecast_load_endpoint(historical: List[float] = Body(...)):
+    """Load forecasting endpoint"""
+    return forecast_load(historical)
 
-# Setup comprehensive error handlers
-setup_error_handlers(app)
+@app.get("/metrics")
+def metrics():
+    """Prometheus metrics endpoint"""
+    return c
 
-# Setup WAF middleware
-setup_waf_middleware(app)
+# WebSocket endpoint for market data
+@app.websocket("/ws/market")
+async def websocket_market_data(websocket):
+    """WebSocket endpoint for real-time market data"""
+    await market_data_broadcaster(websocket, "/ws/market")
 
-# Setup metrics middleware
-metrics_middleware = MetricsMiddleware(get_metrics())
-app.middleware("http")(metrics_middleware)
+@app.post("/compliance/validate")
+def validate_compliance(request: dict = Body(...)):
+    """Validate trade compliance against regulatory framework"""
+    trade_data = request.get("trade", {})
+    framework_str = request.get("framework", "REMIT")
+    
+    try:
+        framework = ComplianceFramework(framework_str)
+        result = ComplianceService.validate_trade_compliance(trade_data, framework)
+        return result
+    except ValueError:
+        return {"error": f"Invalid framework. Supported: {[f.value for f in ComplianceFramework]}"}
 
-# Add GraphQL endpoint
-app.include_router(graphql_router, prefix="/api", tags=["GraphQL"])
+@app.post("/compliance/report")
+def generate_compliance_report(request: dict = Body(...)):
+    """Generate compliance report for multiple trades"""
+    trades = request.get("trades", [])
+    framework_str = request.get("framework", "REMIT")
+    
+    try:
+        framework = ComplianceFramework(framework_str)
+        report = ComplianceService.generate_compliance_report(trades, framework)
+        return report
+    except ValueError:
+        return {"error": f"Invalid framework. Supported: {[f.value for f in ComplianceFramework]}"}
 
-# Add new API routers
-app.include_router(risk_forecast_router, tags=["AI/ML Risk Forecast"])
-app.include_router(quantum_var_router, tags=["Quantum VaR"])
-
-# Add main API endpoints (includes trade capture and risk management)
-app.include_router(main_api_router)
-
-# Add tenant management routes
-app.include_router(tenant_router)
-
-# Add federated authentication routes
-auth_manager = get_federated_auth_manager()
-# Note: create_federated_auth_routes is called during app startup
-
-# Start metrics server
-start_metrics_server(port=8001)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+# Placeholder for future routers
+# app.include_router()  # Will be added when routers are created
