@@ -3,12 +3,13 @@ Blockchain and Carbon Trading API
 Phase 3: Disruptive Innovations & Market Dominance
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Body, Query
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
 from ...services.decentralized_trading import DecentralizedTradingProtocol, DecentralizedTradingValidator
 from ...services.carbon_trading import CarbonCreditTradingPlatform, CarbonTradingValidator
+from ...services.carbon_nft_service import carbon_nft_service
 from ...schemas.trade import (
     ApiResponse, ErrorResponse, IslamicComplianceResponse
 )
@@ -460,6 +461,122 @@ async def validate_carbon_credits(credits_data: Dict[str, Any]):
             success=True,
             data=validation,
             message="Carbon credits validation completed"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Carbon NFT Endpoints
+
+@router.post("/carbon-nft/mint", response_model=ApiResponse)
+async def mint_carbon_nft(
+    carbon_credits: float = Body(..., gt=0, description="Amount of carbon credits in tons CO2"),
+    project_id: str = Body(..., description="Unique project identifier"),
+    verification_standard: str = Body("VCS", description="Carbon verification standard"),
+    metadata: Dict[str, Any] = Body(default_factory=dict, description="Additional NFT metadata")
+):
+    """Mint Carbon NFT with EU ETS arbitrage calculation"""
+    try:
+        result = carbon_nft_service.mint_carbon_nft(
+            carbon_credits, project_id, verification_standard, metadata
+        )
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        
+        return ApiResponse(
+            success=True,
+            data=result,
+            message="Carbon NFT minted successfully with EU ETS arbitrage"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/carbon-nft/transfer", response_model=ApiResponse)
+async def transfer_carbon_nft(
+    nft_id: str = Body(..., description="NFT identifier"),
+    from_address: str = Body(..., description="Sender address"),
+    to_address: str = Body(..., description="Recipient address")
+):
+    """Transfer Carbon NFT between addresses"""
+    try:
+        result = carbon_nft_service.transfer_nft(nft_id, from_address, to_address)
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail=result.get("error"))
+        
+        return ApiResponse(
+            success=True,
+            data=result,
+            message="Carbon NFT transferred successfully"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/carbon-nft/{nft_id}", response_model=ApiResponse)
+async def get_carbon_nft_details(nft_id: str):
+    """Get Carbon NFT details"""
+    try:
+        result = carbon_nft_service.get_nft_details(nft_id)
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=404, detail=result.get("error"))
+        
+        return ApiResponse(
+            success=True,
+            data=result,
+            message="Carbon NFT details retrieved successfully"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/carbon-nft/list", response_model=ApiResponse)
+async def list_carbon_nfts(
+    owner: Optional[str] = Query(None, description="Filter by owner address")
+):
+    """List Carbon NFTs with optional owner filter"""
+    try:
+        result = carbon_nft_service.list_nfts(owner)
+        
+        return ApiResponse(
+            success=True,
+            data=result,
+            message="Carbon NFTs listed successfully"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/carbon-nft/calculate-arbitrage", response_model=ApiResponse)
+async def calculate_ets_arbitrage(
+    carbon_credits: float = Body(..., gt=0, description="Amount of carbon credits")
+):
+    """Calculate EU ETS arbitrage opportunity"""
+    try:
+        result = carbon_nft_service.calculate_ets_arbitrage(carbon_credits)
+        
+        return ApiResponse(
+            success=True,
+            data=result,
+            message="EU ETS arbitrage calculated successfully"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/carbon-nft/transactions/{nft_id}", response_model=ApiResponse)
+async def get_carbon_nft_transactions(nft_id: str):
+    """Get Carbon NFT transaction history"""
+    try:
+        result = carbon_nft_service.get_transaction_history(nft_id)
+        
+        return ApiResponse(
+            success=True,
+            data=result,
+            message="Carbon NFT transaction history retrieved successfully"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

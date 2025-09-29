@@ -14,6 +14,7 @@ from app.db.session import engine, get_db
 from app.models import Base, Trade, ESG, User
 from passlib.context import CryptContext
 from app.services.trade_service import reconcile_position
+from app.services.enhanced_trade_service import TradeLifecycleService
 from app.services.risk_service import calculate_var, monte_carlo_var, calculate_enhanced_var
 from app.services.ai_service import forecast_price, quantum_optimize_portfolio, forecast_load, ensemble_forecast
 from app.services.market_service import market_data_broadcaster, fetch_energy_prices, get_market_volatility
@@ -23,6 +24,15 @@ from app.services.esg_service import track_esg
 from app.services.integration_service import fetch_erp_data
 from app.api.v1 import market_data, monte_carlo_var, real_pnl
 from app.security.auth import create_access_token, verify_token
+from app.domains.trading.routers import router as trading_router
+from app.domains.risk.routers import router as risk_router
+from app.domains.ai_forecasting.services import AIForecastingService
+from app.domains.geo_risk.routers import router as geo_risk_router
+from app.domains.quantum.routers import router as quantum_router
+from app.domains.blockchain.routers import router as blockchain_router
+from app.domains.compliance.routers import router as compliance_router
+from app.core.trade_engine import TradeEngine
+from app.core.risk_calculator import RiskCalculator
 import numpy as np
 import websockets
 from typing import List
@@ -151,6 +161,10 @@ security = HTTPBearer()
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Initialize SOLID classes
+trade_engine = TradeEngine()
+risk_calculator = RiskCalculator()
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
     """Get current user from JWT token"""
     if credentials:
@@ -192,56 +206,138 @@ async def create_trade(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Create a new trade (requires JWT authentication)"""
+    """Create a new trade with SOLID TradeEngine and real P&L calculations (requires JWT authentication)"""
     if not current_user:
         raise HTTPException(status_code=401, detail="Auth failed")
 
-    # Create & save trade
-    trade_obj = Trade(
-        asset=trade.asset,
-        quantity=trade.quantity,
-        price=trade.price,
-        # Add user_id= current_user.id if models link (e.g., owner_id FK)
-    )
-    db.add(trade_obj)
-    db.commit()
-    db.refresh(trade_obj)  # Fetches real ID/timestamp
-
+    # Use SOLID TradeEngine for trade processing
+    trade_data = {
+        'asset': trade.asset,
+        'quantity': trade.quantity,
+        'price': trade.price,
+        'currency': 'USD',
+        'trade_type': 'spot',
+        'user_id': current_user.id
+    }
+    
+    # Process trade with SOLID TradeEngine
+    result = trade_engine.process_trade(trade_data, 'REMIT')
+    
+    if not result['success']:
+        raise HTTPException(status_code=400, detail=result['error'])
+    
+    # Use enhanced trade service for P&L calculations
+    trade_service = TradeLifecycleService()
+    pnl_result = trade_service.capture_trade(trade_data, current_user.id, db)
+    
     # Auto-generate ESG
-    esg_result = track_esg(trade_obj.id, db)  # Your service—assumes it inserts ESG row
+    esg_result = track_esg(result['trade_id'], db)
 
     return {
-        "id": trade_obj.id,
-        "trade": {
-            "asset": trade_obj.asset,
-            "quantity": trade_obj.quantity,
-            "price": trade_obj.price,
-            "timestamp": trade_obj.timestamp.isoformat() if trade_obj.timestamp else None
-        },
+        "success": True,
+        "trade_id": result['trade_id'],
+        "trade": result['trade'],
+        "compliance": result['compliance'],
+        "pnl_metrics": pnl_result.get('pnl_metrics', {}),
         "user": current_user,
-        "esg": ESGResponse(**esg_result)  # e.g., {"co2": 35.2, "certs": "silver"}
+        "esg": ESGResponse(**esg_result)
     }
 
 @app.get("/trades/{id}/position")
 def get_position(id: int, db=Depends(get_db), current_user = Depends(get_current_user)):
-    """Get position for a trade"""
-    return reconcile_position(db, id)
+    """Get enhanced position reconciliation for a trade"""
+    trade_service = TradeLifecycleService()
+    return trade_service.reconcile_position(id, db)
+
+@app.post("/trades/{id}/settle")
+def settle_trade_pnl(
+    id: int, 
+    current_price: float = Body(...),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Settle P&L for a trade with real calculations"""
+    trade_service = TradeLifecycleService()
+    return trade_service.settle_pnl(id, current_price, db)
+
+@app.post("/trades/{id}/validate")
+def validate_trade(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Validate trade against business rules and risk limits"""
+    trade_service = TradeLifecycleService()
+    return trade_service.validate_trade(id, db)
 
 @app.post("/risk/var", tags=["Risk Management"])
-def var_endpoint(prices: List[float] = Body(...), method: str = "parametric", current_user = Depends(get_current_user)):
-    """Calculate Value at Risk for given price series - Enhanced for US Shale risk with parametric, Monte Carlo, and combined methods"""
+def var_endpoint(prices: List[float] = Body(...), method: str = "monte_carlo", current_user = Depends(get_current_user)):
+    """Calculate Value at Risk using SOLID RiskCalculator - Enhanced for US Shale risk with Monte Carlo 10k paths"""
+    # Convert prices to positions format for SOLID RiskCalculator
+    positions = [{'notional_value': price * 1000, 'price_history': prices} for price in prices[-10:]]  # Last 10 prices
+    
+    # Use SOLID RiskCalculator
     if method == "monte_carlo":
-        return monte_carlo_var(prices)
-    elif method == "enhanced":
-        return calculate_enhanced_var(prices)
+        return risk_calculator.calculate_var(positions, 'monte_carlo', confidence_level=0.95, num_simulations=10000)
+    elif method == "historical":
+        return risk_calculator.calculate_var(positions, 'historical', confidence_level=0.95)
     else:
-        return calculate_var(prices)
+        # Fallback to original methods
+        if method == "enhanced":
+            return calculate_enhanced_var(prices)
+        else:
+            return calculate_var(prices)
 
 @app.post("/forecast/price")
 def forecast(historical: List[float] = Body(...)):
     """Forecast next price using AI/ML ensemble"""
     ensemble_result = ensemble_forecast(historical)
     return {"prediction": ensemble_result['pred'], "accuracy": ensemble_result['accuracy']}
+
+@app.post("/forecast/ai/prophet")
+async def forecast_with_prophet(
+    historical_data: List[Dict[str, Any]] = Body(...),
+    days_ahead: int = Query(7, ge=1, le=30),
+    db: Session = Depends(get_db)
+):
+    """AI forecasting using Prophet with MAE<5% validation"""
+    ai_service = AIForecastingService(db)
+    result = ai_service.forecast_with_prophet(historical_data, days_ahead)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Prophet forecasting failed"))
+    
+    return result
+
+@app.post("/forecast/ai/xgboost")
+async def forecast_with_xgboost(
+    historical_data: List[Dict[str, Any]] = Body(...),
+    days_ahead: int = Query(7, ge=1, le=30),
+    db: Session = Depends(get_db)
+):
+    """AI forecasting using XGBoost with MAE<5% validation"""
+    ai_service = AIForecastingService(db)
+    result = ai_service.forecast_with_xgboost(historical_data, days_ahead)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "XGBoost forecasting failed"))
+    
+    return result
+
+@app.post("/forecast/ai/ensemble")
+async def forecast_ensemble(
+    historical_data: List[Dict[str, Any]] = Body(...),
+    days_ahead: int = Query(7, ge=1, le=30),
+    db: Session = Depends(get_db)
+):
+    """Ensemble AI forecasting combining Prophet and XGBoost"""
+    ai_service = AIForecastingService(db)
+    result = ai_service.forecast_ensemble(historical_data, days_ahead)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Ensemble forecasting failed"))
+    
+    return result
 
 @app.post("/esg/track")
 async def track_esg_endpoint(trade_id: ESGTrack = Body(...), db=Depends(get_db), current_user = Depends(get_current_user)):
@@ -395,3 +491,15 @@ def get_supported_regions(current_user = Depends(get_current_user)):
 app.include_router(market_data.router, prefix="/api/v1")
 app.include_router(monte_carlo_var.router, prefix="/api/v1")
 app.include_router(real_pnl.router, prefix="/api/v1")
+
+# Include domain routers
+app.include_router(trading_router, prefix="/api/v1")
+app.include_router(risk_router, prefix="/api/v1")
+app.include_router(geo_risk_router, prefix="/api/v1")
+app.include_router(quantum_router, prefix="/api/v1")
+app.include_router(blockchain_router, prefix="/api/v1")
+app.include_router(compliance_router, prefix="/api/v1")
+
+# Include advanced ETRM router
+from app.api.v1.advanced_etrm import router as advanced_etrm_router
+app.include_router(advanced_etrm_router, prefix="/api/v1")

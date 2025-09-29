@@ -49,3 +49,11 @@ class TradeResponse(BaseModel):
     message: str
     timestamp: str
     data: Optional[Dict[str, Any]] = None
+
+
+class ApiResponse(BaseModel):
+    """Standard API response schema"""
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    message: str
+    timestamp: Optional[str] = None

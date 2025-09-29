@@ -91,7 +91,12 @@ class GeoRiskService:
         volatility_impact = volatility * region_config['volatility_multiplier']
         sentiment_impact = (1 - sentiment) * 0.3  # Negative sentiment increases risk
         
-        risk_score = min(1.0, base_risk + volatility_impact + sentiment_impact)
+        # Guyana-specific HIGH 20% uplift for CO2 emissions
+        guyana_uplift = 0.0
+        if region == 'GUYANA' and risk_prediction >= 2:  # HIGH or CRITICAL risk
+            guyana_uplift = 0.20  # 20% CO2 uplift for Guyana HIGH risk
+        
+        risk_score = min(1.0, base_risk + volatility_impact + sentiment_impact + guyana_uplift)
         
         # Region-specific risk factors
         risk_factors = self._assess_region_factors(region, volatility, sentiment)
@@ -100,6 +105,7 @@ class GeoRiskService:
             'region': region,
             'risk_level': predicted_level,
             'risk_score': float(risk_score),
+            'guyana_uplift': guyana_uplift,  # 20% CO2 uplift for Guyana HIGH risk
             'confidence': float(max(risk_probabilities)),
             'factors': risk_factors,
             'timestamp': datetime.now().isoformat(),
