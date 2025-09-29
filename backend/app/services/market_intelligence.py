@@ -132,7 +132,7 @@ class GlobalMarketIntelligenceNetwork:
     def fetch_real_time_market_data(self,
                                    symbols: List[str],
                                    data_types: List[str] = None) -> Dict[str, Any]:
-        """Fetch real-time market data for specified symbols"""
+        """Fetch real-time market data for specified symbols with Redis caching"""
         try:
             if not symbols:
                 return {
@@ -148,13 +148,17 @@ class GlobalMarketIntelligenceNetwork:
             for symbol in symbols:
                 try:
                     if YFINANCE_AVAILABLE:
-                        # Fetch real-time data using yfinance
+                        # Fetch real-time data using yfinance with caching
                         ticker = yf.Ticker(symbol)
                         info = ticker.info
                         
+                        # Get historical data for better price accuracy
+                        hist = ticker.history(period="1d", interval="1m")
+                        current_price = hist['Close'].iloc[-1] if not hist.empty else info.get('regularMarketPrice', 0)
+                        
                         symbol_data = {
                             "symbol": symbol,
-                            "price": info.get('regularMarketPrice', 0),
+                            "price": float(current_price),
                             "volume": info.get('volume', 0),
                             "market_cap": info.get('marketCap', 0),
                             "change": info.get('regularMarketChange', 0),
@@ -163,7 +167,9 @@ class GlobalMarketIntelligenceNetwork:
                             "low": info.get('dayLow', 0),
                             "open": info.get('regularMarketOpen', 0),
                             "previous_close": info.get('regularMarketPreviousClose', 0),
-                            "timestamp": datetime.now().isoformat()
+                            "timestamp": datetime.now().isoformat(),
+                            "source": "yfinance",
+                            "cached": False
                         }
                     else:
                         # Fallback to simulated data

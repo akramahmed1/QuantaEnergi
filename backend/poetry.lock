@@ -157,6 +157,22 @@ typing-extensions = ">=4.12"
 tz = ["tzdata"]
 
 [[package]]
+name = "alpha-vantage"
+version = "3.0.0"
+description = "Python module to get stock data from the Alpha Vantage Api"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "alpha_vantage-3.0.0-py3-none-any.whl", hash = "sha256:5c64b3a179cfcd68aa2166bacaf581758522fa4fe06392a0298847d49db9596f"},
+    {file = "alpha_vantage-3.0.0.tar.gz", hash = "sha256:f97fe2b8efad2da97580199d54f8556c8007053870c462d10b9eaa815186c484"},
+]
+
+[package.dependencies]
+aiohttp = "*"
+requests = "*"
+
+[[package]]
 name = "amqp"
 version = "5.3.1"
 description = "Low-level AMQP client for Python (fork of amqplib)."
@@ -3517,6 +3533,29 @@ files = [
 ]
 
 [[package]]
+name = "pulp"
+version = "3.3.0"
+description = "PuLP is an LP modeler written in python. PuLP can generate MPS or LP files and call GLPK, COIN CLP/CBC, CPLEX, and GUROBI to solve linear problems."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "pulp-3.3.0-py3-none-any.whl", hash = "sha256:dd6ad2d63f196d1254eddf9dcff5cd224912c1f046120cb7c143c5b0eda63fae"},
+    {file = "pulp-3.3.0.tar.gz", hash = "sha256:7eb99b9ce7beeb8bbb7ea9d1c919f02f003ab7867e0d1e322f2f2c26dd31c8ba"},
+]
+
+[package.extras]
+copt = ["coptpy"]
+cplex = ["cplex ; sys_platform != \"darwin\" or python_full_version < \"3.12.0\""]
+gurobi = ["gurobipy"]
+highs = ["highspy"]
+mosek = ["mosek"]
+open-py = ["cylp", "highspy", "pyscipopt"]
+public-py = ["coptpy", "cplex ; sys_platform != \"darwin\" or python_full_version < \"3.12.0\"", "gurobipy", "xpress"]
+scip = ["pyscipopt"]
+xpress = ["xpress"]
+
+[[package]]
 name = "py-ecc"
 version = "8.0.0"
 description = "py-ecc: Elliptic curve crypto in python including secp256k1, alt_bn128, and bls12_381"
@@ -5514,4 +5553,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "9f5ed024277f371ec21c225f9d01aa3f5af79870c3cd2698172c79883170b419"
+content-hash = "7258c399dc63f025957fa75c5b2e20d6241d8bfa6e04a3e62c98d108e7d04c88"

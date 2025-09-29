@@ -22,7 +22,8 @@ deal_service = DealCaptureService()
 deal_validator = DealValidationService()
 position_manager = PositionManager()
 sharia_service = ShariaComplianceService()
-# Islamic validator is now part of ShariaComplianceService
+sharia_engine = sharia_service  # Alias for compatibility
+islamic_validator = sharia_service  # Alias for compatibility
 
 
 @router.post("/deals/capture", response_model=TradeResponse)
