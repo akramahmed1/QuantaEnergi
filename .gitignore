@@ -141,6 +141,12 @@ dmypy.json
 temp_*.md
 temp_plan_*.md
 temp_fix.md
+*.bak
+0.*
+1.*
+poetry
+e2e_results.json
+e2e_test_results.json
 
 # Installer files
 *.msi
@@ -184,6 +190,10 @@ backend.log
 # Coverage reports
 .coverage
 bandit_report*.json
+TEST_COVERAGE_SUMMARY.md
+TEST_SUMMARY.md
+test_*.py
+test_*.json
 
 # Build artifacts
 build/
