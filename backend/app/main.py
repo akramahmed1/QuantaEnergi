@@ -503,3 +503,7 @@ app.include_router(compliance_router, prefix="/api/v1")
 # Include advanced ETRM router
 from app.api.v1.advanced_etrm import router as advanced_etrm_router
 app.include_router(advanced_etrm_router, prefix="/api/v1")
+
+# Include comprehensive ETRM/CTRM API router
+from app.api.etrm_api import router as etrm_router
+app.include_router(etrm_router, prefix="/api/v1")

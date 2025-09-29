@@ -72,31 +72,41 @@ class TradingService:
         
         return position
     
-    def calculate_real_pnl(self, position_id: str, current_price: float) -> Dict[str, Any]:
-        """Calculate real P&L for position"""
+    def calculate_real_pnl(self, position_id: str, current_price: float, fx_rate: float = 1.0, hedge_ratio: float = 0.05) -> Dict[str, Any]:
+        """Calculate real P&L for position with FX and hedging adjustments"""
         try:
             position = self.db.query(Position).filter(Position.position_id == position_id).first()
             if not position:
                 return {"success": False, "error": "Position not found"}
             
-            # Calculate unrealized P&L
+            # Calculate unrealized P&L with FX adjustment
             if position.direction == "buy":
-                unrealized_pnl = (current_price - position.entry_price) * position.quantity
+                base_pnl = (current_price - position.entry_price) * position.quantity
             else:  # sell
-                unrealized_pnl = (position.entry_price - current_price) * position.quantity
+                base_pnl = (position.entry_price - current_price) * position.quantity
+            
+            # Apply FX rate adjustment
+            fx_adjusted_pnl = base_pnl * fx_rate
+            
+            # Apply hedging adjustment (reduce risk by hedge_ratio)
+            hedged_pnl = fx_adjusted_pnl * (1 - hedge_ratio)
             
             # Update position
             position.current_price = current_price
-            position.unrealized_pnl = unrealized_pnl
+            position.unrealized_pnl = hedged_pnl
             self.db.commit()
             
             return {
                 "success": True,
                 "position_id": position_id,
-                "unrealized_pnl": unrealized_pnl,
-                "pnl_percentage": (unrealized_pnl / (position.entry_price * position.quantity)) * 100,
+                "unrealized_pnl": round(hedged_pnl, 2),
+                "base_pnl": round(base_pnl, 2),
+                "fx_adjusted_pnl": round(fx_adjusted_pnl, 2),
+                "hedge_ratio": hedge_ratio,
+                "pnl_percentage": round((hedged_pnl / (position.entry_price * position.quantity)) * 100, 2),
                 "current_price": current_price,
-                "entry_price": position.entry_price
+                "entry_price": position.entry_price,
+                "fx_rate": fx_rate
             }
             
         except Exception as e:
