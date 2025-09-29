@@ -12,70 +12,48 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://quantaenergi-backend.onrender.com/api/$1"
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
   ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=31536000; includeSubDomains"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://quantaenergi-backend.onrender.com https://api.openweathermap.org;"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "geolocation=(), microphone=(), camera=()"
-        }
-      ]
-    }
-  ],
   "env": {
-    "VITE_API_BASE_URL": "https://quantaenergi-backend.onrender.com",
+    "VITE_API_URL": "https://quantaenergi-backend.railway.app",
+    "VITE_WS_URL": "wss://quantaenergi-backend.railway.app",
     "VITE_APP_NAME": "QuantaEnergi",
     "VITE_APP_VERSION": "2.0.0"
   },
   "functions": {
-    "api/**/*.js": {
-      "maxDuration": 10
+    "app/api/**/*.ts": {
+      "runtime": "nodejs18.x"
     }
   },
-  "regions": ["iad1"],
-  "monitoring": {
-    "enabled": true
-  },
-  "performance": {
-    "cache": {
-      "maxAge": 3600
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
     }
-  }
-  "github": {
-    "enabled": true,
-    "silent": true
-  }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://quantaenergi-backend.railway.app/api/$1"
+    }
+  ]
 }

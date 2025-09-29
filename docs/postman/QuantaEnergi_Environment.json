@@ -1,0 +1,85 @@
+{
+  "id": "quantaenergi-environment",
+  "name": "QuantaEnergi Environment",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "base_url_prod",
+      "value": "https://quantaenergi-backend.railway.app",
+      "type": "default",
+      "enabled": false
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "test_username",
+      "value": "testuser",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "test_password",
+      "value": "testpass",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "test_trade_id",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "test_prices",
+      "value": "[150, 152, 148, 155, 160, 158, 162, 165, 163, 168]",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "test_returns",
+      "value": "[0.05, 0.08, 0.12, 0.06, 0.09]",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "test_risks",
+      "value": "[0.1, 0.15, 0.2, 0.12, 0.18]",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "guyana_volatility",
+      "value": "0.25",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "guyana_sentiment",
+      "value": "0.4",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "me_volatility",
+      "value": "0.30",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "me_sentiment",
+      "value": "0.2",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

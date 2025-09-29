@@ -1,0 +1,643 @@
+{
+  "info": {
+    "name": "QuantaEnergi ETRM/CTRM API",
+    "description": "Comprehensive API collection for QuantaEnergi - Next-Gen ETRM/CTRM Trading Platform",
+    "version": "2.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"testpass\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"testpass\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"access_token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...\",\n  \"token_type\": \"bearer\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🏥 Health & Monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "API Documentation",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/docs",
+              "host": ["{{base_url}}"],
+              "path": ["docs"]
+            }
+          }
+        },
+        {
+          "name": "OpenAPI Specification",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/openapi.json",
+              "host": ["{{base_url}}"],
+              "path": ["openapi.json"]
+            }
+          }
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔬 Phase 1: VaR/Monte Carlo Risk",
+      "item": [
+        {
+          "name": "Parametric VaR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[150, 152, 148, 155, 160, 158, 162, 165, 163, 168]"
+            },
+            "url": {
+              "raw": "{{base_url}}/risk/var",
+              "host": ["{{base_url}}"],
+              "path": ["risk", "var"]
+            }
+          }
+        },
+        {
+          "name": "Monte Carlo VaR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[150, 152, 148, 155, 160, 158, 162, 165, 163, 168]"
+            },
+            "url": {
+              "raw": "{{base_url}}/risk/var?method=monte_carlo",
+              "host": ["{{base_url}}"],
+              "path": ["risk", "var"],
+              "query": [
+                {
+                  "key": "method",
+                  "value": "monte_carlo"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enhanced VaR (Both Methods)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[150, 152, 148, 155, 160, 158, 162, 165, 163, 168]"
+            },
+            "url": {
+              "raw": "{{base_url}}/risk/var?method=enhanced",
+              "host": ["{{base_url}}"],
+              "path": ["risk", "var"],
+              "query": [
+                {
+                  "key": "method",
+                  "value": "enhanced"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌐 Phase 2: Alpha Vantage + Geo-Risk AI",
+      "item": [
+        {
+          "name": "Market Data - BRENT",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/market/prices/BRENT",
+              "host": ["{{base_url}}"],
+              "path": ["market", "prices", "BRENT"]
+            }
+          }
+        },
+        {
+          "name": "Market Data - WTI",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/market/prices/WTI",
+              "host": ["{{base_url}}"],
+              "path": ["market", "prices", "WTI"]
+            }
+          }
+        },
+        {
+          "name": "Guyana Geo-Risk Assessment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"region\": \"GUYANA\",\n  \"volatility\": 0.25,\n  \"sentiment\": 0.4,\n  \"news_volume\": 0.8\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/geo-risk/assess",
+              "host": ["{{base_url}}"],
+              "path": ["geo-risk", "assess"]
+            }
+          }
+        },
+        {
+          "name": "Middle East Geo-Risk Assessment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"region\": \"MIDDLE_EAST\",\n  \"volatility\": 0.30,\n  \"sentiment\": 0.2,\n  \"news_volume\": 0.9\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/geo-risk/assess",
+              "host": ["{{base_url}}"],
+              "path": ["geo-risk", "assess"]
+            }
+          }
+        },
+        {
+          "name": "Supported Regions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/geo-risk/regions",
+              "host": ["{{base_url}}"],
+              "path": ["geo-risk", "regions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔬 Phase 3: Quantum Optimization + REMIT",
+      "item": [
+        {
+          "name": "Quantum Portfolio Optimization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"returns\": [0.05, 0.08, 0.12, 0.06, 0.09],\n  \"risks\": [0.1, 0.15, 0.2, 0.12, 0.18]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/optimize/portfolio?method=quantum",
+              "host": ["{{base_url}}"],
+              "path": ["optimize", "portfolio"],
+              "query": [
+                {
+                  "key": "method",
+                  "value": "quantum"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Classical Portfolio Optimization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"returns\": [0.05, 0.08, 0.12],\n  \"risks\": [0.1, 0.15, 0.2]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/optimize/portfolio?method=classical",
+              "host": ["{{base_url}}"],
+              "path": ["optimize", "portfolio"],
+              "query": [
+                {
+                  "key": "method",
+                  "value": "classical"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "REMIT Compliance - Compliant Trade",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trade\": {\n    \"asset\": \"brent_crude_oil\",\n    \"quantity\": 500,\n    \"price\": 75.50,\n    \"market_price\": 75.00,\n    \"timestamp\": \"2024-01-15T10:30:00Z\",\n    \"counterparty\": \"Shell_Energy\",\n    \"trader\": \"John_Smith\",\n    \"energy_type\": \"oil\",\n    \"cross_border\": false\n  },\n  \"framework\": \"REMIT\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/compliance/validate",
+              "host": ["{{base_url}}"],
+              "path": ["compliance", "validate"]
+            }
+          }
+        },
+        {
+          "name": "REMIT Compliance - Position Limit Violation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trade\": {\n    \"asset\": \"wti_crude_oil\",\n    \"quantity\": 1200,\n    \"price\": 70.25,\n    \"market_price\": 70.00,\n    \"timestamp\": \"2024-01-15T11:00:00Z\",\n    \"counterparty\": \"BP_Trading\",\n    \"trader\": \"Jane_Doe\",\n    \"energy_type\": \"oil\",\n    \"cross_border\": false\n  },\n  \"framework\": \"REMIT\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/compliance/validate",
+              "host": ["{{base_url}}"],
+              "path": ["compliance", "validate"]
+            }
+          }
+        },
+        {
+          "name": "REMIT Compliance - Market Abuse Detection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trade\": {\n    \"asset\": \"inside_trading_oil\",\n    \"quantity\": 300,\n    \"price\": 75.00,\n    \"market_price\": 75.00,\n    \"timestamp\": \"2024-01-15T12:00:00Z\",\n    \"counterparty\": \"Trader_A\",\n    \"trader\": \"Trader_A\",\n    \"energy_type\": \"oil\",\n    \"cross_border\": false\n  },\n  \"framework\": \"REMIT\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/compliance/validate",
+              "host": ["{{base_url}}"],
+              "path": ["compliance", "validate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Trading & Analytics",
+      "item": [
+        {
+          "name": "Create Trade",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset\": \"guyana_crude_oil\",\n  \"quantity\": 500,\n  \"price\": 75.50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/trades",
+              "host": ["{{base_url}}"],
+              "path": ["trades"]
+            }
+          }
+        },
+        {
+          "name": "Get Position",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trades/1/position",
+              "host": ["{{base_url}}"],
+              "path": ["trades", "1", "position"]
+            }
+          }
+        },
+        {
+          "name": "Track ESG",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trade_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/esg/track",
+              "host": ["{{base_url}}"],
+              "path": ["esg", "track"]
+            }
+          }
+        },
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔮 Forecasting",
+      "item": [
+        {
+          "name": "Price Forecast",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[75.0, 76.5, 74.2, 77.8, 73.1, 79.2, 72.5, 81.3, 71.8, 83.7]"
+            },
+            "url": {
+              "raw": "{{base_url}}/forecast/price",
+              "host": ["{{base_url}}"],
+              "path": ["forecast", "price"]
+            }
+          }
+        },
+        {
+          "name": "Load Forecast",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[75.0, 76.5, 74.2, 77.8, 73.1, 79.2, 72.5, 81.3, 71.8, 83.7]"
+            },
+            "url": {
+              "raw": "{{base_url}}/forecast/load",
+              "host": ["{{base_url}}"],
+              "path": ["forecast", "load"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔗 Integration",
+      "item": [
+        {
+          "name": "ERP Integration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/integrate/erp",
+              "host": ["{{base_url}}"],
+              "path": ["integrate", "erp"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set auth token from login response",
+          "if (pm.response && pm.response.json() && pm.response.json().access_token) {",
+          "    pm.collectionVariables.set('auth_token', pm.response.json().access_token);",
+          "}"
+        ]
+      }
+    }
+  ]
+}
