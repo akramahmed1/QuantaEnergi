@@ -14,6 +14,10 @@ interface ComplianceData {
   total_pages: number;
 }
 
+interface ComplianceDataGeneric {
+  [key: string]: any;
+}
+
 interface ReportTemplate {
   name: string;
   description: string;
@@ -60,7 +64,7 @@ const ComplianceView: React.FC = () => {
 
   // Build report mutation
   const buildReportMutation = useMutation({
-    mutationFn: async ({ reportType, data, templateConfig }: { reportType: string; data: any; templateConfig?: any }) => {
+    mutationFn: async ({ reportType, data, templateConfig }: { reportType: string; data: ComplianceDataGeneric; templateConfig?: any }) => {
       const token = localStorage.getItem('token');
       const response = await axios.post('http://localhost:8000/api/v1/reports/build', {
         report_type: reportType,
