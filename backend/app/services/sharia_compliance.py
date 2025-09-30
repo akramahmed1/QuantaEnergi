@@ -31,6 +31,62 @@ class ShariaComplianceService:
         self.nisab_threshold = 100000  # Minimum wealth threshold for Zakat
         self.zakat_rate = 0.025  # 2.5% Zakat rate
         
+        # Static compliance frameworks (no real-time fatwa APIs)
+        self.compliance_frameworks = {
+            "AAOIFI": "Accounting and Auditing Organization for Islamic Financial Institutions",
+            "ISRA": "International Shari'ah Research Academy",
+            "DIFC": "Dubai International Financial Centre Sharia Standards"
+        }
+        
+        # Middle East specific compliance
+        self.me_compliance_frameworks = {
+            "UAE": {"regulator": "SCA", "framework": "AAOIFI", "fatwa_required": True},
+            "Saudi": {"regulator": "CMA", "framework": "AAOIFI", "fatwa_required": True},
+            "Qatar": {"regulator": "QFC", "framework": "AAOIFI", "fatwa_required": False},
+            "Kuwait": {"regulator": "CMA", "framework": "AAOIFI", "fatwa_required": True},
+            "Bahrain": {"regulator": "CBB", "framework": "AAOIFI", "fatwa_required": True}
+        }
+        
+        # Verified Islamic finance P&L structures (riba-free)
+        self.islamic_structures = {
+            "murabaha": {
+                "type": "Cost-plus financing",
+                "markup_rate": 0.05,  # 5% markup (not interest)
+                "risk_sharing": False,
+                "asset_backing": True,
+                "description": "Cost-plus sale with transparent markup"
+            },
+            "musharaka": {
+                "type": "Partnership financing", 
+                "profit_sharing": True,
+                "loss_sharing": True,
+                "profit_ratio": 0.5,  # Equal profit/loss sharing
+                "asset_backing": True,
+                "description": "Joint partnership with shared profit/loss"
+            },
+            "mudaraba": {
+                "type": "Trust financing",
+                "profit_sharing": 0.7,  # Investor gets 70% of profit
+                "loss_sharing": False,  # Investor bears all losses
+                "asset_backing": True,
+                "description": "Trust-based investment with profit sharing"
+            },
+            "ijara": {
+                "type": "Lease financing",
+                "lease_rate": 0.04,  # 4% lease rate (not interest)
+                "asset_ownership": True,
+                "lease_period": 12,  # months
+                "description": "Asset lease with ownership transfer option"
+            },
+            "sukuk": {
+                "type": "Asset-backed securities",
+                "coupon_rate": 0.03,  # 3% return (not interest)
+                "asset_backed": True,
+                "maturity": 5,  # years
+                "description": "Asset-backed Islamic bonds"
+            }
+        }
+        
     def screen_ethical_sectors(self, commodity: str, sector: str) -> Dict[str, Any]:
         """
         Screen commodities and sectors for ethical compliance
@@ -124,130 +180,92 @@ class ShariaComplianceService:
             logger.error(f"Error retrieving compliance guidance: {e}")
             return {"error": "Failed to retrieve compliance guidance", "fallback": True}
     
-    def calculate_islamic_pnl(self, trade_data: Dict[str, Any], structure: str) -> Dict[str, Any]:
+    def calculate_islamic_pnl(self, trade_data: Dict[str, Any], structure_type: str) -> Dict[str, Any]:
         """
         Calculate Islamic finance P&L with proper risk sharing
         
         Args:
             trade_data: Trade information
-            structure: Islamic finance structure (murabaha, musharaka, etc.)
+            structure_type: Islamic finance structure (murabaha, musharaka, etc.)
             
         Returns:
             Dict with Islamic P&L calculations
         """
         try:
-            structure_config = self.islamic_structures.get(structure, {})
-            quantity = trade_data.get("quantity", 0)
-            price = trade_data.get("price", 0)
+            # Validate structure_type is in islamic_structures
+            if structure_type not in self.islamic_structures:
+                return {
+                    "sharia_compliant": False,
+                    "error": f"Invalid Islamic structure: {structure_type}",
+                    "valid_structures": list(self.islamic_structures.keys())
+                }
             
-            # Base calculation
-            base_value = quantity * price
+            structure_config = self.islamic_structures[structure_type]
+            
+            # Extract trade parameters
+            principal = trade_data.get("principal", trade_data.get("quantity", 0) * trade_data.get("price", 0))
+            profit_rate = trade_data.get("profit_rate", 0.05)
+            total_profit = trade_data.get("total_profit", 0)
+            capital_contribution = trade_data.get("capital_contribution", 0)
             
             # Islamic structure specific calculations
-            if structure == "murabaha":
-                markup = base_value * structure_config.get("markup_rate", 0.05)
-                islamic_pnl = markup
-                risk_sharing = "None (fixed markup)"
+            if structure_type == "murabaha":
+                markup_rate = structure_config.get("markup_rate", 0.05)
+                islamic_pnl = principal * markup_rate
+                profit_sharing = {
+                    "buyer_profit": islamic_pnl,
+                    "seller_profit": 0
+                }
                 
-            elif structure == "musharaka":
-                profit_sharing_ratio = 0.5  # Equal profit sharing
-                islamic_pnl = base_value * profit_sharing_ratio
-                risk_sharing = "Equal profit/loss sharing"
+            elif structure_type == "musharaka":
+                profit_sharing_ratio = structure_config.get("profit_ratio", 0.5)
+                partner_share = total_profit * profit_sharing_ratio
+                islamic_pnl = partner_share
+                profit_sharing = {
+                    "partner_share": partner_share,
+                    "other_partner_share": total_profit - partner_share
+                }
                 
-            elif structure == "mudaraba":
+            elif structure_type == "mudaraba":
                 profit_ratio = structure_config.get("profit_sharing", 0.7)
-                islamic_pnl = base_value * profit_ratio
-                risk_sharing = "Investor bears losses, manager gets profit share"
+                investor_profit = total_profit * profit_ratio
+                islamic_pnl = investor_profit
+                profit_sharing = {
+                    "investor_profit": investor_profit,
+                    "mudarib_profit": total_profit - investor_profit
+                }
                 
-            elif structure == "ijara":
+            elif structure_type == "ijara":
                 lease_rate = structure_config.get("lease_rate", 0.04)
-                islamic_pnl = base_value * lease_rate
-                risk_sharing = "Asset ownership retained, lease income"
+                lease_period = trade_data.get("lease_period", 12)
+                islamic_pnl = (principal * lease_rate) * (lease_period / 12)
+                profit_sharing = {
+                    "lease_income": islamic_pnl
+                }
                 
-            elif structure == "sukuk":
+            elif structure_type == "sukuk":
                 coupon_rate = structure_config.get("coupon_rate", 0.03)
-                islamic_pnl = base_value * coupon_rate
-                risk_sharing = "Asset-backed returns"
+                islamic_pnl = principal * coupon_rate
+                profit_sharing = {
+                    "coupon_payment": islamic_pnl
+                }
                 
             else:
-                islamic_pnl = base_value * 0.03  # Default 3% return
-                risk_sharing = "Standard Islamic return"
-            
-            # Zakat calculation
-            zakat_amount = 0
-            if islamic_pnl > self.nisab_threshold:
-                zakat_amount = islamic_pnl * self.zakat_rate
+                # Default calculation
+                islamic_pnl = principal * 0.03
+                profit_sharing = {"default_return": islamic_pnl}
             
             return {
-                "structure": structure,
-                "base_value": base_value,
-                "islamic_pnl": islamic_pnl,
-                "risk_sharing": risk_sharing,
-                "zakat_amount": zakat_amount,
-                "net_after_zakat": islamic_pnl - zakat_amount,
                 "sharia_compliant": True,
-                "calculation_method": "Islamic finance principles"
+                "structure": structure_type,
+                "islamic_pnl": islamic_pnl,
+                "profit_sharing": profit_sharing,
+                "calculation_date": datetime.now().isoformat()
             }
             
         except Exception as e:
             logger.error(f"Error calculating Islamic P&L: {e}")
             return {"error": "Failed to calculate Islamic P&L", "sharia_compliant": False}
-        
-        # Static compliance frameworks (no real-time fatwa APIs)
-        self.compliance_frameworks = {
-            "AAOIFI": "Accounting and Auditing Organization for Islamic Financial Institutions",
-            "ISRA": "International Shari'ah Research Academy",
-            "DIFC": "Dubai International Financial Centre Sharia Standards"
-        }
-        
-        # Middle East specific compliance
-        self.me_compliance_frameworks = {
-            "UAE": {"regulator": "SCA", "framework": "AAOIFI", "fatwa_required": True},
-            "Saudi": {"regulator": "CMA", "framework": "AAOIFI", "fatwa_required": True},
-            "Qatar": {"regulator": "QFC", "framework": "AAOIFI", "fatwa_required": False},
-            "Kuwait": {"regulator": "CMA", "framework": "AAOIFI", "fatwa_required": True},
-            "Bahrain": {"regulator": "CBB", "framework": "AAOIFI", "fatwa_required": True}
-        }
-        
-        # Verified Islamic finance P&L structures (riba-free)
-        self.islamic_structures = {
-            "murabaha": {
-                "type": "Cost-plus financing",
-                "markup_rate": 0.05,  # 5% markup (not interest)
-                "risk_sharing": False,
-                "asset_backing": True,
-                "description": "Cost-plus sale with transparent markup"
-            },
-            "musharaka": {
-                "type": "Partnership financing", 
-                "profit_sharing": True,
-                "loss_sharing": True,
-                "profit_ratio": 0.5,  # Equal profit/loss sharing
-                "asset_backing": True,
-                "description": "Joint partnership with shared profit/loss"
-            },
-            "mudaraba": {
-                "type": "Trust financing",
-                "profit_sharing": 0.7,  # Investor gets 70% of profit
-                "loss_sharing": False,  # Investor bears all losses
-                "asset_backing": True,
-                "description": "Trust-based investment with profit sharing"
-            },
-            "ijara": {
-                "type": "Lease financing",
-                "lease_rate": 0.04,  # 4% lease rate (not interest)
-                "asset_ownership": True,
-                "lease_period": 12,  # months
-                "description": "Asset lease with ownership transfer option"
-            },
-            "sukuk": {
-                "type": "Asset-backed securities",
-                "coupon_rate": 0.03,  # 3% return (not interest)
-                "asset_backed": True,
-                "maturity": 5,  # years
-                "description": "Asset-backed Islamic bonds"
-            }
-        }
         
     async def validate_trade(self, trade_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -426,7 +444,8 @@ class ShariaComplianceService:
                     "nisab_threshold": nisab_threshold,
                     "wealth_above_nisab": 0,
                     "zakat_amount": 0,
-                    "message": "Wealth below Nisab threshold, no Zakat required"
+                    "zakat_rate": zakat_rate,
+                    "calculation_date": datetime.now().isoformat()
                 }
             
             wealth_above_nisab = total_wealth - nisab_threshold
@@ -439,7 +458,7 @@ class ShariaComplianceService:
                 "wealth_above_nisab": wealth_above_nisab,
                 "zakat_amount": zakat_amount,
                 "zakat_rate": zakat_rate,
-                "message": f"Zakat of {zakat_amount} required on wealth above Nisab threshold"
+                "calculation_date": datetime.now().isoformat()
             }
             
         except Exception as e:
