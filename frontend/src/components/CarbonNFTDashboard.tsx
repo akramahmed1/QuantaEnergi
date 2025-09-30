@@ -386,7 +386,7 @@ const CarbonNFTDashboard: React.FC<CarbonNFTDashboardProps> = ({ userId = 'user1
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getVerificationIcon(verificationStatus[index]?.verified || false)}
+                        {getVerificationIcon(verificationStatus.find(v => v.token_id === nft.token_id)?.verified || false)}
                       </td>
                     </tr>
                   ))}

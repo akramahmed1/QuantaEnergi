@@ -26,11 +26,6 @@
     "VITE_APP_NAME": "QuantaEnergi",
     "VITE_APP_VERSION": "2.0.0"
   },
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",

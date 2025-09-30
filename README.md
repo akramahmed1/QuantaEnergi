@@ -72,13 +72,17 @@ brew install redis
 # Download from https://github.com/microsoftarchive/redis/releases
 
 # Start Redis (optional)
-redis-server
+redis-server  # Default port 6379
 
 # Run database migrations
 python upgrade_database.py
 
-# Start the backend server
+# Start the backend server (dev)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Production-style run with multiple workers
+# Tip: Scale based on CPU cores (e.g., 4 workers)
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ### 3. Frontend Setup (React/TypeScript)
@@ -124,6 +128,14 @@ python test_enhanced_features.py
 curl -X POST "http://localhost:8000/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"username": "testuser", "password": "testpass"}'
+
+# Trade capture (E2E integration)
+curl -X POST "http://localhost:8000/api/trades" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instrument": "BRENT", "side": "BUY", "quantity": 10,
+    "price": 82.5, "currency": "USD", "region": "EU"
+  }'
 
 # Test quantum optimization
 curl -X POST "http://localhost:8000/optimize/portfolio" \
@@ -214,7 +226,7 @@ curl -X POST "http://localhost:8000/api/v1/blockchain/mint-nft" \
 ### Backend (FastAPI + Python)
 - **FastAPI**: High-performance async API framework
 - **SQLAlchemy**: ORM with PostgreSQL
-- **Redis**: Caching and session management
+- **Redis**: Caching and session management (default `localhost:6379`, cache TTL 300s)
 - **Celery**: Background task processing
 - **Pydantic**: Data validation and serialization
 
@@ -429,6 +441,9 @@ DATABASE_URL=postgresql://...
 REDIS_URL=redis://...
 SECRET_KEY=your-secret-key
 CORS_ORIGINS=https://quantaenergi.vercel.app
+
+# Redis cache tuning (optional)
+REDIS_CACHE_TTL_SECONDS=300
 
 # Vercel Environment Variables
 VITE_API_URL=https://quantaenergi-backend.railway.app
