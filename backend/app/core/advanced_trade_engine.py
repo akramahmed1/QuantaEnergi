@@ -6,7 +6,7 @@ import asyncio
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 import logging
 from dataclasses import dataclass, field
@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 from scipy.stats import norm
-import json
 
 logger = logging.getLogger(__name__)
 

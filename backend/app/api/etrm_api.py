@@ -5,7 +5,7 @@ Comprehensive API exposing all trading, risk, and analytics functionality
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from decimal import Decimal
 import logging
