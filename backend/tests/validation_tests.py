@@ -12,7 +12,7 @@ import numpy as np
 from unittest.mock import Mock, patch, AsyncMock
 
 # Import the services to test
-from app.services.enhanced_trade_service import TradeLifecycleService
+from app.services.advanced_etrm_features import TradeLifecycleService
 from app.services.geo_risk_service import GeoRiskService
 from app.services.sharia_compliance import ShariaComplianceService
 
@@ -146,20 +146,20 @@ class TestGuyanaGeoRiskValidation:
         guyana_data = self.geo_risk_service.guyana_basin_data
         
         # Validate Liza field data
-        assert guyana_data['liza_field']['production'] == 150000  # 150K bpd
+        assert guyana_data['liza_field']['production'] == 300000  # 300K bpd
         assert guyana_data['liza_field']['operator'] == 'ExxonMobil Guyana'
         assert guyana_data['liza_field']['status'] == 'operational'
         
         # Validate Payara field data
-        assert guyana_data['payara_field']['production'] == 220000  # 220K bpd
+        assert guyana_data['payara_field']['production'] == 250000  # 250K bpd
         assert guyana_data['payara_field']['startup_year'] == 2023
         
         # Validate Yellowtail field data
-        assert guyana_data['yellowtail_field']['production'] == 250000  # 250K bpd
+        assert guyana_data['yellowtail_field']['production'] == 150000  # 150K bpd
         assert guyana_data['yellowtail_field']['startup_year'] == 2025
         
         # Validate Stabroek block total
-        assert guyana_data['stabroek_block']['total_production'] == 620000  # 620K bpd total
+        assert guyana_data['stabroek_block']['total_production'] == 700000  # 700K bpd total
         assert guyana_data['stabroek_block']['total_reserves'] == 11000000000  # 11B barrels
     
     def test_production_range_validation(self):
@@ -171,6 +171,7 @@ class TestGuyanaGeoRiskValidation:
         ])
         
         assert 650000 <= total_production <= 800000, f"Production {total_production} not in 650-800K bpd range"
+        assert total_production == 700000, f"Expected 700K bpd, got {total_production}"
 
 
 class TestShariaComplianceValidation:

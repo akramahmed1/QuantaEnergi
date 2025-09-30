@@ -90,9 +90,10 @@ class MarketDataSubscription:
 class MarketDataEngine:
     """Advanced market data processing engine"""
     
-    def __init__(self, db: Session, redis_client: redis.Redis = None):
+    def __init__(self, db: Session, redis_client: redis.Redis = None, cache_size: int = 10000):
         self.db = db
         self.redis_client = redis_client
+        self.cache_size = cache_size  # Parameterized cache size
         self.subscriptions: Dict[str, MarketDataSubscription] = {}
         self.data_cache: Dict[str, deque] = {}
         self.running = False
@@ -166,7 +167,7 @@ class MarketDataEngine:
         
         # Initialize data cache for symbol if not exists
         if symbol not in self.data_cache:
-            self.data_cache[symbol] = deque(maxlen=10000)  # Keep last 10k ticks
+            self.data_cache[symbol] = deque(maxlen=self.cache_size)  # Keep last N ticks
         
         logger.info(f"Subscribed to {data_type.value} data for {symbol}")
         return subscription_id

@@ -8,6 +8,133 @@ from datetime import datetime
 from time import time
 from typing import Dict, List, Any
 from sqlalchemy.orm import Session
+from decimal import Decimal
+
+class TradeLifecycleService:
+    """Trade lifecycle management service for ETRM/CTRM operations"""
+    
+    def __init__(self, db: Session = None):
+        self.db = db
+        self.trades = {}  # In-memory storage for demo
+    
+    def create_trade(self, trade_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new trade with validation"""
+        try:
+            # Validate required fields
+            required_fields = ['trade_id', 'commodity', 'quantity', 'price']
+            for field in required_fields:
+                if field not in trade_data:
+                    return {
+                        "success": False,
+                        "error": f"Missing required field: {field}",
+                        "errors": [f"Missing required field: {field}"]
+                    }
+            
+            # Validate data types and values
+            if not isinstance(trade_data.get('quantity'), (int, float)) or trade_data['quantity'] <= 0:
+                return {
+                    "success": False,
+                    "error": "Invalid quantity: must be positive number",
+                    "errors": ["Invalid quantity: must be positive number"]
+                }
+            
+            if not isinstance(trade_data.get('price'), (int, float)) or trade_data['price'] <= 0:
+                return {
+                    "success": False,
+                    "error": "Invalid price: must be positive number",
+                    "errors": ["Invalid price: must be positive number"]
+                }
+            
+            # Store trade
+            trade_id = trade_data['trade_id']
+            self.trades[trade_id] = {
+                **trade_data,
+                'status': 'CREATED',
+                'created_at': datetime.now(),
+                'updated_at': datetime.now()
+            }
+            
+            return {
+                "success": True,
+                "trade_id": trade_id,
+                "status": "CREATED",
+                "message": "Trade created successfully"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "errors": [str(e)]
+            }
+    
+    def calculate_pnl(self, trade_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Calculate P&L for a trade position"""
+        try:
+            # Validate required fields
+            required_fields = ['trade_id', 'commodity', 'quantity', 'entry_price', 'current_price', 'position_type']
+            for field in required_fields:
+                if field not in trade_data:
+                    return {
+                        "success": False,
+                        "error": f"Missing required field: {field}"
+                    }
+            
+            quantity = float(trade_data['quantity'])
+            entry_price = float(trade_data['entry_price'])
+            current_price = float(trade_data['current_price'])
+            position_type = trade_data['position_type'].lower()
+            
+            # Calculate P&L based on position type
+            if position_type == 'long':
+                unrealized_pnl = quantity * (current_price - entry_price)
+            elif position_type == 'short':
+                unrealized_pnl = quantity * (entry_price - current_price)
+            else:
+                return {
+                    "success": False,
+                    "error": "Invalid position_type: must be 'long' or 'short'"
+                }
+            
+            # Calculate VaR (simplified)
+            price_volatility = 0.02  # 2% daily volatility
+            var_95 = quantity * current_price * price_volatility * 1.645  # 95% confidence
+            var_99 = quantity * current_price * price_volatility * 2.326  # 99% confidence
+            
+            return {
+                "success": True,
+                "trade_id": trade_data['trade_id'],
+                "unrealized_pnl": round(unrealized_pnl, 2),
+                "realized_pnl": 0.0,  # No realized P&L for open positions
+                "var_95": round(var_95, 2),
+                "var_99": round(var_99, 2),
+                "position_type": position_type,
+                "quantity": quantity,
+                "entry_price": entry_price,
+                "current_price": current_price
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def confirm_trade(self, trade_id: str) -> Dict[str, Any]:
+        """Confirm a trade"""
+        if trade_id in self.trades:
+            self.trades[trade_id]['status'] = 'CONFIRMED'
+            self.trades[trade_id]['updated_at'] = datetime.now()
+            return {"status": "CONFIRMED"}
+        return {"status": "NOT_FOUND"}
+    
+    def settle_trade(self, trade_id: str) -> Dict[str, Any]:
+        """Settle a trade"""
+        if trade_id in self.trades:
+            self.trades[trade_id]['status'] = 'SETTLED'
+            self.trades[trade_id]['updated_at'] = datetime.now()
+            return {"status": "SETTLED"}
+        return {"status": "NOT_FOUND"}
 
 class AdvancedETRMFeatures:
     """Advanced ETRM/CTRM features that address market gaps"""

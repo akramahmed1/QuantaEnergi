@@ -206,3 +206,7 @@ node_modules/
 # Python virtual environment
 venv/
 env/
+
+# Poetry
+.poetry/
+poetry.lock

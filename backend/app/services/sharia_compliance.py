@@ -404,6 +404,51 @@ class ShariaComplianceService:
             "screened_at": datetime.utcnow().isoformat()
         }
     
+    def calculate_zakat(self, wealth_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Calculate Zakat with Nisab threshold
+        
+        Args:
+            wealth_data: Dict containing total_wealth, zakat_rate, nisab_threshold
+            
+        Returns:
+            Dict with Zakat calculation results
+        """
+        try:
+            total_wealth = wealth_data.get('total_wealth', 0)
+            zakat_rate = wealth_data.get('zakat_rate', 0.025)  # Default 2.5%
+            nisab_threshold = wealth_data.get('nisab_threshold', 100000)
+            
+            if total_wealth <= nisab_threshold:
+                return {
+                    "zakat_required": False,
+                    "total_wealth": total_wealth,
+                    "nisab_threshold": nisab_threshold,
+                    "wealth_above_nisab": 0,
+                    "zakat_amount": 0,
+                    "message": "Wealth below Nisab threshold, no Zakat required"
+                }
+            
+            wealth_above_nisab = total_wealth - nisab_threshold
+            zakat_amount = wealth_above_nisab * zakat_rate
+            
+            return {
+                "zakat_required": True,
+                "total_wealth": total_wealth,
+                "nisab_threshold": nisab_threshold,
+                "wealth_above_nisab": wealth_above_nisab,
+                "zakat_amount": zakat_amount,
+                "zakat_rate": zakat_rate,
+                "message": f"Zakat of {zakat_amount} required on wealth above Nisab threshold"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating Zakat: {e}")
+            return {
+                "error": str(e),
+                "zakat_required": False
+            }
+    
     async def calculate_zakat_obligation(self, portfolio_value: float) -> Dict[str, Any]:
         """
         Calculate Zakat obligation (2.5% of wealth above nisab)

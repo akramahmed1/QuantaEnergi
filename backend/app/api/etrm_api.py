@@ -3,7 +3,6 @@ ETRM/CTRM API Endpoints for QuantaEnergi Enterprise Application
 Comprehensive API exposing all trading, risk, and analytics functionality
 """
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
@@ -154,11 +153,15 @@ async def get_risk_limits_status(
 @router.post("/risk/stress-test")
 async def run_stress_test(
     scenario_id: str,
-    positions: List[Dict[str, Any]],
+    positions: Dict[str, Dict[str, Any]],
     engine: ETRMIntegrationEngine = Depends(get_integration_engine)
 ):
-    """Run stress test"""
+    """Run stress test with positions keyed by instrument"""
     try:
+        # Validate positions input
+        if not isinstance(positions, dict) or not positions:
+            raise HTTPException(status_code=400, detail="Positions must be a non-empty dictionary keyed by instrument")
+        
         result = engine.risk_engine.run_stress_test(scenario_id, positions)
         return result
     except Exception as e:
