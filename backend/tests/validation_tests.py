@@ -12,9 +12,9 @@ import numpy as np
 from unittest.mock import Mock, patch, AsyncMock
 
 # Import the services to test
-from app.services.enhanced_trade_service import TradeLifecycleService
-from app.services.geo_risk_service import GeoRiskService
-from app.services.sharia_compliance import ShariaComplianceService
+from backend.app.services.enhanced_trade_service import TradeLifecycleService
+from backend.app.services.geo_risk_service import GeoRiskService
+from backend.app.services.sharia_compliance import ShariaComplianceService
 
 
 class TestTradeLifecycleValidation:
