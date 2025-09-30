@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import AdvancedDashboard from '../AdvancedDashboard';
+import ProductionDashboard from '../ProductionDashboard';
 import GeoRiskDashboard from '../GeoRiskDashboard';
 import QuantumOptimizationDashboard from '../QuantumOptimizationDashboard';
 import CarbonNFTDashboard from '../CarbonNFTDashboard';
@@ -45,7 +45,7 @@ describe('Comprehensive UI Test Suite', () => {
 
   describe('AdvancedDashboard', () => {
     it('renders all navigation tabs', () => {
-      render(<AdvancedDashboard />);
+      render(<ProductionDashboard />);
       
       expect(screen.getByText('Overview')).toBeInTheDocument();
       expect(screen.getByText('Trading')).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe('Comprehensive UI Test Suite', () => {
     });
 
     it('switches between tabs correctly', async () => {
-      render(<AdvancedDashboard />);
+      render(<ProductionDashboard />);
       
       // Click on Quantum tab
       fireEvent.click(screen.getByText('Quantum'));
@@ -68,7 +68,7 @@ describe('Comprehensive UI Test Suite', () => {
     });
 
     it('displays key metrics in overview tab', () => {
-      render(<AdvancedDashboard />);
+      render(<ProductionDashboard />);
       
       expect(screen.getByText('VaR 95%')).toBeInTheDocument();
       expect(screen.getByText('VaR 99%')).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('Comprehensive UI Test Suite', () => {
     });
 
     it('renders charts in overview tab', () => {
-      render(<AdvancedDashboard />);
+      render(<ProductionDashboard />);
       
       expect(screen.getByTestId('area-chart')).toBeInTheDocument();
       expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
@@ -283,7 +283,7 @@ describe('Comprehensive UI Test Suite', () => {
 
   describe('Chart Integration Tests', () => {
     it('renders all chart types in AdvancedDashboard', () => {
-      render(<AdvancedDashboard />);
+      render(<ProductionDashboard />);
       
       expect(screen.getByTestId('area-chart')).toBeInTheDocument();
       expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
@@ -325,7 +325,7 @@ describe('Comprehensive UI Test Suite', () => {
 
   describe('User Interaction Tests', () => {
     it('handles tab navigation in AdvancedDashboard', async () => {
-      render(<AdvancedDashboard />);
+      render(<ProductionDashboard />);
       
       // Test all tab switches
       const tabs = ['Trading', 'Risk Analytics', 'Quantum', 'Blockchain', 'Compliance', 'ESG'];
@@ -394,7 +394,7 @@ describe('Comprehensive UI Test Suite', () => {
   describe('Data Display Tests', () => {
     it('displays key metrics in all dashboards', () => {
       // Test AdvancedDashboard metrics
-      render(<AdvancedDashboard />);
+      render(<ProductionDashboard />);
       expect(screen.getByText('VaR 95%')).toBeInTheDocument();
       expect(screen.getByText('Sharpe Ratio')).toBeInTheDocument();
       
@@ -421,7 +421,7 @@ describe('Comprehensive UI Test Suite', () => {
 
     it('displays recommendations in all dashboards', () => {
       // Test AdvancedDashboard recommendations
-      render(<AdvancedDashboard />);
+      render(<ProductionDashboard />);
       fireEvent.click(screen.getByText('Quantum'));
       expect(screen.getByText('Optimization Recommendations')).toBeInTheDocument();
       

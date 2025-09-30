@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import AdvancedDashboard from '../AdvancedDashboard';
+import ProductionDashboard from '../ProductionDashboard';
 
 // Mock Recharts components
 jest.mock('recharts', () => ({
@@ -27,7 +27,7 @@ jest.mock('recharts', () => ({
   PolarRadiusAxis: () => <div data-testid="polar-radius-axis" />
 }));
 
-describe('AdvancedDashboard', () => {
+describe('ProductionDashboard', () => {
   beforeEach(() => {
     // Mock console methods to avoid test output noise
     jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -39,14 +39,14 @@ describe('AdvancedDashboard', () => {
   });
 
   it('renders the dashboard header correctly', () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     expect(screen.getByText('QuantaEnergi Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Welcome back, Trader')).toBeInTheDocument();
   });
 
   it('renders all navigation tabs', () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     expect(screen.getByText('Overview')).toBeInTheDocument();
     expect(screen.getByText('Trading')).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe('AdvancedDashboard', () => {
   });
 
   it('switches between tabs correctly', async () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     // Click on Quantum tab
     fireEvent.click(screen.getByText('Quantum'));
@@ -69,7 +69,7 @@ describe('AdvancedDashboard', () => {
   });
 
   it('displays key metrics in overview tab', () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     expect(screen.getByText('VaR 95%')).toBeInTheDocument();
     expect(screen.getByText('VaR 99%')).toBeInTheDocument();
@@ -78,7 +78,7 @@ describe('AdvancedDashboard', () => {
   });
 
   it('renders charts in overview tab', () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     expect(screen.getByTestId('area-chart')).toBeInTheDocument();
     expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('AdvancedDashboard', () => {
   });
 
   it('displays quantum optimization content when quantum tab is selected', async () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     fireEvent.click(screen.getByText('Quantum'));
     
@@ -98,7 +98,7 @@ describe('AdvancedDashboard', () => {
   });
 
   it('displays blockchain content when blockchain tab is selected', async () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     fireEvent.click(screen.getByText('Blockchain'));
     
@@ -110,7 +110,7 @@ describe('AdvancedDashboard', () => {
   });
 
   it('displays compliance content when compliance tab is selected', async () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     fireEvent.click(screen.getByText('Compliance'));
     
@@ -123,7 +123,7 @@ describe('AdvancedDashboard', () => {
   });
 
   it('displays ESG content when ESG tab is selected', async () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     fireEvent.click(screen.getByText('ESG'));
     
@@ -135,21 +135,21 @@ describe('AdvancedDashboard', () => {
   });
 
   it('shows portfolio performance chart', () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     expect(screen.getByText('Portfolio Performance')).toBeInTheDocument();
     expect(screen.getByTestId('area-chart')).toBeInTheDocument();
   });
 
   it('shows asset allocation chart', () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     expect(screen.getByText('Asset Allocation')).toBeInTheDocument();
     expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
   });
 
   it('shows market data chart', () => {
-    render(<AdvancedDashboard />);
+    render(<ProductionDashboard />);
     
     expect(screen.getByText('Market Data')).toBeInTheDocument();
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();

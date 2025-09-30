@@ -49,6 +49,17 @@ interface WeatherForecastData {
   }>;
 }
 
+interface ChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    borderColor: string;
+    backgroundColor: string;
+    tension: number;
+  }[];
+}
+
 interface MarketOverviewProps {
   data?: MarketData;
   loading: boolean;

@@ -39,6 +39,13 @@ interface QuantumOptimization {
   }>;
 }
 
+interface FormValues {
+  asset: string;
+  quantity: number;
+  price: number;
+  currency: string;
+}
+
 const ProductionDashboard: React.FC = () => {
   const [trades, setTrades] = useState<TradeData[]>([]);
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null);
@@ -60,7 +67,7 @@ const ProductionDashboard: React.FC = () => {
       quantity: Yup.number().positive('Quantity must be positive').required('Quantity is required'),
       price: Yup.number().positive('Price must be positive').required('Price is required')
     }),
-    onSubmit: async (values) => {
+    onSubmit: async (values: FormValues) => {
       setLoading(true);
       try {
         const response = await fetch('/api/trades', {
