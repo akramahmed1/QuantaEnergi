@@ -90,75 +90,88 @@ const ProductionDashboard: React.FC = () => {
   // Load dashboard data
   const loadDashboardData = async () => {
     try {
-      // Load trades
-      const tradesResponse = await fetch('/api/trades', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (tradesResponse.ok) {
-        const tradesData = await tradesResponse.json();
+      const token = localStorage.getItem('token');
+      const authHeaders = { 'Authorization': `Bearer ${token}` };
+      
+      // Parallel API calls with Promise.allSettled for better error handling
+      const [tradesResult, riskResult, geoRiskResult, quantumResult] = await Promise.allSettled([
+        fetch('/api/trades', { headers: authHeaders }),
+        fetch('/api/risk/var', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
+          body: JSON.stringify({
+            prices: [85.50, 86.20, 85.80, 87.10, 86.90, 88.30, 87.50, 89.20, 88.80, 90.10]
+          })
+        }),
+        fetch('/api/geo-risk/assess', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
+          body: JSON.stringify({
+            region: 'GUYANA',
+            volatility: 0.2,
+            sentiment: 0.4,
+            news_volume: 0.7
+          })
+        }),
+        fetch('/api/quantum/optimize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders
+          },
+          body: JSON.stringify({
+            returns: [0.15, 0.12, 0.18, 0.10, 0.08],
+            risks: [0.08, 0.10, 0.12, 0.06, 0.04]
+          })
+        })
+      ]);
+
+      // Process trades result
+      if (tradesResult.status === 'fulfilled' && tradesResult.value.ok) {
+        const tradesData = await tradesResult.value.json();
         setTrades(tradesData);
+      } else if (tradesResult.status === 'rejected') {
+        console.warn('Trades API failed:', tradesResult.reason);
       }
 
-      // Load risk metrics
-      const riskResponse = await fetch('/api/risk/var', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          prices: [85.50, 86.20, 85.80, 87.10, 86.90, 88.30, 87.50, 89.20, 88.80, 90.10]
-        })
-      });
-      if (riskResponse.ok) {
-        const riskData = await riskResponse.json();
+      // Process risk metrics result
+      if (riskResult.status === 'fulfilled' && riskResult.value.ok) {
+        const riskData = await riskResult.value.json();
         setRiskMetrics({
           var_95: riskData.param_var || 0.05,
           var_99: riskData.param_var * 1.5 || 0.075,
           expected_shortfall: riskData.param_var * 1.2 || 0.06,
           sharpe_ratio: 1.4
         });
+      } else if (riskResult.status === 'rejected') {
+        console.warn('Risk API failed:', riskResult.reason);
       }
 
-      // Load geo-risk data
-      const geoRiskResponse = await fetch('/api/geo-risk/assess', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          region: 'GUYANA',
-          volatility: 0.2,
-          sentiment: 0.4,
-          news_volume: 0.7
-        })
-      });
-      if (geoRiskResponse.ok) {
-        const geoData = await geoRiskResponse.json();
+      // Process geo-risk result
+      if (geoRiskResult.status === 'fulfilled' && geoRiskResult.value.ok) {
+        const geoData = await geoRiskResult.value.json();
         setGeoRisk({
           region: geoData.risk_assessment.region,
           risk_level: geoData.risk_assessment.risk_level,
           risk_score: geoData.risk_assessment.risk_score,
           recommendations: geoData.recommendations || []
         });
+      } else if (geoRiskResult.status === 'rejected') {
+        console.warn('Geo-risk API failed:', geoRiskResult.reason);
       }
 
-      // Load quantum optimization
-      const quantumResponse = await fetch('/api/quantum/optimize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          returns: [0.15, 0.12, 0.18, 0.10, 0.08],
-          risks: [0.08, 0.10, 0.12, 0.06, 0.04]
-        })
-      });
-      if (quantumResponse.ok) {
-        const quantumData = await quantumResponse.json();
+      // Process quantum optimization result
+      if (quantumResult.status === 'fulfilled' && quantumResult.value.ok) {
+        const quantumData = await quantumResult.value.json();
         setQuantumOpt(quantumData);
+      } else if (quantumResult.status === 'rejected') {
+        console.warn('Quantum API failed:', quantumResult.reason);
       }
 
     } catch (err) {

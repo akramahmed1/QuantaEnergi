@@ -81,11 +81,12 @@ class TestTradeLifecycleValidation:
     
     def test_trade_lifecycle_states(self):
         """Test trade lifecycle state transitions"""
-        trade_id = "LIFECYCLE_TEST_001"
-        
         # Create trade
         create_result = self.trade_service.create_trade(self.sample_trade)
         assert create_result["status"] == "CREATED"
+        
+        # Get the trade_id from the created trade
+        trade_id = create_result["trade_id"]
         
         # Confirm trade
         confirm_result = self.trade_service.confirm_trade(trade_id)
@@ -322,8 +323,13 @@ class TestIntegrationValidation:
         trade_result = self.trade_service.create_trade(trade_data)
         assert trade_result["success"] is True
         
-        # Calculate P&L
-        pnl_result = self.trade_service.calculate_pnl(trade_data)
+        # Calculate P&L (add missing fields)
+        pnl_data = {
+            **trade_data,
+            "entry_price": 3.50,
+            "current_price": 3.75
+        }
+        pnl_result = self.trade_service.calculate_pnl(pnl_data)
         assert pnl_result["success"] is True
         
         # Validate risk metrics

@@ -430,7 +430,7 @@ class ShariaComplianceService:
                 }
             
             wealth_above_nisab = total_wealth - nisab_threshold
-            zakat_amount = wealth_above_nisab * zakat_rate
+            zakat_amount = total_wealth * zakat_rate  # Zakat on total wealth when above nisab
             
             return {
                 "zakat_required": True,
