@@ -178,10 +178,16 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-# Add CORS middleware
+# Enhanced CORS middleware for frontend-backend sync
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "https://quantaenergi.vercel.app",
+        "https://*.vercel.app",
+        "https://*.railway.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -193,12 +199,20 @@ def health():
     return {"status": "healthy"}
 
 @app.post("/auth/login", tags=["Authentication"])
+@app.post("/v1/auth/login", tags=["Authentication"])
 async def login(form_data: dict = Body(...), db: Session = Depends(get_db)):
     """Login endpoint to generate JWT token for API access"""
     user = db.query(User).filter(User.username == form_data.get("username")).first()
     if user and pwd_context.verify(form_data.get("password"), user.hashed_password):
         token = create_access_token(subject=user.username)
-        return {"access_token": token, "token_type": "bearer"}
+        return {
+            "access_token": token, 
+            "token_type": "bearer",
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "company_name": getattr(user, 'company_name', 'QuantaEnergi')
+        }
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.post("/trades")
