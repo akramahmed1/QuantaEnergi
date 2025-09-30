@@ -5,6 +5,7 @@ Advanced ETRM/CTRM Features to Surpass Competitors
 import asyncio
 import numpy as np
 from datetime import datetime
+from time import time
 from typing import Dict, List, Any
 from sqlalchemy.orm import Session
 
@@ -94,3 +95,29 @@ class AdvancedETRMFeatures:
                 "benefit": "Most accurate predictions in market"
             }
         }
+
+    # Performance-critical primitives for E2E benchmarks
+    def calculate_risk(self, prices: list[float]) -> Dict[str, Any]:
+        """Calculate a quick VaR-like metric and report elapsed time in ms.
+
+        Target benchmark: ~0.5ms on typical dev hardware for small inputs.
+        """
+        start = time()
+        mean_price = float(np.mean(prices)) if prices else 0.0
+        std_price = float(np.std(prices)) if prices else 0.0
+        # Lightweight bootstrap via normal approximation
+        simulated = np.random.normal(mean_price, std_price if std_price > 0 else 1e-9, 10000)
+        var_5 = float(np.percentile(simulated, 5))
+        elapsed_ms = (time() - start) * 1000.0
+        return {"var": var_5, "time_ms": elapsed_ms}
+
+    def process_trade(self, quantity: float, price: float) -> Dict[str, Any]:
+        """Compute a simple PnL vs a mocked current price and report elapsed time in ms.
+
+        Target benchmark: ~2ms on typical dev hardware for single trade.
+        """
+        start = time()
+        current_price = 90.0
+        pnl = float(quantity) * (current_price - float(price))
+        elapsed_ms = (time() - start) * 1000.0
+        return {"pnl": pnl, "time_ms": elapsed_ms}

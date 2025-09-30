@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: quantaenergi-config
+  namespace: quantaenergi
+  labels:
+    app: quantaenergi-etrm
+data:
+  # Database Configuration
+  DATABASE_URL: "postgresql://user:pass@postgres-service:5432/quantaenergi_prod"
+  DATABASE_SSL_MODE: "require"
+  DATABASE_POOL_SIZE: "10"
+  DATABASE_MAX_OVERFLOW: "20"
+  DATABASE_POOL_TIMEOUT: "30"
+  DATABASE_POOL_RECYCLE: "3600"
+  DATABASE_POOL_PRE_PING: "true"
+  
+  # Redis Configuration
+  REDIS_URL: "redis://redis-service:6379"
+  REDIS_SSL: "true"
+  REDIS_POOL_SIZE: "10"
+  
+  # API Configuration
+  API_BASE_URL: "https://api.quantaenergi.com"
+  API_VERSION: "v1"
+  API_TITLE: "QuantaEnergi ETRM API"
+  API_DESCRIPTION: "Quantum-Powered Energy Trading and Risk Management Platform"
+  
+  # Security Configuration
+  JWT_ALGORITHM: "HS256"
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  JWT_REFRESH_TOKEN_EXPIRE_DAYS: "7"
+  JWT_ISSUER: "quantaenergi.com"
+  JWT_AUDIENCE: "quantaenergi-api"
+  
+  # Rate Limiting Configuration
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_REQUESTS_PER_MINUTE: "100"
+  RATE_LIMIT_REQUESTS_PER_HOUR: "1000"
+  RATE_LIMIT_REQUESTS_PER_DAY: "10000"
+  
+  # Security Headers Configuration
+  SECURITY_HEADERS_ENABLED: "true"
+  HSTS_MAX_AGE: "31536000"
+  CSP_ENABLED: "true"
+  X_FRAME_OPTIONS: "DENY"
+  X_CONTENT_TYPE_OPTIONS: "nosniff"
+  X_XSS_PROTECTION: "1; mode=block"
+  
+  # TLS/SSL Configuration
+  TLS_ENABLED: "true"
+  TLS_VERIFY_MODE: "strict"
+  
+  # Logging Configuration
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  LOG_FILE_PATH: "/app/logs/quantaenergi.log"
+  
+  # Monitoring Configuration
+  MONITORING_ENABLED: "true"
+  METRICS_ENABLED: "true"
+  HEALTH_CHECK_ENABLED: "true"
+  
+  # Compliance Configuration
+  COMPLIANCE_MODE: "strict"
+  AUDIT_LOGGING_ENABLED: "true"
+  DATA_RETENTION_DAYS: "2555"
+  ENCRYPTION_AT_REST: "true"
+  ENCRYPTION_IN_TRANSIT: "true"
+  
+  # Environment Configuration
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  TESTING: "false"

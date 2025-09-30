@@ -89,7 +89,7 @@ class ConsolidatedQuantumService:
                                        max_iterations: int = 100,
                                        use_qaoa: bool = True) -> Dict[str, Any]:
         """
-        Optimize portfolio using quantum algorithms with QAOA 15% efficiency boost
+        Optimize portfolio using quantum algorithms with QAOA 15% efficiency boost - SECURE VERSION
         
         Args:
             assets: List of portfolio assets
@@ -102,6 +102,50 @@ class ConsolidatedQuantumService:
             Dictionary with optimization results
         """
         try:
+            # SECURITY: Validate inputs to prevent tool poisoning attacks
+            if not isinstance(assets, list):
+                raise ValueError("Assets must be a list")
+            
+            if len(assets) == 0 or len(assets) > 100:
+                raise ValueError("Invalid number of assets - potential DoS risk")
+            
+            if not isinstance(target_return, (int, float)):
+                raise ValueError("Target return must be numeric")
+            
+            if target_return < -1.0 or target_return > 2.0:
+                raise ValueError("Target return out of safe range")
+            
+            if not isinstance(risk_tolerance, (int, float)):
+                raise ValueError("Risk tolerance must be numeric")
+            
+            if risk_tolerance < 0.0 or risk_tolerance > 1.0:
+                raise ValueError("Risk tolerance must be between 0 and 1")
+            
+            if not isinstance(max_iterations, int):
+                raise ValueError("Max iterations must be an integer")
+            
+            if max_iterations < 10 or max_iterations > 1000:
+                raise ValueError("Max iterations out of safe range")
+            
+            # SECURITY: Validate each asset to prevent malicious data
+            for i, asset in enumerate(assets):
+                if not isinstance(asset, PortfolioAsset):
+                    raise ValueError(f"Asset {i} must be a PortfolioAsset instance")
+                
+                if not isinstance(asset.symbol, str) or len(asset.symbol) > 20:
+                    raise ValueError(f"Invalid asset symbol at index {i}")
+                
+                if not isinstance(asset.expected_return, (int, float)):
+                    raise ValueError(f"Invalid expected return at index {i}")
+                
+                if asset.expected_return < -1.0 or asset.expected_return > 2.0:
+                    raise ValueError(f"Expected return out of range at index {i}")
+                
+                if not isinstance(asset.volatility, (int, float)):
+                    raise ValueError(f"Invalid volatility at index {i}")
+                
+                if asset.volatility < 0.0 or asset.volatility > 2.0:
+                    raise ValueError(f"Volatility out of range at index {i}")
             logger.info(f"Starting quantum portfolio optimization", 
                        assets=len(assets), 
                        target_return=target_return,

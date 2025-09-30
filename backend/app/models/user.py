@@ -10,4 +10,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    role = Column(String, default="trader")
+    company_name = Column(String, default="QuantaEnergi")
+    organization_id = Column(String, default="default")
     created_at = Column(DateTime(timezone=True), server_default=func.now())

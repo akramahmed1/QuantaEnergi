@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import TradeForm from './components/TradeForm';
+import LoginForm from './components/LoginForm';
+import ETRMDashboard from './components/ETRMDashboard';
+import TradingForm from './components/TradingForm';
 import RiskDashboard from './pages/RiskDashboard';
 import ESGDashboard from './pages/ESGDashboard';
 import AdvancedDashboard from './components/AdvancedDashboard';
@@ -102,7 +104,7 @@ function App() {
               Next-Gen Energy Trading & Risk Management
             </p>
           </div>
-          <TradeForm onLogin={handleLogin} />
+          <LoginForm onLogin={handleLogin} />
         </div>
       </div>
     );
@@ -136,8 +138,8 @@ function App() {
         {/* Main Content */}
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<AdvancedDashboard />} />
-          <Route path="/trading" element={<TradeForm />} />
+          <Route path="/dashboard" element={<ETRMDashboard />} />
+          <Route path="/trading" element={<TradingForm />} />
           <Route path="/risk" element={<RiskDashboard />} />
           <Route path="/esg" element={<ESGDashboard />} />
           <Route path="/geo-risk" element={<GeoRiskDashboard />} />
@@ -145,6 +147,7 @@ function App() {
           <Route path="/blockchain" element={<CarbonNFTDashboard />} />
           <Route path="/compliance" element={<ComplianceDashboard />} />
           <Route path="/production" element={<ProductionDashboard />} />
+          <Route path="/advanced" element={<AdvancedDashboard />} />
         </Routes>
       </div>
     </Router>

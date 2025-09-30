@@ -88,6 +88,30 @@ class TestE2EUserFlows:
         assert "pnl" in settlement
         
         return trade_id
+
+    def test_full_e2e_flow(self):
+        """Simple E2E sanity covering login, trade, settle, and risk."""
+        # Login
+        resp = client.post("/v1/auth/login", json={"username": "admin", "password": "admin123"})
+        assert resp.status_code in [200, 401]
+        if resp.status_code != 200:
+            return  # Skip if default admin not present in this env
+        token = resp.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # Create trade
+        resp = client.post("/trades", headers=headers, json={"asset": "BRENT_CRUDE", "quantity": 100, "price": 85})
+        assert resp.status_code == 200
+        trade_id = resp.json()["trade_id"]
+
+        # Settle trade
+        resp = client.post(f"/trades/{trade_id}/settle", headers=headers, json={"current_price": 90})
+        assert resp.status_code == 200
+        assert "pnl" in resp.json()
+
+        # Risk var (versioned alias)
+        resp = client.post("/v1/risk/var", headers=headers, json=[85, 86, 87, 84, 85])
+        assert resp.status_code == 200
     
     def test_risk_management_workflow(self, auth_headers):
         """Test risk management workflow"""

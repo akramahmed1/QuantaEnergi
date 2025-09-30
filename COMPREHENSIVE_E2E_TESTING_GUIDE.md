@@ -1,3 +1,11 @@
+# Comprehensive E2E Testing Guide
+
+- **Setup**: `docker-compose up -d; poetry install; npm install`
+- **Run Backend**: `uvicorn app.main:app --port 8000`
+- **Run Frontend**: `npm start`
+- **Test Commands**: `poetry run pytest -v; curl -X POST http://localhost:8000/v1/auth/login -d '{"username":"admin","password":"admin123"}'`
+- **Validate**: Check UI at `http://localhost:3000`, monitor logs
+
 # QuantaEnergi Comprehensive E2E Testing & Production Readiness Guide
 
 ## 🎯 Executive Summary

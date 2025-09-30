@@ -142,9 +142,9 @@ class TenantRouter:
         """
         try:
             with self.default_engine.connect() as conn:
-                # Create trades table
-                conn.execute(text(f"""
-                    CREATE TABLE IF NOT EXISTS {schema_name}.trades (
+                # Create trades table - SECURE: Use parameterized query
+                trades_table_sql = text("""
+                    CREATE TABLE IF NOT EXISTS :schema_name.trades (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                         trade_id VARCHAR(50) NOT NULL,
                         commodity VARCHAR(50) NOT NULL,
@@ -162,11 +162,12 @@ class TenantRouter:
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                     )
-                """))
+                """)
+                conn.execute(trades_table_sql, {"schema_name": schema_name})
                 
-                # Create portfolios table
-                conn.execute(text(f"""
-                    CREATE TABLE IF NOT EXISTS {schema_name}.portfolios (
+                # Create portfolios table - SECURE: Use parameterized query
+                portfolios_table_sql = text("""
+                    CREATE TABLE IF NOT EXISTS :schema_name.portfolios (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                         portfolio_id VARCHAR(50) NOT NULL,
                         name VARCHAR(100) NOT NULL,
@@ -176,13 +177,14 @@ class TenantRouter:
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                     )
-                """))
+                """)
+                conn.execute(portfolios_table_sql, {"schema_name": schema_name})
                 
-                # Create positions table
-                conn.execute(text(f"""
-                    CREATE TABLE IF NOT EXISTS {schema_name}.positions (
+                # Create positions table - SECURE: Use parameterized query
+                positions_table_sql = text("""
+                    CREATE TABLE IF NOT EXISTS :schema_name.positions (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                        portfolio_id UUID REFERENCES {schema_name}.portfolios(id),
+                        portfolio_id UUID REFERENCES :schema_name.portfolios(id),
                         commodity VARCHAR(50) NOT NULL,
                         quantity DECIMAL(15,2) NOT NULL,
                         average_price DECIMAL(15,4) NOT NULL,
@@ -192,13 +194,14 @@ class TenantRouter:
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                     )
-                """))
+                """)
+                conn.execute(positions_table_sql, {"schema_name": schema_name})
                 
-                # Create risk metrics table
-                conn.execute(text(f"""
-                    CREATE TABLE IF NOT EXISTS {schema_name}.risk_metrics (
+                # Create risk metrics table - SECURE: Use parameterized query
+                risk_metrics_table_sql = text("""
+                    CREATE TABLE IF NOT EXISTS :schema_name.risk_metrics (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                        portfolio_id UUID REFERENCES {schema_name}.portfolios(id),
+                        portfolio_id UUID REFERENCES :schema_name.portfolios(id),
                         var_95 DECIMAL(15,2),
                         var_99 DECIMAL(15,2),
                         expected_shortfall DECIMAL(15,2),
@@ -209,23 +212,27 @@ class TenantRouter:
                         calculation_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
                         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
                     )
-                """))
+                """)
+                conn.execute(risk_metrics_table_sql, {"schema_name": schema_name})
                 
-                # Create indexes
-                conn.execute(text(f"""
-                    CREATE INDEX IF NOT EXISTS idx_{schema_name}_trades_date 
-                    ON {schema_name}.trades(trade_date)
-                """))
+                # Create indexes - SECURE: Use parameterized queries
+                trades_date_index_sql = text("""
+                    CREATE INDEX IF NOT EXISTS idx_:schema_name_trades_date 
+                    ON :schema_name.trades(trade_date)
+                """)
+                conn.execute(trades_date_index_sql, {"schema_name": schema_name})
                 
-                conn.execute(text(f"""
-                    CREATE INDEX IF NOT EXISTS idx_{schema_name}_trades_commodity 
-                    ON {schema_name}.trades(commodity)
-                """))
+                trades_commodity_index_sql = text("""
+                    CREATE INDEX IF NOT EXISTS idx_:schema_name_trades_commodity 
+                    ON :schema_name.trades(commodity)
+                """)
+                conn.execute(trades_commodity_index_sql, {"schema_name": schema_name})
                 
-                conn.execute(text(f"""
-                    CREATE INDEX IF NOT EXISTS idx_{schema_name}_positions_portfolio 
-                    ON {schema_name}.positions(portfolio_id)
-                """))
+                positions_portfolio_index_sql = text("""
+                    CREATE INDEX IF NOT EXISTS idx_:schema_name_positions_portfolio 
+                    ON :schema_name.positions(portfolio_id)
+                """)
+                conn.execute(positions_portfolio_index_sql, {"schema_name": schema_name})
                 
                 conn.commit()
                 

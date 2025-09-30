@@ -23,7 +23,7 @@ from app.services.compliance_service import ComplianceService, ComplianceFramewo
 from app.services.esg_service import track_esg
 from app.services.integration_service import fetch_erp_data
 from app.api.v1 import market_data, monte_carlo_var, real_pnl
-from app.security.auth import create_access_token, verify_token
+from app.core.auth import auth_manager, get_current_user
 from app.domains.trading.routers import router as trading_router
 from app.domains.risk.routers import router as risk_router
 from app.domains.ai_forecasting.services import AIForecastingService
@@ -35,9 +35,10 @@ from app.core.trade_engine import TradeEngine
 from app.core.risk_calculator import RiskCalculator
 import numpy as np
 import websockets
-from typing import List
+from typing import List, Dict, Any
 from prometheus_client import Counter
 from datetime import datetime
+from fastapi import Query
 
 # Pydantic models
 # Pydantic models
@@ -166,14 +167,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 trade_engine = TradeEngine()
 risk_calculator = RiskCalculator()
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
-    """Get current user from JWT token"""
-    if credentials:
-        token = credentials.credentials
-        user = verify_token(token)
-        if user:
-            return user
-    raise HTTPException(status_code=401, detail="Invalid or missing token")
+# Use the secure get_current_user from auth module
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -202,18 +196,39 @@ def health():
 @app.post("/v1/auth/login", tags=["Authentication"])
 async def login(form_data: dict = Body(...), db: Session = Depends(get_db)):
     """Login endpoint to generate JWT token for API access"""
-    user = db.query(User).filter(User.username == form_data.get("username")).first()
-    if user and pwd_context.verify(form_data.get("password"), user.hashed_password):
-        token = create_access_token(subject=user.username)
-        return {
-            "access_token": token, 
-            "token_type": "bearer",
-            "user_id": user.id,
-            "email": user.email,
-            "role": user.role,
-            "company_name": getattr(user, 'company_name', 'QuantaEnergi')
-        }
-    raise HTTPException(status_code=401, detail="Invalid credentials")
+    username = form_data.get("username")
+    password = form_data.get("password")
+    
+    # Check if user exists
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Verify password
+    if not auth_manager.verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Create token with user data
+    user_data = {
+        "user_id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "organization_id": getattr(user, 'organization_id', 'default'),
+        "is_active": True
+    }
+    
+    token = auth_manager.create_access_token(user_data)
+    
+    return {
+        "access_token": token, 
+        "token_type": "bearer",
+        "user_id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "company_name": getattr(user, 'company_name', 'QuantaEnergi')
+    }
 
 @app.post("/trades")
 async def create_trade(
@@ -286,6 +301,7 @@ def validate_trade(
     return trade_service.validate_trade(id, db)
 
 @app.post("/risk/var", tags=["Risk Management"])
+@app.post("/v1/risk/var", tags=["Risk Management"])  # versioned alias for E2E tests
 def var_endpoint(prices: List[float] = Body(...), method: str = "monte_carlo", current_user = Depends(get_current_user)):
     """Calculate Value at Risk using SOLID RiskCalculator - Enhanced for US Shale risk with Monte Carlo 10k paths"""
     # Convert prices to positions format for SOLID RiskCalculator
