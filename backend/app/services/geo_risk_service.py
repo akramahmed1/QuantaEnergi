@@ -6,7 +6,7 @@ Enhanced with ML sentiment analysis and risk scoring
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 import random
 from datetime import datetime
 
