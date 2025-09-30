@@ -5,7 +5,7 @@ import ETRMDashboard from './components/ETRMDashboard';
 import TradingForm from './components/TradingForm';
 import RiskDashboard from './pages/RiskDashboard';
 import ESGDashboard from './pages/ESGDashboard';
-import AdvancedDashboard from './components/AdvancedDashboard';
+// import AdvancedDashboard from './components/AdvancedDashboard'; // Component not found, using ProductionDashboard instead
 import GeoRiskDashboard from './components/GeoRiskDashboard';
 import QuantumOptimizationDashboard from './components/QuantumOptimizationDashboard';
 import CarbonNFTDashboard from './components/CarbonNFTDashboard';
@@ -16,9 +16,20 @@ import './App.css';
 // API utilities
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+// Type definitions
+interface User {
+  username: string;
+  email?: string;
+}
+
+interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,7 +65,7 @@ function App() {
     }
   }, []);
 
-  const handleLogin = async (credentials) => {
+  const handleLogin = async (credentials: LoginCredentials) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -147,7 +158,7 @@ function App() {
           <Route path="/blockchain" element={<CarbonNFTDashboard />} />
           <Route path="/compliance" element={<ComplianceDashboard />} />
           <Route path="/production" element={<ProductionDashboard />} />
-          <Route path="/advanced" element={<AdvancedDashboard />} />
+          <Route path="/advanced" element={<ProductionDashboard />} />
         </Routes>
       </div>
     </Router>

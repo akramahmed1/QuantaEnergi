@@ -4,7 +4,7 @@ import {
   CurrencyDollarIcon,
   ShieldCheckIcon,
   CogIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   ExclamationTriangleIcon,
   ClockIcon,
   UserGroupIcon
@@ -171,7 +171,7 @@ const ETRMDashboard: React.FC = () => {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <TrendingUpIcon className="h-6 w-6 text-purple-600" />
+                <ArrowTrendingUpIcon className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>

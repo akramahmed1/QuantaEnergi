@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface ComplianceData {
   report_id: string;
@@ -256,7 +256,7 @@ const ComplianceView: React.FC = () => {
             section.fields.map((field: string) => item[field] || 'N/A')
           );
           
-          doc.autoTable({
+          autoTable(doc, {
             head: [section.fields],
             body: tableData,
             startY: yPosition,

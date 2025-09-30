@@ -11,7 +11,7 @@ class WebSocketService {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
-  private heartbeatInterval: number | null = null
+  private heartbeatInterval: NodeJS.Timeout | null = null
   private subscriptions = new Set<string>()
 
   async connect(userId: string): Promise<void> {
