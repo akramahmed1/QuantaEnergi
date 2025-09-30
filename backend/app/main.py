@@ -40,6 +40,7 @@ from prometheus_client import Counter
 from datetime import datetime
 
 # Pydantic models
+# Pydantic models
 class TradeCreate(BaseModel):
     asset: str
     quantity: float
@@ -343,23 +344,6 @@ async def forecast_ensemble(
 async def track_esg_endpoint(trade_id: ESGTrack = Body(...), db=Depends(get_db), current_user = Depends(get_current_user)):
     """Track ESG metrics for a trade"""
     return track_esg(trade_id.trade_id, db)
-
-class TradeCreate(BaseModel):
-    asset: str
-    quantity: float
-    price: float
-
-class ESGResponse(BaseModel):
-    co2: float
-    certs: str
-
-class ESGTrack(BaseModel):
-    trade_id: int
-
-class TradeCreate(BaseModel):
-    asset: str
-    quantity: float
-    price: float
 
 class OptRequest(BaseModel):
     returns: list[float]

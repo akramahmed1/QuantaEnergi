@@ -43,6 +43,8 @@
 ### Prerequisites
 - Docker & Docker Compose
 - Node.js 18+ (for frontend)
+- Python 3.9+ (for backend)
+- Redis (optional, for caching)
 - Railway CLI (for deployment)
 - Vercel CLI (for frontend deployment)
 
@@ -52,7 +54,89 @@ git clone https://github.com/akramahmed1/QuantaEnergi.git
 cd QuantaEnergi
 ```
 
-### 2. Local Testing
+### 2. Backend Setup (Python/FastAPI)
+
+```bash
+# Navigate to backend
+cd backend
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Optional: Install Redis for caching
+# On Ubuntu/Debian:
+sudo apt-get install redis-server
+# On macOS:
+brew install redis
+# On Windows:
+# Download from https://github.com/microsoftarchive/redis/releases
+
+# Start Redis (optional)
+redis-server
+
+# Run database migrations
+python upgrade_database.py
+
+# Start the backend server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### 3. Frontend Setup (React/TypeScript)
+
+```bash
+# Navigate to frontend
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the frontend development server
+npm run dev
+```
+
+### 4. Docker Setup (Recommended)
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d --build
+
+# Check logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### 5. Testing & Validation
+
+```bash
+# Run backend tests
+cd backend
+python -m pytest --cov=app --cov-report=term-missing -v
+
+# Run E2E tests
+python test_enhanced_features.py
+
+# Test API endpoints
+curl -X POST "http://localhost:8000/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "testpass"}'
+
+# Test quantum optimization
+curl -X POST "http://localhost:8000/optimize/portfolio" \
+  -H "Content-Type: application/json" \
+  -d '{"returns": [0.1, 0.12, 0.08], "risks": [0.15, 0.18, 0.12]}'
+
+# Test carbon NFT minting
+curl -X POST "http://localhost:8000/api/v1/blockchain/mint-nft" \
+  -H "Content-Type: application/json" \
+  -d '{"project_id": "PROJ001", "carbon_credits": 1000, "metadata": {"standard": "VCS"}}'
+```
+
+### 6. Local Testing
 ```bash
 # Test the full stack locally
 ./scripts/deploy.sh local
