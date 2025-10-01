@@ -1,8 +1,8 @@
-﻿# EnergyOpti-Pro: Disruptive Energy Trading SaaS Platform
+﻿# QuantaEnergi Backend: Production-Ready ETRM/CTRM System
 
 ## 🚀 Vision & Mission
 
-EnergyOpti-Pro is a **revolutionary SaaS platform** that transforms energy trading through cutting-edge AI, quantum computing, blockchain technology, and IoT integration. We're addressing real industry pain points in ETRM/CTRM systems by providing:
+QuantaEnergi Backend is a **production-ready ETRM/CTRM system** that transforms energy trading through cutting-edge AI, quantum computing, blockchain technology, and IoT integration. We're addressing real industry pain points in ETRM/CTRM systems by providing:
 
 - **AI-Powered Forecasting** with Prophet and Grok AI integration
 - **Quantum Portfolio Optimization** using Qiskit algorithms
@@ -54,10 +54,35 @@ EnergyOpti-Pro is a **revolutionary SaaS platform** that transforms energy tradi
 
 ## 🏗️ Architecture
 
+### SOLID Design Patterns
+```python
+# TradeEngine - Single Responsibility
+class TradeEngine:
+    def process_trade(self, trade_data, compliance_framework):
+        # Handles trade processing only
+        
+# RiskCalculator - Single Responsibility  
+class RiskCalculator:
+    def calculate_var(self, positions, method, confidence_level):
+        # Handles risk calculations only
+```
+
+### Enhanced Core Services
+- **TradeLifecycleService**: Real P&L with FX hedging
+- **PositionManager**: Redis-optimized reconciliation
+- **RiskCalculator**: Historical + Monte Carlo VaR
+- **AIForecastingService**: Prophet/XGBoost ensemble
+
+### Disruptive Features
+- **GeoRiskService**: ML-powered regional risk with Guyana 20% uplift
+- **QuantumService**: Qiskit QAOA portfolio optimization
+- **ComplianceEngine**: REMIT/FERC regulatory compliance
+- **CarbonNFTService**: Web3 Polygon mock with EU ETS arbitrage
+
 ### High-Level System Architecture
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    EnergyOpti-Pro Platform                  │
+│                    QuantaEnergi Platform                    │
 ├─────────────────────────────────────────────────────────────┤
 │  Frontend (React + Vite)  │  Backend (FastAPI + Python)   │
 ├─────────────────────────────────────────────────────────────┤

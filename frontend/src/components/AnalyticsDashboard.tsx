@@ -1,6 +1,10 @@
-﻿import React from 'react';
+import React from 'react';
 
-const AnalyticsDashboard = () => {
+interface AnalyticsDashboardProps {
+  // Add props interface if needed
+}
+
+const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = () => {
   return (
     <div className="p-4 bg-blue-100 rounded m-2">
       <h2 className="text-xl font-bold text-blue-800">📊 Analytics Dashboard</h2>

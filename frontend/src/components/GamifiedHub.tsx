@@ -1,6 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 
-const GamifiedHub = () => {
+const GamifiedHub: React.FC = () => {
   return (
     <div className="p-4 bg-purple-100 rounded m-2">
       <h2 className="text-xl font-bold text-purple-800">🎮 Gamified Hub</h2>
