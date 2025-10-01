@@ -152,6 +152,13 @@ app.include_router(market_data.router, prefix="/api/v1")
 app.include_router(monte_carlo_var.router, prefix="/api/v1")
 app.include_router(real_pnl.router, prefix="/api/v1")
 
+# ... [existing code above unchanged] ...
+
+# Include API routers
+app.include_router(market_data.router, prefix="/api/v1")
+app.include_router(monte_carlo_var.router, prefix="/api/v1")
+app.include_router(real_pnl.router, prefix="/api/v1")
+
 # Include domain routers
 app.include_router(trading_router, prefix="/api/v1")
 app.include_router(risk_router, prefix="/api/v1")
@@ -164,6 +171,6 @@ app.include_router(compliance_router, prefix="/api/v1")
 from app.api.v1.advanced_etrm import router as advanced_etrm_router
 app.include_router(advanced_etrm_router, prefix="/api/v1/advanced")
 
-# Comprehensive ETRM/CTRM API router remains at /api/v1
+# Comprehensive ETRM/CTRM router remains at /api/v1
 from app.api.etrm_api import router as etrm_router
 app.include_router(etrm_router, prefix="/api/v1")
