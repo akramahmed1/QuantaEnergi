@@ -39,7 +39,7 @@ jobs:
     - name: Lint with Black
       working-directory: ./backend
       run: |
-        black --check app/ --line-length 120 || echo "Black formatting issues found"
+        black --check app/ --line-length 120
     
     - name: Lint with Ruff
       working-directory: ./backend
