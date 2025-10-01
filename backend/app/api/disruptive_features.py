@@ -10,6 +10,8 @@ import structlog
 
 # Local imports
 from ..core.security import get_current_user
+from ..core.security_guards import get_ai_authenticated_user, require_ai_permissions
+from ..schemas.security import SecureAIForecastRequest, CommodityType
 
 # Add shared services to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shared', 'services'))
@@ -35,13 +37,16 @@ router = APIRouter(prefix="/api/disruptive", tags=["disruptive-features"])
 # AI Forecasting Endpoints
 @router.post("/ai/forecast")
 async def create_ai_forecast(
-    commodity: str = Query(..., description="Energy commodity to forecast"),
-    days: int = Query(7, description="Number of days to forecast"),
-    use_prophet: bool = Query(False, description="Use Prophet library for forecasting"),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    request: SecureAIForecastRequest,
+    current_user: Dict[str, Any] = Depends(require_ai_permissions)
 ):
-    """Create AI-powered energy price forecast"""
+    """Create AI-powered energy price forecast with OWASP AI security"""
     try:
+        # Extract validated parameters
+        commodity = request.commodity
+        days = request.days
+        use_prophet = request.use_prophet
+        
         # Generate sample historical data for demonstration
         historical_data = _generate_sample_historical_data(commodity, 100)
         
@@ -78,8 +83,8 @@ async def create_ai_forecast(
 
 @router.post("/ai/train")
 async def train_ai_model(
-    commodity: str = Query(..., description="Energy commodity to train model for"),
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    commodity: CommodityType = Query(..., description="Energy commodity to train model for"),
+    current_user: Dict[str, Any] = Depends(require_ai_permissions)
 ):
     """Train AI model for energy forecasting"""
     try:

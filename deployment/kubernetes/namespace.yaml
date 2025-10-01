@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: quantaenergi
+  labels:
+    name: quantaenergi
+    app: quantaenergi-etrm
+    version: v1.0.0
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: quantaenergi-quota
+  namespace: quantaenergi
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    pods: "20"
+    services: "10"
+    secrets: "20"
+    configmaps: "20"

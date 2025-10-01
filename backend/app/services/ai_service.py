@@ -2,7 +2,82 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 import numpy as np
 import warnings
+import re
+import logging
+from typing import Any, Dict, List, Optional, Union
+from fastapi import HTTPException
 warnings.filterwarnings('ignore')
+
+logger = logging.getLogger(__name__)
+
+class AISecurityValidator:
+    """Input validation and sanitization for AI service"""
+    
+    @staticmethod
+    def validate_numeric_input(value: Any, min_val: float = None, max_val: float = None) -> float:
+        """Validate and sanitize numeric inputs"""
+        try:
+            if isinstance(value, str):
+                # Remove any non-numeric characters except decimal point and minus sign
+                cleaned = re.sub(r'[^\d.-]', '', value)
+                value = float(cleaned)
+            elif not isinstance(value, (int, float, np.number)):
+                raise ValueError(f"Invalid numeric input type: {type(value)}")
+            
+            value = float(value)
+            
+            if min_val is not None and value < min_val:
+                raise ValueError(f"Value {value} below minimum {min_val}")
+            if max_val is not None and value > max_val:
+                raise ValueError(f"Value {value} above maximum {max_val}")
+                
+            return value
+        except (ValueError, TypeError) as e:
+            logger.error(f"Input validation failed: {e}")
+            raise HTTPException(status_code=400, detail=f"Invalid input: {str(e)}")
+    
+    @staticmethod
+    def validate_array_input(data: Any, max_size: int = 10000) -> np.ndarray:
+        """Validate and sanitize array inputs"""
+        try:
+            if isinstance(data, str):
+                # Try to parse JSON-like array string
+                import json
+                data = json.loads(data)
+            
+            if not isinstance(data, (list, tuple, np.ndarray)):
+                raise ValueError("Input must be array-like")
+            
+            array = np.array(data, dtype=float)
+            
+            if array.size > max_size:
+                raise ValueError(f"Array size {array.size} exceeds maximum {max_size}")
+            
+            # Check for NaN or infinite values
+            if np.any(np.isnan(array)) or np.any(np.isinf(array)):
+                raise ValueError("Array contains NaN or infinite values")
+            
+            return array
+        except (ValueError, TypeError, json.JSONDecodeError) as e:
+            logger.error(f"Array validation failed: {e}")
+            raise HTTPException(status_code=400, detail=f"Invalid array input: {str(e)}")
+    
+    @staticmethod
+    def sanitize_string_input(text: str, max_length: int = 1000) -> str:
+        """Sanitize string inputs to prevent injection attacks"""
+        if not isinstance(text, str):
+            text = str(text)
+        
+        # Limit length
+        text = text[:max_length]
+        
+        # Remove potentially dangerous characters
+        text = re.sub(r'[<>"\'\x00-\x1f\x7f-\x9f]', '', text)
+        
+        # Escape special characters
+        text = text.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
+        
+        return text.strip()
 
 # Quantum computing imports
 try:
@@ -25,7 +100,15 @@ except ImportError:
     print("PuLP not available, using basic optimization")
 
 def forecast_price(historical: np.ndarray, horizon: int = 1):
-    """Forecast price using RandomForest ensemble"""
+    """Forecast price using RandomForest ensemble with input validation"""
+    # Validate inputs using security validator
+    validator = AISecurityValidator()
+    historical = validator.validate_array_input(historical, max_size=50000)
+    horizon = int(validator.validate_numeric_input(horizon, min_val=1, max_val=365))
+    
+    if len(historical) <= horizon:
+        raise HTTPException(status_code=400, detail="Insufficient historical data for forecasting")
+    
     X = historical[:-horizon].reshape(-1, 1)
     y = historical[horizon:]
     X_train, _, y_train, _ = train_test_split(X, y)

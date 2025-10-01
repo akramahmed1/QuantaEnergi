@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -17,36 +18,19 @@ const Login = () => {
     });
   };
 
+  const { login } = useAuth();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Store token and user data
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify({
-          id: data.user_id,
-          email: data.email,
-          role: data.role,
-          company_name: data.company_name
-        }));
-        
-        // Redirect to dashboard
+      const ok = await login(formData.email, formData.password);
+      if (ok) {
         navigate('/dashboard');
       } else {
-        setError(data.detail || 'Login failed');
+        setError('Login failed');
       }
     } catch (err) {
       setError('Network error. Please try again.');

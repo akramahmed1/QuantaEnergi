@@ -43,6 +43,8 @@
 ### Prerequisites
 - Docker & Docker Compose
 - Node.js 18+ (for frontend)
+- Python 3.9+ (for backend)
+- Redis (optional, for caching)
 - Railway CLI (for deployment)
 - Vercel CLI (for frontend deployment)
 
@@ -52,7 +54,101 @@ git clone https://github.com/akramahmed1/QuantaEnergi.git
 cd QuantaEnergi
 ```
 
-### 2. Local Testing
+### 2. Backend Setup (Python/FastAPI)
+
+```bash
+# Navigate to backend
+cd backend
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Optional: Install Redis for caching
+# On Ubuntu/Debian:
+sudo apt-get install redis-server
+# On macOS:
+brew install redis
+# On Windows:
+# Download from https://github.com/microsoftarchive/redis/releases
+
+# Start Redis (optional)
+redis-server  # Default port 6379
+
+# Run database migrations
+python upgrade_database.py
+
+# Start the backend server (dev)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Production-style run with multiple workers
+# Tip: Scale based on CPU cores (e.g., 4 workers)
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+### 3. Frontend Setup (React/TypeScript)
+
+```bash
+# Navigate to frontend
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the frontend development server
+npm run dev
+```
+
+### 4. Docker Setup (Recommended)
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d --build
+
+# Check logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### 5. Testing & Validation
+
+```bash
+# Run backend tests
+cd backend
+python -m pytest --cov=app --cov-report=term-missing -v
+
+# Run E2E tests
+python test_enhanced_features.py
+
+# Test API endpoints
+curl -X POST "http://localhost:8000/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "testpass"}'
+
+# Trade capture (E2E integration)
+curl -X POST "http://localhost:8000/api/trades" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instrument": "BRENT", "side": "BUY", "quantity": 10,
+    "price": 82.5, "currency": "USD", "region": "EU"
+  }'
+
+# Test quantum optimization
+curl -X POST "http://localhost:8000/optimize/portfolio" \
+  -H "Content-Type: application/json" \
+  -d '{"returns": [0.1, 0.12, 0.08], "risks": [0.15, 0.18, 0.12]}'
+
+# Test carbon NFT minting
+curl -X POST "http://localhost:8000/api/v1/blockchain/mint-nft" \
+  -H "Content-Type: application/json" \
+  -d '{"project_id": "PROJ001", "carbon_credits": 1000, "metadata": {"standard": "VCS"}}'
+```
+
+### 6. Local Testing
 ```bash
 # Test the full stack locally
 ./scripts/deploy.sh local
@@ -130,7 +226,7 @@ cd QuantaEnergi
 ### Backend (FastAPI + Python)
 - **FastAPI**: High-performance async API framework
 - **SQLAlchemy**: ORM with PostgreSQL
-- **Redis**: Caching and session management
+- **Redis**: Caching and session management (default `localhost:6379`, cache TTL 300s)
 - **Celery**: Background task processing
 - **Pydantic**: Data validation and serialization
 
@@ -345,6 +441,9 @@ DATABASE_URL=postgresql://...
 REDIS_URL=redis://...
 SECRET_KEY=your-secret-key
 CORS_ORIGINS=https://quantaenergi.vercel.app
+
+# Redis cache tuning (optional)
+REDIS_CACHE_TTL_SECONDS=300
 
 # Vercel Environment Variables
 VITE_API_URL=https://quantaenergi-backend.railway.app

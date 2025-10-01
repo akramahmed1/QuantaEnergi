@@ -51,6 +51,7 @@ export interface TradeResponse {
   status: string;
   message: string;
   timestamp: string;
+  trade_type: string;
 }
 
 export interface TradeStatusResponse {

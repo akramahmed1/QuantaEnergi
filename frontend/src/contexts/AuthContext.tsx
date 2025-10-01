@@ -34,40 +34,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token on mount
     const token = localStorage.getItem('token');
     if (token) {
-      // Mock user data for now
-      setUser({
-        id: 'user123',
-        email: 'trader@quantaenergi.com',
-        role: 'trader',
-        name: 'John Trader'
-      });
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch {
+        // ignore parse errors
+      }
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Mock login - in real app, call your API
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('http://localhost:8000/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username: email, password }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('token', data.token);
-        setUser({
-          id: data.user.id,
-          email: data.user.email,
-          role: data.user.role,
-          name: data.user.name
-        });
+        const token = data.access_token;
+        const parsedUser: User = {
+          id: String(data.user_id ?? ''),
+          email: String(data.email ?? email),
+          role: String(data.role ?? 'trader'),
+          name: undefined
+        };
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(parsedUser));
+        setUser(parsedUser);
         return true;
       }
       return false;

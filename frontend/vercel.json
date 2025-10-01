@@ -1,23 +1,9 @@
 {
   "version": 2,
-  "name": "quantaenergi-frontend",
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "use": "@vercel/static-build"
     }
   ],
   "env": {
@@ -25,11 +11,6 @@
     "VITE_WS_URL": "wss://quantaenergi-backend.railway.app",
     "VITE_APP_NAME": "QuantaEnergi",
     "VITE_APP_VERSION": "2.0.0"
-  },
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs18.x"
-    }
   },
   "headers": [
     {

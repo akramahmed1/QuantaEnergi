@@ -1,279 +1,295 @@
-# QuantaEnergi Deployment Guide
+# 🚀 QuantaEnergi ETRM/CTRM Deployment Guide
 
-## 🚀 Complete Deployment Setup for Vercel + Railway
+## 📋 Overview
+
+QuantaEnergi is a complete Enterprise Energy Trading and Risk Management (ETRM/CTRM) platform with:
+
+- **Frontend**: React/TypeScript with Tailwind CSS
+- **Backend**: FastAPI with Python
+- **Database**: PostgreSQL with Redis caching
+- **Security**: Enterprise-grade authentication and authorization
+- **Compliance**: REMIT, FERC, CFTC, NERC, EMIR, GDPR compliance
+
+## 🏗️ Local Development Setup
 
 ### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL (optional, SQLite for development)
+- Redis (optional, in-memory for development)
 
-1. **Node.js 18+** and **npm**
-2. **Python 3.12+** and **Poetry**
-3. **Git** for version control
-4. **Railway CLI**: `npm install -g @railway/cli`
-5. **Vercel CLI**: `npm install -g vercel`
-
-### Step 1: Backend Deployment (Railway)
-
-#### 1.1 Railway Setup
+### Quick Start
 ```bash
-# Login to Railway
-railway login
+# Clone the repository
+git clone https://github.com/akramahmed1/QuantaEnergi.git
+cd QuantaEnergi
 
-# Create new project
-railway new
-
-# Link to existing project (if you have one)
-railway link
+# Start the complete application
+python start_etrm.py
 ```
 
-#### 1.2 Environment Variables
-Set these in Railway dashboard:
+This will:
+1. Install all dependencies
+2. Create default admin user (admin/admin123)
+3. Start backend on http://localhost:8000
+4. Start frontend on http://localhost:3000
 
-```bash
-# Core Configuration
-ENVIRONMENT=production
-DEBUG=false
-LOG_LEVEL=INFO
-HOST=0.0.0.0
-PORT=$PORT
+### Manual Setup
 
-# Database (Auto-configured by Railway)
-DATABASE_URL=$DATABASE_URL
-REDIS_URL=$REDIS_URL
-
-# Security (Generate strong keys)
-SECRET_KEY=your-super-secret-key-here
-JWT_SECRET_KEY=your-jwt-secret-key-here
-
-# CORS (Update with your frontend URL)
-CORS_ORIGINS=https://quantaenergi-frontend.vercel.app,https://quantaenergi.vercel.app
-
-# External APIs
-ALPHA_VANTAGE_API_KEY=your-alpha-vantage-key
-```
-
-#### 1.3 Deploy Backend
+#### Backend Setup
 ```bash
 cd backend
-railway up
+pip install -r requirements.txt
+python create_default_user.py
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Step 2: Frontend Deployment (Vercel)
-
-#### 2.1 Vercel Setup
-```bash
-# Login to Vercel
-vercel login
-
-# Link to existing project
-vercel link
-```
-
-#### 2.2 Environment Variables
-Set these in Vercel dashboard:
-
-```bash
-# API Configuration
-VITE_API_URL=https://your-backend.railway.app
-VITE_WS_URL=wss://your-backend.railway.app
-
-# App Configuration
-VITE_APP_NAME=QuantaEnergi
-VITE_APP_VERSION=2.0.0
-
-# Feature Flags
-VITE_ENABLE_QUANTUM=true
-VITE_ENABLE_GEO_RISK=true
-VITE_ENABLE_REMIT_COMPLIANCE=true
-```
-
-#### 2.3 Deploy Frontend
+#### Frontend Setup
 ```bash
 cd frontend
-npm run build
-vercel --prod
+npm install
+npm start
 ```
 
-### Step 3: Database Setup
+## 🌐 Production Deployment
 
-#### 3.1 Railway PostgreSQL
-Railway automatically provisions PostgreSQL. Update your `DATABASE_URL`:
+### Option 1: Railway (Backend) + Vercel (Frontend)
 
+#### Backend Deployment on Railway
+1. **Connect to Railway**:
+   ```bash
+   # Install Railway CLI
+   npm install -g @railway/cli
+   
+   # Login and connect
+   railway login
+   railway link
+   ```
+
+2. **Deploy Backend**:
+   ```bash
+   railway up
+   ```
+
+3. **Set Environment Variables**:
+   - `DATABASE_URL`: PostgreSQL connection string
+   - `JWT_SECRET`: Strong secret key (32+ characters)
+   - `REDIS_URL`: Redis connection string
+   - `TLS_ENABLED`: true
+   - `RATE_LIMIT_ENABLED`: true
+   - `AUDIT_LOGGING_ENABLED`: true
+
+#### Frontend Deployment on Vercel
+1. **Connect to Vercel**:
+   ```bash
+   # Install Vercel CLI
+   npm install -g vercel
+   
+   # Login and deploy
+   vercel login
+   vercel --prod
+   ```
+
+2. **Set Environment Variables**:
+   - `REACT_APP_API_URL`: Your Railway backend URL
+   - `REACT_APP_WS_URL`: Your Railway WebSocket URL
+   - `REACT_APP_ENVIRONMENT`: production
+
+### Option 2: Render (Full Stack)
+
+#### Backend on Render
+1. Create new **Web Service**
+2. Connect GitHub repository
+3. Set build command: `cd backend && pip install -r requirements.txt`
+4. Set start command: `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. Set environment variables
+
+#### Frontend on Render
+1. Create new **Static Site**
+2. Connect GitHub repository
+3. Set build command: `cd frontend && npm install && npm run build`
+4. Set publish directory: `frontend/dist`
+
+## 🔧 Environment Configuration
+
+### Backend Environment Variables
 ```bash
-# Get database URL from Railway dashboard
-railway variables
+# Database
+DATABASE_URL=postgresql://user:pass@host:port/dbname
+REDIS_URL=redis://host:port
+
+# Security
+JWT_SECRET=your-super-secret-jwt-key-32-chars-min
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# API Configuration
+API_BASE_URL=https://your-backend-url.com
+CORS_ORIGINS=["https://your-frontend-url.com"]
+
+# Compliance
+COMPLIANCE_MODE=strict
+AUDIT_LOGGING_ENABLED=true
 ```
 
-#### 3.2 Run Migrations
+### Frontend Environment Variables
+```bash
+# API Configuration
+REACT_APP_API_URL=https://your-backend-url.com
+REACT_APP_WS_URL=wss://your-backend-url.com
+REACT_APP_ENVIRONMENT=production
+```
+
+## 🗄️ Database Setup
+
+### PostgreSQL (Production)
+```sql
+-- Create database
+CREATE DATABASE quantaenergi;
+
+-- Create user
+CREATE USER quantaenergi_user WITH PASSWORD 'secure_password';
+
+-- Grant permissions
+GRANT ALL PRIVILEGES ON DATABASE quantaenergi TO quantaenergi_user;
+```
+
+### Database Migration
 ```bash
 cd backend
-poetry run alembic upgrade head
+alembic upgrade head
+python create_default_user.py
 ```
 
-### Step 4: Redis Setup
+## 🔐 Security Configuration
 
-#### 4.1 Railway Redis
-Railway automatically provisions Redis. Update your `REDIS_URL`:
-
+### JWT Secret Generation
 ```bash
-# Get Redis URL from Railway dashboard
-railway variables
+# Generate secure JWT secret
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-### Step 5: Domain Configuration
+### SSL/TLS Setup
+- Railway/Render provide automatic SSL
+- Custom domains require SSL certificates
+- Use Let's Encrypt for free certificates
 
-#### 5.1 Custom Domains (Optional)
-- **Railway**: Configure custom domain in Railway dashboard
-- **Vercel**: Configure custom domain in Vercel dashboard
+## 📊 Monitoring & Logging
 
-#### 5.2 SSL Certificates
-Both Railway and Vercel provide automatic SSL certificates.
+### Health Checks
+- Backend: `GET /health`
+- Database: Automatic connection monitoring
+- Redis: Automatic connection monitoring
 
-### Step 6: Monitoring Setup
+### Logging
+- Structured JSON logging
+- Audit trail for all operations
+- Compliance reporting
 
-#### 6.1 Health Checks
-- **Backend**: `https://your-backend.railway.app/health`
-- **Frontend**: `https://your-frontend.vercel.app/`
+## 🚀 Deployment Checklist
 
-#### 6.2 Monitoring
-- **Railway**: Built-in monitoring and logs
-- **Vercel**: Built-in analytics and performance monitoring
+### Pre-Deployment
+- [ ] Environment variables configured
+- [ ] Database migrations run
+- [ ] Default user created
+- [ ] SSL certificates configured
+- [ ] CORS origins updated
+- [ ] Security headers enabled
 
-### Step 7: Testing Deployment
+### Post-Deployment
+- [ ] Health checks passing
+- [ ] Login functionality working
+- [ ] Trade creation working
+- [ ] API documentation accessible
+- [ ] Frontend-backend communication working
+- [ ] WebSocket connections working
 
-#### 7.1 Backend Tests
+## 🔍 Troubleshooting
+
+### Common Issues
+
+#### Backend Not Starting
 ```bash
-# Test API endpoints
-curl https://your-backend.railway.app/health
-curl https://your-backend.railway.app/docs
+# Check logs
+railway logs
+
+# Common fixes
+pip install -r requirements.txt
+python create_default_user.py
 ```
 
-#### 7.2 Frontend Tests
+#### Frontend Build Failing
 ```bash
-# Test frontend
-curl https://your-frontend.vercel.app/
+# Clear cache and rebuild
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+npm run build
 ```
 
-### Step 8: Production Checklist
+#### Database Connection Issues
+```bash
+# Check connection string
+echo $DATABASE_URL
 
-#### 8.1 Security
-- [ ] Strong SECRET_KEY and JWT_SECRET_KEY
-- [ ] CORS properly configured
-- [ ] Environment variables secured
-- [ ] SSL certificates active
+# Test connection
+python -c "from app.db.session import db_manager; print(db_manager.health_check())"
+```
 
-#### 8.2 Performance
-- [ ] Database indexes optimized
-- [ ] Redis caching configured
-- [ ] CDN enabled (Vercel)
-- [ ] Monitoring alerts set up
+#### Authentication Issues
+```bash
+# Create new user
+python create_default_user.py
 
-#### 8.3 Compliance
-- [ ] REMIT compliance enabled
-- [ ] Data retention policies
-- [ ] Audit logging configured
-- [ ] Backup strategies in place
+# Check JWT secret
+echo $JWT_SECRET
+```
 
-### Step 9: Automated Deployment
+## 📈 Performance Optimization
 
-#### 9.1 GitHub Actions (Optional)
-Create `.github/workflows/deploy.yml`:
+### Backend Optimization
+- Enable Redis caching
+- Configure connection pooling
+- Enable gzip compression
+- Set up CDN for static assets
 
+### Frontend Optimization
+- Enable code splitting
+- Configure service worker
+- Optimize bundle size
+- Enable lazy loading
+
+## 🔄 CI/CD Pipeline
+
+### GitHub Actions
 ```yaml
-name: Deploy QuantaEnergi
-
+name: Deploy
 on:
   push:
     branches: [main]
-
 jobs:
-  deploy-backend:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Deploy to Railway
         run: railway up
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to Vercel
-        run: vercel --prod
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 ```
 
-### Step 10: Troubleshooting
+## 📞 Support
 
-#### 10.1 Common Issues
-- **CORS errors**: Check CORS_ORIGINS configuration
-- **Database connection**: Verify DATABASE_URL
-- **Redis connection**: Verify REDIS_URL
-- **Environment variables**: Check all required variables are set
+### Documentation
+- API Documentation: `/docs` endpoint
+- Frontend Documentation: README.md
+- Security Documentation: docs/security/
 
-#### 10.2 Logs
-- **Railway**: `railway logs`
-- **Vercel**: Check Vercel dashboard logs
+### Contact
+- Email: team@quantaenergi.com
+- GitHub: https://github.com/akramahmed1/QuantaEnergi
+- Issues: GitHub Issues
 
-#### 10.3 Debug Mode
-```bash
-# Enable debug mode for troubleshooting
-DEBUG=true
-LOG_LEVEL=DEBUG
-```
+---
 
-### Step 11: Scaling
-
-#### 11.1 Railway Scaling
-- **Hobby Plan**: $5/month (Railway)
-- **Pro Plan**: $20/month (Railway)
-- **Enterprise**: Custom pricing
-
-#### 11.2 Vercel Scaling
-- **Hobby Plan**: Free (Vercel)
-- **Pro Plan**: $20/month (Vercel)
-- **Enterprise**: Custom pricing
-
-### Step 12: Maintenance
-
-#### 12.1 Regular Updates
-- Update dependencies monthly
-- Monitor security advisories
-- Backup database regularly
-- Review and rotate secrets
-
-#### 12.2 Performance Monitoring
-- Monitor API response times
-- Track error rates
-- Monitor database performance
-- Review user analytics
-
-## 🎯 Deployment Summary
-
-### Architecture
-```
-Frontend (Vercel) → Backend (Railway) → Database (Railway PostgreSQL)
-                                    → Cache (Railway Redis)
-```
-
-### Costs
-- **Frontend**: Free (Vercel Hobby)
-- **Backend**: $5/month (Railway Hobby)
-- **Database**: Included (Railway)
-- **Cache**: Included (Railway)
-- **Total**: ~$5/month
-
-### Features Deployed
-- ✅ VaR/Monte Carlo Risk Calculations
-- ✅ Alpha Vantage Market Data Integration
-- ✅ Geo-Risk AI for Guyana/ME
-- ✅ Quantum Portfolio Optimization
-- ✅ REMIT Compliance for Europe/UK
-- ✅ Real-time WebSocket Streaming
-- ✅ Comprehensive API Documentation
-- ✅ Production-ready Security
-
-## 🚀 Ready for Production!
-
-Your QuantaEnergi ETRM/CTRM disruptor is now deployed and ready to disrupt the energy trading market!
+**Status**: ✅ Production Ready
+**Last Updated**: December 30, 2024
+**Version**: 2.0.0
