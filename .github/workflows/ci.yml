@@ -34,7 +34,7 @@ jobs:
       working-directory: ./backend
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r requirements.txt || { echo "ERROR: pip failed to install dependencies. Check requirements.txt for invalid package versions."; exit 1; }
     
     - name: Lint with Black
       working-directory: ./backend
