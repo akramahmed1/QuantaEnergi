@@ -21,6 +21,17 @@ ChartJS.register(
   Legend
 );
 
+interface ChartData {
+  labels: string[];
+  datasets: Array<{
+    label: string;
+    data: number[];
+    borderColor: string;
+    backgroundColor: string;
+    tension: number;
+  }>;
+}
+
 interface MarketData {
   prices: Array<{
     timestamp: string;
@@ -73,7 +84,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
   weatherData,
   weatherForecast
 }) => {
-  const [chartData, setChartData] = useState({
+  const [chartData, setChartData] = useState<ChartData>({
     labels: [],
     datasets: []
   });
@@ -85,7 +96,7 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
       );
       const prices = data.prices.map(price => price.price);
 
-      setChartData({
+      const newChartData: ChartData = {
         labels,
         datasets: [
           {
@@ -96,7 +107,8 @@ const MarketOverview: React.FC<MarketOverviewProps> = ({
             tension: 0.1,
           },
         ],
-      });
+      };
+      setChartData(newChartData);
     }
   }, [data]);
 
