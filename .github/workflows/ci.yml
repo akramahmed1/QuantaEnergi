@@ -103,7 +103,7 @@ jobs:
     
     - name: Run tests
       working-directory: ./frontend
-      run: npm test -- --ci --coverage || echo "No tests configured yet"
+      run: npm test -- --ci --coverage
     
     - name: Build
       working-directory: ./frontend
