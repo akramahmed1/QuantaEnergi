@@ -41,8 +41,23 @@ const Signup: React.FC = () => {
     }
 
     try {
-      // Mock signup - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Real signup API call
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          company_name: formData.company_name,
+          role: formData.role
+        })
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Signup failed');
+      }
       navigate('/login');
     } catch (err) {
       setError('Signup failed. Please try again.');
