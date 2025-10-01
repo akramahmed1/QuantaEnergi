@@ -226,7 +226,7 @@ const ComplianceView: React.FC = () => {
   };
 
   const generatePDFReport = () => {
-    const data = generateComplianceData();
+    const data: ComplianceDataGeneric = generateComplianceData();
     const doc = new jsPDF();
     
     // Add title
@@ -252,7 +252,7 @@ const ComplianceView: React.FC = () => {
         doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
         
-        const sectionData = data[section.id] || {};
+        const sectionData: ComplianceDataGeneric = data[section.id] || {};
         
         if (Array.isArray(sectionData)) {
           // Handle array data (like trades)
@@ -278,7 +278,7 @@ const ComplianceView: React.FC = () => {
         } else {
           // Handle simple values
           section.fields.forEach((field: string) => {
-            const value = data[field] || 'N/A';
+            const value: string = String(data[field] || 'N/A');
             doc.text(`${field}: ${value}`, 20, yPosition);
             yPosition += 10;
           });

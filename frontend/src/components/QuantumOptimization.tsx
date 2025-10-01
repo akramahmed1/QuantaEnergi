@@ -217,11 +217,11 @@ const QuantumOptimization: React.FC = () => {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={optimizationResult.portfolio_assets}
+                  data={optimizationResult.portfolio_assets as ChartDataInput[]}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ symbol, optimized_weight }) => `${symbol}: ${(optimized_weight * 100).toFixed(1)}%`}
+                  label={({ symbol, optimized_weight }: { symbol: string; optimized_weight: number }) => `${symbol}: ${(optimized_weight * 100).toFixed(1)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="optimized_weight"

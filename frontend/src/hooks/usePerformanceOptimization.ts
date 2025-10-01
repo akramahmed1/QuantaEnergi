@@ -112,11 +112,17 @@ export const usePerformanceOptimization = (
     const apiMetrics = getPerformanceSummary();
 
     if (cacheStats || apiMetrics) {
+      const defaultApiMetrics: { avgResponseTime: number; avgCacheHitRate: number; totalRequests: number } = { 
+        avgResponseTime: 0, 
+        avgCacheHitRate: 0, 
+        totalRequests: 0 
+      };
+      
       setPerformanceData({
         renderTime: 0,
         memoryUsage: cacheStats?.memoryUsage || 0,
         cacheStats: cacheStats || { size: 0, hitRate: 0, memoryUsage: 0 },
-        apiMetrics: apiMetrics || { avgResponseTime: 0, avgCacheHitRate: 0, totalRequests: 0 }
+        apiMetrics: apiMetrics || defaultApiMetrics
       });
     }
   }, [enableMonitoring, getCacheStats, getPerformanceSummary]);

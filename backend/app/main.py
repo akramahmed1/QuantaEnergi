@@ -28,8 +28,9 @@ from app.domains.trading.routers import router as trading_router
 from app.domains.risk.routers import router as risk_router
 from app.domains.ai_forecasting.services import AIForecastingService
 from app.domains.geo_risk.routers import router as geo_risk_router
-from app.domains.quantum.routers import router as quantum_router
-from app.domains.blockchain.routers import router as blockchain_router
+# De-prioritized for 2025 disruption focus - moved to future_addons/
+# from app.domains.quantum.routers import router as quantum_router
+# from app.domains.blockchain.routers import router as blockchain_router
 from app.domains.compliance.routers import router as compliance_router
 from app.core.trade_engine import TradeEngine
 from app.core.risk_calculator import RiskCalculator
@@ -158,8 +159,9 @@ app.include_router(real_pnl.router, prefix="/api/v1")
 app.include_router(trading_router, prefix="/api/v1")
 app.include_router(risk_router, prefix="/api/v1")
 app.include_router(geo_risk_router, prefix="/api/v1")
-app.include_router(quantum_router, prefix="/api/v1")
-app.include_router(blockchain_router, prefix="/api/v1")
+# De-prioritized for 2025 - enable post-Q1 2026 after market validation
+# app.include_router(quantum_router, prefix="/api/v1")
+# app.include_router(blockchain_router, prefix="/api/v1")
 app.include_router(compliance_router, prefix="/api/v1")
 
 # Advanced ETRM router - fix collision and mount at /api/v1/advanced
