@@ -1,8 +1,10 @@
-
+version: '3.8'
 
 services:
+  # PostgreSQL Database with pg_crypto extension for audit trails
   db:
-    image: postgres:15
+    image: postgres:15-alpine
+    container_name: quantaenergi_db
     environment:
       POSTGRES_DB: quanta_db
       POSTGRES_USER: user
@@ -11,14 +13,19 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d quanta_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - quantaenergi_network
 
+  # Redis for caching and background tasks
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
+    container_name: quantaenergi_redis
     ports:
       - "6379:6379"
     volumes:
@@ -28,7 +35,92 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - quantaenergi_network
+
+  # Backend API - FastAPI with ETRM/CTRM capabilities
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: quantaenergi_backend
+    environment:
+      # Database connection
+      DATABASE_URL: postgresql://user:pass@db:5432/quanta_db
+      REDIS_URL: redis://redis:6379/0
+      
+      # Security (CHANGE IN PRODUCTION!)
+      SECRET_KEY: ${SECRET_KEY:-your-super-secret-key-change-in-production-2025}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-jwt-secret-key-change-in-production}
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      
+      # Encryption for audit trails
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-your-32-byte-encryption-key-here}
+      
+      # API Keys for external services
+      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-demo}
+      
+      # Application settings
+      ENVIRONMENT: development
+      DEBUG: "true"
+      LOG_LEVEL: INFO
+      
+      # CORS settings
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://frontend:3000
+      
+      # Rate limiting
+      RATE_LIMIT_PER_MINUTE: 60
+      
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - backend_cache:/app/__pycache__
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - quantaenergi_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend - React + TypeScript
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: quantaenergi_frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_WS_URL: ws://localhost:8000
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - quantaenergi_network
+    stdin_open: true
+    tty: true
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+  backend_cache:
+    driver: local
+
+networks:
+  quantaenergi_network:
+    driver: bridge
