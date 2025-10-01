@@ -40,7 +40,8 @@ Refs #PR4-DisruptionPivot" || echo "Commit 1 already exists or no changes"
 
 echo ""
 echo "📝 Commit 2/3: Dependency Cleanup"
-git add backend/requirements.txt frontend/package.json backend/app/main.py
+# Files already staged above, no need to re-add
+# git add backend/requirements.txt frontend/package.json backend/app/main.py
 git commit -m "refactor: simplify stack for 2025 pains, OpenAPI sync (Gemini/Musk)
 
 - Cleaned requirements.txt: removed qiskit, web3, asyncio-mqtt
