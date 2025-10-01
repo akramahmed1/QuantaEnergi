@@ -50,16 +50,16 @@ services:
       REDIS_URL: redis://redis:6379/0
       
       # Security (CHANGE IN PRODUCTION!)
-      SECRET_KEY: ${SECRET_KEY:-your-super-secret-key-change-in-production-2025}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-jwt-secret-key-change-in-production}
+      SECRET_KEY: ${SECRET_KEY:-CHANGE_ME}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-CHANGE_ME}
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 60
       
       # Encryption for audit trails
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-your-32-byte-encryption-key-here}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-CHANGE_ME}
       
       # API Keys for external services
-      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-demo}
+      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-CHANGE_ME}
       
       # Application settings
       ENVIRONMENT: development
