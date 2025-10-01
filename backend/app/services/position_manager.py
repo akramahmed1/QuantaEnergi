@@ -260,14 +260,14 @@ class PositionManager:
     
     def calculate_pnl(self, position_id: str, current_price: float) -> Dict[str, Any]:
         """
-        Calculate unrealized P&L for position
+        Calculate unrealized P&L for position with real market factors
         
         Args:
             position_id: Unique position identifier
             current_price: Current market price
             
         Returns:
-            Dict with P&L calculations
+            Dict with comprehensive P&L calculations
         """
         if position_id not in self.positions:
             return {
@@ -278,18 +278,68 @@ class PositionManager:
         position = self.positions[position_id]
         quantity = position["quantity"]
         entry_price = position["entry_price"]
+        currency = position.get("currency", "USD")
+        direction = position.get("direction", "long")
         
-        # TODO: Implement proper P&L calculations with fees, taxes, etc.
-        unrealized_pnl = (current_price - entry_price) * quantity
-        pnl_percentage = (unrealized_pnl / (entry_price * quantity)) * 100 if entry_price > 0 else 0
+        # FX rates (mock - in production, fetch from real API)
+        fx_rates = {'USD': 1.0, 'EUR': 0.85, 'GBP': 0.73, 'AED': 3.67}
+        fx_rate = fx_rates.get(currency, 1.0)
+        
+        # Trading fees and costs
+        trading_fee_rate = 0.001  # 0.1% trading fee
+        hedging_cost_rate = 0.05  # 5% hedging cost
+        
+        # Calculate gross P&L based on direction
+        if direction == "long":
+            price_diff = current_price - entry_price
+        else:  # short position
+            price_diff = entry_price - current_price
+        
+        gross_pnl = quantity * price_diff
+        
+        # Apply FX conversion
+        fx_adjusted_pnl = gross_pnl * fx_rate
+        
+        # Calculate notional values
+        entry_notional = quantity * entry_price * fx_rate
+        current_notional = quantity * current_price * fx_rate
+        
+        # Apply trading fees (on current notional)
+        trading_fee = current_notional * trading_fee_rate
+        
+        # Apply hedging costs (5% of position value)
+        hedging_cost = current_notional * hedging_cost_rate
+        
+        # Net P&L after all costs
+        net_pnl = fx_adjusted_pnl - trading_fee - hedging_cost
+        
+        # Calculate percentage returns
+        pnl_percentage = (net_pnl / entry_notional) * 100 if entry_notional > 0 else 0
+        
+        # Risk-adjusted metrics
+        position_value = current_notional
+        risk_score = self._calculate_position_risk_score(position)
         
         return {
             "success": True,
-            "unrealized_pnl": unrealized_pnl,
-            "pnl_percentage": pnl_percentage,
+            "position_id": position_id,
+            "gross_pnl": round(gross_pnl, 2),
+            "fx_adjusted_pnl": round(fx_adjusted_pnl, 2),
+            "trading_fee": round(trading_fee, 2),
+            "hedging_cost": round(hedging_cost, 2),
+            "net_pnl": round(net_pnl, 2),
+            "pnl_percentage": round(pnl_percentage, 2),
             "current_price": current_price,
             "entry_price": entry_price,
-            "quantity": quantity
+            "quantity": quantity,
+            "direction": direction,
+            "currency": currency,
+            "fx_rate": fx_rate,
+            "entry_notional": round(entry_notional, 2),
+            "current_notional": round(current_notional, 2),
+            "position_value": round(position_value, 2),
+            "risk_score": risk_score,
+            "calculated_at": datetime.now().isoformat()
         }
     
     def get_portfolio_summary(self, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -366,3 +416,19 @@ class PositionManager:
             return "medium"
         else:
             return "low"
+    
+    def _calculate_position_risk_score(self, position: Dict[str, Any]) -> float:
+        """Calculate risk score for a position"""
+        quantity = position.get("quantity", 0)
+        price = position.get("entry_price", 0)
+        notional = quantity * price
+        
+        # Simple risk scoring based on position size
+        if notional > 1000000:  # > $1M
+            return 0.9
+        elif notional > 500000:  # > $500K
+            return 0.7
+        elif notional > 100000:  # > $100K
+            return 0.5
+        else:
+            return 0.3

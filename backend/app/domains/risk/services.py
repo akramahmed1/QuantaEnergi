@@ -60,7 +60,7 @@ class VaRCalculator:
                                  confidence_level: float = 0.95,
                                  time_horizon: int = 1,
                                  num_simulations: int = 10000) -> Dict[str, Any]:
-        """Calculate VaR using Monte Carlo simulation with 10k paths"""
+        """Calculate VaR using Monte Carlo simulation with 10k paths and correlation matrix"""
         try:
             if not positions:
                 return {"var": 0.0, "method": "monte_carlo", "simulations": 0}
@@ -70,20 +70,36 @@ class VaRCalculator:
             if total_value == 0:
                 return {"var": 0.0, "method": "monte_carlo", "simulations": 0}
             
-            # Generate random returns for Monte Carlo simulation
+            # Generate correlated random returns using Cholesky decomposition
             np.random.seed(42)  # For reproducibility
-            daily_returns = np.random.normal(0, 0.02, num_simulations)  # 2% daily volatility
+            
+            # Create correlation matrix for commodities
+            n_assets = len(positions)
+            if n_assets == 1:
+                correlation_matrix = np.array([[1.0]])
+            else:
+                # Base correlation matrix (simplified)
+                correlation_matrix = np.eye(n_assets) * 0.3 + np.ones((n_assets, n_assets)) * 0.1
+                np.fill_diagonal(correlation_matrix, 1.0)
+            
+            # Cholesky decomposition for correlated returns
+            try:
+                L = np.linalg.cholesky(correlation_matrix)
+            except np.linalg.LinAlgError:
+                L = np.eye(n_assets)  # Fallback to uncorrelated
+            
+            # Generate correlated random returns
+            uncorrelated_returns = np.random.normal(0, 0.02, (num_simulations, n_assets))
+            correlated_returns = uncorrelated_returns @ L.T
             
             # Calculate portfolio values for each simulation
             portfolio_values = []
-            for return_rate in daily_returns:
-                # Apply return to each position
+            for sim_idx in range(num_simulations):
                 portfolio_value = 0
-                for pos in positions:
+                for pos_idx, pos in enumerate(positions):
                     position_value = pos.get("notional_value", 0)
-                    # Add some correlation based on commodity type
                     commodity_multiplier = self._get_commodity_multiplier(pos.get("commodity", "crude_oil"))
-                    position_return = return_rate * commodity_multiplier
+                    position_return = correlated_returns[sim_idx, pos_idx] * commodity_multiplier
                     portfolio_value += position_value * (1 + position_return)
                 portfolio_values.append(portfolio_value)
             
@@ -97,6 +113,11 @@ class VaRCalculator:
             tail_losses = portfolio_values[portfolio_values <= var_threshold]
             expected_shortfall = total_value - np.mean(tail_losses) if len(tail_losses) > 0 else var_amount
             
+            # Calculate additional risk metrics
+            portfolio_returns = (portfolio_values - total_value) / total_value
+            portfolio_volatility = np.std(portfolio_returns)
+            sharpe_ratio = np.mean(portfolio_returns) / portfolio_volatility if portfolio_volatility > 0 else 0
+            
             return {
                 "success": True,
                 "var": round(var_amount, 2),
@@ -107,6 +128,9 @@ class VaRCalculator:
                 "simulations": num_simulations,
                 "portfolio_value": total_value,
                 "var_percentile": var_percentile,
+                "portfolio_volatility": round(portfolio_volatility, 4),
+                "sharpe_ratio": round(sharpe_ratio, 4),
+                "correlation_matrix": correlation_matrix.tolist(),
                 "calculated_at": datetime.now().isoformat()
             }
             

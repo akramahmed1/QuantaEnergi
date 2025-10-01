@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface ComplianceData {
   report_id: string;
@@ -12,6 +12,10 @@ interface ComplianceData {
   status: string;
   sections_count: number;
   total_pages: number;
+}
+
+interface ComplianceDataGeneric {
+  [key: string]: any;
 }
 
 interface ReportTemplate {
@@ -60,7 +64,7 @@ const ComplianceView: React.FC = () => {
 
   // Build report mutation
   const buildReportMutation = useMutation({
-    mutationFn: async ({ reportType, data, templateConfig }: { reportType: string; data: any; templateConfig?: any }) => {
+    mutationFn: async ({ reportType, data, templateConfig }: { reportType: string; data: ComplianceDataGeneric; templateConfig?: any }) => {
       const token = localStorage.getItem('token');
       const response = await axios.post('http://localhost:8000/api/v1/reports/build', {
         report_type: reportType,
@@ -256,7 +260,7 @@ const ComplianceView: React.FC = () => {
             section.fields.map((field: string) => item[field] || 'N/A')
           );
           
-          doc.autoTable({
+          autoTable(doc, {
             head: [section.fields],
             body: tableData,
             startY: yPosition,

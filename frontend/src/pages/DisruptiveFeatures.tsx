@@ -141,7 +141,7 @@ const DisruptiveFeatures: React.FC = () => {
                 to="/optimization"
                 className="inline-flex items-center px-8 py-4 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                <TrendingUpIcon className="w-5 h-5 mr-2" />
+                <ArrowTrendingUpIcon className="w-5 h-5 mr-2" />
                 View Demo
               </Link>
             </motion.div>

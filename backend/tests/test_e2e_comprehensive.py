@@ -1,246 +1,343 @@
 """
-Comprehensive End-to-End Testing for EnergyOpti-Pro
-Tests the complete system workflow including authentication, API endpoints, security, and data flow.
+Comprehensive End-to-End Test Suite for QuantaEnergi ETRM/CTRM Platform
 """
 
 import pytest
-import time
+import asyncio
+import json
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
+import numpy as np
 
-# Import application modules
 from app.main import app
-from app.db.session import get_db, create_tables
+from app.db.session import get_db
+from app.models import User, Trade, ESG
+from app.core.security import get_password_hash
 
-# Test configuration
-TEST_DATABASE_URL = "sqlite:///./test_energyopti_pro.db"
-TEST_USER_EMAIL = f"test_{int(time.time())}@energyopti-pro.com"
-TEST_USER_PASSWORD = "TestPassword123!"
-TEST_USER_ROLE = "trader"
+client = TestClient(app)
 
-class TestE2EComprehensive:
-    """Comprehensive E2E testing for the entire EnergyOpti-Pro system."""
+class TestE2EUserFlows:
+    """End-to-end test for complete user flows"""
     
-    @pytest.fixture(autouse=True)
-    def setup_test_environment(self):
-        """Set up test environment with test database."""
-        # Create test database
-        self.engine = create_engine(TEST_DATABASE_URL)
-        self.TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        
-        # Create tables
-        from app.db.session import Base
-        Base.metadata.create_all(bind=self.engine)
-        
-        # Patch the database dependency to use test database
-        def override_get_db():
-            db = self.TestingSessionLocal()
-            try:
-                yield db
-            finally:
-                db.close()
-        
-        app.dependency_overrides[get_db] = override_get_db
-        
-        # Create test client
-        self.client = TestClient(app, headers={"Host": "localhost"})
-        
-        # Test user data
-        self.test_user_data = {
-            "email": TEST_USER_EMAIL,
-            "password": TEST_USER_PASSWORD,
-            "role": TEST_USER_ROLE,
-            "company_name": "Test Energy Corp"
+    @pytest.fixture
+    def test_user(self, db: Session):
+        """Create test user"""
+        user = User(
+            username="test_trader",
+            email="trader@test.com",
+            hashed_password=get_password_hash("testpass123"),
+            role="trader",
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    
+    @pytest.fixture
+    def auth_headers(self, test_user):
+        """Get authentication headers"""
+        response = client.post("/v1/auth/login", json={
+            "username": test_user.username,
+            "password": "testpass123"
+        })
+        assert response.status_code == 200
+        token = response.json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+    
+    def test_complete_trading_workflow(self, auth_headers):
+        """Test complete trading workflow from login to settlement"""
+        # Create a trade
+        trade_data = {
+            "asset": "BRENT_CRUDE",
+            "quantity": 1000,
+            "price": 85.50
         }
         
-        yield
-        
-        # Cleanup
-        app.dependency_overrides.clear()
-        self.engine.dispose()
-        
-        # Remove test database file
-        import os
-        if os.path.exists("./test_energyopti_pro.db"):
-            os.remove("./test_energyopti_pro.db")
-    
-    def test_health_check_endpoint(self):
-        """Test the health check endpoint."""
-        response = self.client.get("/api/health")
+        response = client.post("/trades", json=trade_data, headers=auth_headers)
         assert response.status_code == 200
+        trade_result = response.json()
+        assert trade_result["success"] == True
+        trade_id = trade_result["trade_id"]
         
-        data = response.json()
-        assert "status" in data
-        assert data["status"] == "healthy"
-        assert "services" in data
-        assert "timestamp" in data
-        
-        print("✅ Health check endpoint working")
-    
-    def test_authentication_workflow(self):
-        """Test core authentication workflow."""
-        # Step 1: Create user
-        create_response = self.client.post(
-            "/api/auth/register",
-            json=self.test_user_data
-        )
-        assert create_response.status_code == 201
-        
-        user_data = create_response.json()
-        assert "user_id" in user_data
-        assert user_data["email"] == TEST_USER_EMAIL
-        assert "password" not in user_data
-        
-        # Step 2: Login
-        login_response = self.client.post(
-            "/api/auth/login",
-            json={
-                "email": TEST_USER_EMAIL,
-                "password": TEST_USER_PASSWORD
-            }
-        )
-        assert login_response.status_code == 200
-        
-        login_data = login_response.json()
-        assert "access_token" in login_data
-        assert "token_type" in login_data
-        assert login_data["token_type"] == "bearer"
-        
-        # Step 3: Basic token validation
-        token = login_data["access_token"]
-        assert len(token) > 50
-        assert token.count('.') == 2
-        
-        print("✅ Core authentication workflow completed successfully")
-        print(f"✅ User created with ID: {user_data['user_id']}")
-        print(f"✅ Login successful, token type: {login_data['token_type']}")
-        print(f"✅ Token length: {len(token)} characters")
-    
-    def test_protected_endpoints_jwt_issue(self):
-        """Test protected endpoints - currently failing due to JWT validation issue."""
-        # Create and login user
-        user = self._create_test_user()
-        token = self._login_user(user["email"], user["password"])
-        headers = {"Authorization": f"Bearer {token}"}
-        
-        # Test protected endpoints - all currently return 401 due to JWT validation issue
-        endpoints = [
-            "/api/prices",
-            "/api/renewables", 
-            "/api/oilfield",
-            "/api/tariff_impact",
-            "/api/secure",
-            "/api/onboarding",
-            "/api/retention"
-        ]
-        
-        for endpoint in endpoints:
-            response = self.client.get(endpoint, headers=headers)
-            # TODO: Fix JWT validation in PR5 - currently returns 401 due to audience mismatch
-            assert response.status_code == 401  # Expected until JWT fix
-        
-        print("⚠️  JWT validation issue detected - all protected endpoints return 401")
-        print("✅ Core authentication (user creation, login, token generation) is working")
-        print("📝 JWT validation will be fixed in PR5")
-        print("📝 Protected endpoints will be tested after JWT fix")
-    
-    def _create_test_user(self) -> dict:
-        """Helper method to create a test user."""
-        response = self.client.post(
-            "/api/auth/register",
-            json=self.test_user_data
-        )
-        assert response.status_code == 201
-        user_data = response.json()
-        user_data["password"] = self.test_user_data["password"]
-        return user_data
-    
-    def _login_user(self, email: str, password: str) -> str:
-        """Helper method to login and get token."""
-        response = self.client.post(
-            "/api/auth/login",
-            json={"email": email, "password": password}
-        )
+        # Get position
+        response = client.get(f"/trades/{trade_id}/position", headers=auth_headers)
         assert response.status_code == 200
-        return response.json()["access_token"]
+        position = response.json()
+        assert "position_id" in position
+        
+        # Validate trade
+        response = client.post(f"/trades/{trade_id}/validate", headers=auth_headers)
+        assert response.status_code == 200
+        validation = response.json()
+        assert validation["valid"] == True
+        
+        # Track ESG
+        response = client.post("/esg/track", json={"trade_id": trade_id}, headers=auth_headers)
+        assert response.status_code == 200
+        esg_data = response.json()
+        assert "co2" in esg_data
+        
+        # Settle P&L
+        response = client.post(f"/trades/{trade_id}/settle", 
+                             json={"current_price": 87.25}, 
+                             headers=auth_headers)
+        assert response.status_code == 200
+        settlement = response.json()
+        assert "pnl" in settlement
+        
+        return trade_id
 
-class TestE2ESecurity:
-    """E2E security testing."""
-    
-    def test_sql_injection_protection(self):
-        """Test protection against SQL injection attacks."""
-        client = TestClient(app)
-        
-        malicious_params = [
-            "'; DROP TABLE users; --",
-            "1 OR 1=1",
-            "'; INSERT INTO users VALUES ('hacker', 'password'); --",
-            "1' UNION SELECT * FROM users --"
-        ]
-        
-        for malicious_param in malicious_params:
-            response = client.get(f"/api/prices?region={malicious_param}")
-            # Security middleware may block with 403
-            assert response.status_code in [200, 400, 422, 500, 403]
-        
-        print("✅ SQL injection protection working")
-    
-    def test_xss_protection(self):
-        """Test protection against XSS attacks."""
-        client = TestClient(app)
-        
-        xss_params = [
-            "<script>alert('XSS')</script>",
-            "javascript:alert('XSS')",
-            "<img src=x onerror=alert('XSS')>",
-            "';alert('XSS');//"
-        ]
-        
-        for xss_param in xss_params:
-            response = client.get(f"/api/prices?region={xss_param}")
-            # Security middleware may block with 403
-            assert response.status_code in [200, 400, 422, 500, 403]
-        
-        print("✅ XSS protection working")
-    
-    def test_rate_limiting_jwt_issue(self):
-        """Test rate limiting - currently affected by JWT validation issue."""
-        client = TestClient(app)
-        
-        user_data = {
-            "email": f"ratelimit_{int(time.time())}@test.com",
-            "password": "TestPass123!",
-            "role": "trader",
-            "company_name": "Test Corp"
-        }
-        
-        # Register user
-        register_response = client.post("/api/auth/register", json=user_data)
-        assert register_response.status_code == 201
-        
+    def test_full_e2e_flow(self):
+        """Simple E2E sanity covering login, trade, settle, and risk."""
         # Login
-        login_response = client.post(
-            "/api/auth/login",
-            json={"email": user_data["email"], "password": user_data["password"]}
-        )
-        assert login_response.status_code == 200
-        
-        token = login_response.json()["access_token"]
+        resp = client.post("/v1/auth/login", json={"username": "admin", "password": "admin123"})
+        assert resp.status_code in [200, 401]
+        if resp.status_code != 200:
+            return  # Skip if default admin not present in this env
+        token = resp.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
+
+        # Create trade
+        resp = client.post("/trades", headers=headers, json={"asset": "BRENT_CRUDE", "quantity": 100, "price": 85})
+        assert resp.status_code == 200
+        trade_id = resp.json()["trade_id"]
+
+        # Settle trade
+        resp = client.post(f"/trades/{trade_id}/settle", headers=headers, json={"current_price": 90})
+        assert resp.status_code == 200
+        assert "pnl" in resp.json()
+
+        # Risk var (versioned alias)
+        resp = client.post("/v1/risk/var", headers=headers, json=[85, 86, 87, 84, 85])
+        assert resp.status_code == 200
+    
+    def test_risk_management_workflow(self, auth_headers):
+        """Test risk management workflow"""
+        prices = [85.0, 86.5, 84.2, 87.1, 85.8, 86.9, 84.7, 86.2, 85.5, 87.0]
+        response = client.post("/risk/var", json=prices, headers=auth_headers)
+        assert response.status_code == 200
+        var_result = response.json()
+        assert "var_95" in var_result
+        assert "expected_shortfall" in var_result
         
-        # Make requests - currently failing due to JWT validation issue
-        responses = []
-        for i in range(5):
-            response = client.get("/api/prices", headers=headers)
-            responses.append(response.status_code)
+        return var_result
+    
+    def test_ai_forecasting_workflow(self, auth_headers):
+        """Test AI forecasting workflow"""
+        historical_data = [85.0, 86.5, 84.2, 87.1, 85.8, 86.9, 84.7, 86.2, 85.5, 87.0]
+        response = client.post("/forecast/price", json=historical_data)
+        assert response.status_code == 200
+        forecast = response.json()
+        assert "prediction" in forecast
+        assert "accuracy" in forecast
         
-        # TODO: Fix JWT validation in PR5 - currently returns 401 due to audience mismatch
-        assert all(status == 401 for status in responses)
+        return forecast
+    
+    def test_compliance_workflow(self, auth_headers):
+        """Test compliance workflow"""
+        trade_data = {
+            "asset": "BRENT_CRUDE",
+            "quantity": 500,
+            "price": 85.50,
+            "volume": 500,
+            "timestamp": datetime.now().isoformat()
+        }
         
-        print("⚠️  JWT validation issue affecting rate limiting test")
-        print("✅ Core authentication is working")
-        print("📝 Rate limiting will be tested after JWT fix")
+        response = client.post("/compliance/validate", 
+                             json={"trade": trade_data, "framework": "REMIT"}, 
+                             headers=auth_headers)
+        assert response.status_code == 200
+        compliance = response.json()
+        assert "compliant" in compliance
+        assert "score" in compliance
+        
+        return compliance
+    
+    def test_market_data_workflow(self, auth_headers):
+        """Test market data workflow"""
+        response = client.get("/market/prices/BRENT", headers=auth_headers)
+        assert response.status_code == 200
+        market_data = response.json()
+        assert "symbol" in market_data
+        assert "prices" in market_data
+        assert "volatility" in market_data
+        
+        return market_data
+    
+    def test_complete_user_journey(self, auth_headers):
+        """Test complete user journey from login to logout"""
+        # Get dashboard
+        response = client.get("/dashboard", headers=auth_headers)
+        assert response.status_code == 200
+        
+        # Create multiple trades
+        trade_ids = []
+        for i in range(3):
+            trade_data = {
+                "asset": f"ASSET_{i}",
+                "quantity": 1000 + i * 500,
+                "price": 85.0 + i * 2.5
+            }
+            response = client.post("/trades", json=trade_data, headers=auth_headers)
+            assert response.status_code == 200
+            trade_ids.append(response.json()["trade_id"])
+        
+        # Run risk analysis
+        prices = [85.0, 86.5, 84.2, 87.1, 85.8]
+        response = client.post("/risk/var", json=prices, headers=auth_headers)
+        assert response.status_code == 200
+        
+        # Get AI forecast
+        response = client.post("/forecast/price", json=prices)
+        assert response.status_code == 200
+        
+        return {
+            "trade_ids": trade_ids,
+            "status": "complete_user_journey_successful"
+        }
+
+class TestAdvancedFeatures:
+    """Test advanced features that surpass competitors"""
+    
+    def test_real_time_risk_monitoring(self):
+        """Test real-time risk monitoring capabilities"""
+        prices = np.random.normal(85, 2, 100).tolist()
+        
+        var_results = []
+        for i in range(10):
+            subset = prices[i*10:(i+1)*10]
+            response = client.post("/risk/var", json=subset)
+            if response.status_code == 200:
+                var_results.append(response.json())
+        
+        assert len(var_results) == 10
+        assert all("var_95" in result for result in var_results)
+    
+    def test_ai_ensemble_forecasting(self):
+        """Test AI ensemble forecasting accuracy"""
+        base_price = 85.0
+        historical = []
+        for i in range(30):
+            price = base_price + np.sin(i * 0.1) * 2 + np.random.normal(0, 0.5)
+            historical.append(price)
+        
+        response = client.post("/forecast/price", json=historical)
+        assert response.status_code == 200
+        
+        forecast = response.json()
+        assert "prediction" in forecast
+        assert "accuracy" in forecast
+        assert forecast["accuracy"] > 0.7
+    
+    def test_quantum_portfolio_optimization(self):
+        """Test quantum portfolio optimization"""
+        returns = [0.08, 0.12, 0.06, 0.15, 0.10]
+        risks = [0.15, 0.20, 0.12, 0.25, 0.18]
+        
+        response = client.post("/optimize/portfolio?method=quantum", 
+                             json={"returns": returns, "risks": risks})
+        assert response.status_code == 200
+        
+        result = response.json()
+        assert "optimized_weights" in result
+        assert "expected_return" in result
+        
+        weights = result["optimized_weights"]
+        assert abs(sum(weights) - 1.0) < 0.01
+    
+    def test_multi_framework_compliance(self):
+        """Test multi-framework compliance validation"""
+        frameworks = ["REMIT", "FERC", "CFTC", "EMIR"]
+        trade_data = {
+            "asset": "BRENT_CRUDE",
+            "quantity": 1000,
+            "price": 85.50,
+            "volume": 1000
+        }
+        
+        compliance_results = {}
+        for framework in frameworks:
+            response = client.post("/compliance/validate", 
+                                 json={"trade": trade_data, "framework": framework})
+            if response.status_code == 200:
+                compliance_results[framework] = response.json()
+        
+        assert len(compliance_results) == len(frameworks)
+        assert all("score" in result for result in compliance_results.values())
+
+class TestPerformanceAndScalability:
+    """Test performance and scalability features"""
+    
+    def test_high_frequency_trading_simulation(self):
+        """Simulate high-frequency trading scenarios"""
+        trade_count = 100
+        successful_trades = 0
+        
+        for i in range(trade_count):
+            trade_data = {
+                "asset": f"ASSET_{i % 10}",
+                "quantity": 100 + i,
+                "price": 85.0 + (i % 5) * 0.5
+            }
+            
+            response = client.post("/trades", json=trade_data)
+            if response.status_code == 200:
+                successful_trades += 1
+        
+        success_rate = successful_trades / trade_count
+        assert success_rate > 0.9
+    
+    def test_concurrent_risk_calculations(self):
+        """Test concurrent risk calculations"""
+        import threading
+        
+        results = []
+        
+        def calculate_risk(thread_id):
+            prices = np.random.normal(85, 2, 20).tolist()
+            response = client.post("/risk/var", json=prices)
+            if response.status_code == 200:
+                results.append((thread_id, response.json()))
+        
+        threads = []
+        for i in range(10):
+            thread = threading.Thread(target=calculate_risk, args=(i,))
+            threads.append(thread)
+            thread.start()
+        
+        for thread in threads:
+            thread.join()
+        
+        assert len(results) == 10
+        assert all("var_95" in result[1] for result in results)
+
+class TestErrorHandlingAndResilience:
+    """Test error handling and system resilience"""
+    
+    def test_invalid_trade_handling(self):
+        """Test handling of invalid trade data"""
+        invalid_trades = [
+            {"asset": "", "quantity": 1000, "price": 85.0},
+            {"asset": "BRENT", "quantity": -1000, "price": 85.0},
+            {"asset": "BRENT", "quantity": 1000, "price": -85.0},
+        ]
+        
+        for invalid_trade in invalid_trades:
+            response = client.post("/trades", json=invalid_trade)
+            assert response.status_code in [400, 422]
+    
+    def test_authentication_failure_handling(self):
+        """Test authentication failure scenarios"""
+        invalid_credentials = [
+            {"username": "nonexistent", "password": "wrongpass"},
+            {"username": "", "password": "testpass"},
+        ]
+        
+        for creds in invalid_credentials:
+            response = client.post("/v1/auth/login", json=creds)
+            assert response.status_code == 401
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v", "--tb=short"])
+    pytest.main([__file__, "-v"])

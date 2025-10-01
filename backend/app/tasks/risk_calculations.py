@@ -34,7 +34,7 @@ def calculate_var_monte_carlo(self, portfolio_data: Dict[str, Any],
                             time_horizon: int = 1,
                             tenant_id: str = "system") -> Dict[str, Any]:
     """
-    Calculate Value at Risk using Monte Carlo simulation
+    Calculate Value at Risk using Monte Carlo simulation - SECURE VERSION
     
     Args:
         portfolio_data: Portfolio positions and market data
@@ -47,6 +47,31 @@ def calculate_var_monte_carlo(self, portfolio_data: Dict[str, Any],
         VaR calculation results
     """
     try:
+        # SECURITY: Validate inputs to prevent RCE/DoS attacks
+        if not isinstance(portfolio_data, dict):
+            raise ValueError("Portfolio data must be a dictionary")
+        
+        if confidence_level < 0.01 or confidence_level > 0.99:
+            raise ValueError("Confidence level must be between 0.01 and 0.99")
+        
+        if num_simulations < 100 or num_simulations > 100000:
+            raise ValueError("Number of simulations must be between 100 and 100,000")
+        
+        if time_horizon < 1 or time_horizon > 365:
+            raise ValueError("Time horizon must be between 1 and 365 days")
+        
+        if not isinstance(tenant_id, str) or len(tenant_id) > 100:
+            raise ValueError("Invalid tenant ID")
+        
+        # SECURITY: Validate portfolio data structure
+        required_keys = ['positions', 'market_data']
+        for key in required_keys:
+            if key not in portfolio_data:
+                raise ValueError(f"Missing required key: {key}")
+        
+        positions = portfolio_data.get("positions", [])
+        if not isinstance(positions, list) or len(positions) > 1000:
+            raise ValueError("Invalid positions data - potential DoS risk")
         logger.info("Starting Monte Carlo VaR calculation", 
                    tenant_id=tenant_id, 
                    num_simulations=num_simulations,
@@ -61,15 +86,16 @@ def calculate_var_monte_carlo(self, portfolio_data: Dict[str, Any],
         if not positions or not market_data:
             raise ValueError("Invalid portfolio data")
         
-        # Use multiprocessing for CPU-intensive calculations
-        with ProcessPoolExecutor(max_workers=mp.cpu_count()) as executor:
-            # Split simulations across processes
-            chunk_size = num_simulations // mp.cpu_count()
+        # SECURITY: Limit multiprocessing to prevent resource exhaustion
+        max_workers = min(mp.cpu_count(), 8)  # Cap at 8 workers
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            # SECURITY: Split simulations across processes with safe chunking
+            chunk_size = max(1, num_simulations // max_workers)
             futures = []
             
-            for i in range(mp.cpu_count()):
+            for i in range(max_workers):
                 chunk_start = i * chunk_size
-                chunk_end = chunk_start + chunk_size if i < mp.cpu_count() - 1 else num_simulations
+                chunk_end = chunk_start + chunk_size if i < max_workers - 1 else num_simulations
                 
                 future = executor.submit(
                     _monte_carlo_chunk,

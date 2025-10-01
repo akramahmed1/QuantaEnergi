@@ -2,7 +2,7 @@
 Trade Schema - ETRM/CTRM Trade Models
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -13,6 +13,44 @@ class TradeStatus(str, Enum):
     CONFIRMED = "confirmed"
     SETTLED = "settled"
     CANCELLED = "cancelled"
+
+class OrderType(str, Enum):
+    MARKET = "market"
+    LIMIT = "limit"
+    STOP = "stop"
+    STOP_LIMIT = "stop_limit"
+
+class TradeRequest(BaseModel):
+    """Schema for trade requests with conditional validation"""
+    commodity: str
+    asset: str
+    volume: float
+    order_type: OrderType = OrderType.MARKET
+    price: Optional[float] = None
+    region: str
+    counterparty: str
+    trade_date: datetime
+    settlement_date: Optional[datetime] = None
+    currency: str = "USD"
+    trade_type: str = "spot"
+    description: Optional[str] = None
+
+    @validator('price')
+    def validate_price_for_limit_orders(cls, v, values):
+        """Validate that price is required for LIMIT orders"""
+        order_type = values.get('order_type')
+        if order_type == OrderType.LIMIT and v is None:
+            raise ValueError('Price is required for LIMIT orders')
+        if order_type == OrderType.STOP_LIMIT and v is None:
+            raise ValueError('Price is required for STOP_LIMIT orders')
+        return v
+
+    @validator('volume')
+    def validate_volume(cls, v):
+        """Validate volume is positive"""
+        if v <= 0:
+            raise ValueError('Volume must be positive')
+        return v
 
 class TradeCapture(BaseModel):
     asset: str

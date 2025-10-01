@@ -32,6 +32,10 @@ interface RiskAssessment {
   overall_risk: number;
 }
 
+interface ChartDataInput {
+  [key: string]: any;
+}
+
 const QuantumOptimization: React.FC = () => {
   const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
   const [riskAssessment, setRiskAssessment] = useState<RiskAssessment | null>(null);
