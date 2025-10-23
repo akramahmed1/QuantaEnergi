@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
-const PriceDisplay = () => {
-  const [priceData, setPriceData] = useState(null);
+interface PriceData {
+  source: string;
+  data: string;
+  explanation: string;
+}
+
+const PriceDisplay: React.FC = () => {
+  const [priceData, setPriceData] = useState<PriceData | null>(null);
   
   useEffect(() => {
     // Simulate API call with local data

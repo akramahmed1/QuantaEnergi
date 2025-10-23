@@ -18,7 +18,7 @@ from app.schemas.risk import VarRequest
 from app.services.risk import RiskCalculator
 from app.services.compliance import screen_trade
 from app.services.logistics import InventoryTracker
-from app.services.settlement import generate_invoice
+from app.services.settlement_management import SettlementManagementService
 from app.services.ai_forecasting import forecasting_engine, ModelType
 from app.services.quantum_optimization import quantum_optimizer, OptimizationObjective
 from app.services.ai_insights import ai_insights_engine
@@ -902,7 +902,11 @@ async def track_delivery(req: dict):
 async def generate_invoice_endpoint(req: dict):
     """Generate invoice for trade settlement with multi-currency support"""
     try:
-        invoice = generate_invoice(req['trade_id'], req['region'])
+        settlement_service = SettlementManagementService()
+        invoice = await settlement_service.generate_invoice(
+            trade_id=req['trade_id'],
+            region=req['region']
+        )
         return invoice
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate invoice: {str(e)}")

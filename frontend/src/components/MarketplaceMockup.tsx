@@ -1,6 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 
-const MarketplaceMockup = () => {
+const MarketplaceMockup: React.FC = () => {
   return (
     <div className="p-4 bg-orange-100 rounded m-2">
       <h2 className="text-xl font-bold text-orange-800">🏪 Energy Marketplace</h2>
