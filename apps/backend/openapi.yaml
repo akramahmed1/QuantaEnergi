@@ -1,0 +1,1117 @@
+openapi: 3.0.3
+info:
+  title: QuantaEnergi ETRM/CTRM API
+  description: |
+    Comprehensive Energy Trading and Risk Management (ETRM/CTRM) API for QuantaEnergi.
+    
+    ## Features
+    - **Energy Trading**: Capture, manage, and execute energy trades
+    - **Risk Management**: Advanced VaR calculations, stress testing, and portfolio analytics
+    - **AI Forecasting**: Machine learning-powered price predictions and market analysis
+    - **ESG Integration**: Environmental, Social, and Governance metrics and scoring
+    - **Real-time Data**: Live market data, weather integration, and trading signals
+    - **Quantum Computing**: Quantum-enhanced portfolio optimization and risk analysis
+    - **Compliance**: Regulatory compliance and sanctions screening
+    - **Logistics**: Physical delivery tracking and settlement management
+    
+    ## Authentication
+    All endpoints require JWT authentication via Bearer token in the Authorization header.
+    
+    ## Rate Limiting
+    - Standard endpoints: 1000 requests/hour
+    - AI/ML endpoints: 100 requests/hour
+    - Quantum endpoints: 10 requests/hour
+    
+  version: 2.0.0
+  contact:
+    name: QuantaEnergi Team
+    email: team@quantaenergi.com
+    url: https://github.com/akramahmed1/QuantaEnergi
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:8000
+    description: Local Development Server
+  - url: https://quantaenergi-backend.railway.app
+    description: Production Server (Railway)
+  - url: https://api.quantaenergi.com
+    description: Production API Gateway
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Health & Monitoring
+    description: System health and monitoring endpoints
+  - name: Trading
+    description: Trade capture, execution, and lifecycle management
+  - name: Risk Management
+    description: Risk calculations, VaR, stress testing, and portfolio analytics
+  - name: Market Data
+    description: Real-time market data, prices, and analytics
+  - name: AI & Forecasting
+    description: AI-powered forecasting and machine learning insights
+  - name: ESG
+    description: Environmental, Social, and Governance metrics
+  - name: Weather
+    description: Weather data integration for energy trading
+  - name: Portfolio
+    description: Portfolio management and optimization
+  - name: Compliance
+    description: Regulatory compliance and sanctions screening
+  - name: Logistics
+    description: Physical delivery tracking and settlement
+  - name: Quantum Computing
+    description: Quantum-enhanced optimization and risk analysis
+  - name: Billing
+    description: Subscription and billing management
+  - name: Admin
+    description: Administrative functions and system monitoring
+security:
+  - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TradeCreate:
+      type: object
+      required:
+        - asset
+        - quantity
+        - price
+      properties:
+        asset:
+          type: string
+          enum: [oil, gas, electricity, carbon_credits]
+          description: Energy commodity type
+        quantity:
+          type: number
+          format: float
+          minimum: 0
+          description: Trade quantity
+        price:
+          type: number
+          format: float
+          minimum: 0
+          description: Price per unit
+        region:
+          type: string
+          enum: [me, guyana, us, uk, eu]
+          description: Trading region
+        amendments:
+          type: array
+          items:
+            type: object
+          description: Optional trade amendments
+      example:
+        asset: "oil"
+        quantity: 1000.0
+        price: 85.50
+        region: "me"
+        amendments: [{"type": "quality_adjustment", "value": 0.5}]
+    
+    TradeResponse:
+      type: object
+      properties:
+        trade_id:
+          type: string
+          description: Unique trade identifier
+        status:
+          type: string
+          enum: [captured, pending_review, rejected]
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        forecast_validation:
+          type: object
+          description: AI forecast validation results
+    
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          default: bearer
+        user_id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        company_name:
+          type: string
+    
+    VaRRequest:
+      type: object
+      required:
+        - positions
+      properties:
+        positions:
+          type: array
+          items:
+            type: object
+            properties:
+              commodity:
+                type: string
+              value:
+                type: number
+              volatility:
+                type: number
+              quantity:
+                type: number
+              price:
+                type: number
+        confidence_level:
+          type: number
+          minimum: 0.5
+          maximum: 0.99
+          default: 0.95
+        time_horizon:
+          type: integer
+          minimum: 1
+          maximum: 30
+          default: 1
+        num_simulations:
+          type: integer
+          minimum: 1000
+          maximum: 100000
+          default: 10000
+    
+    VaRResponse:
+      type: object
+      properties:
+        var_95:
+          type: number
+        var_99:
+          type: number
+        expected_shortfall_95:
+          type: number
+        expected_shortfall_99:
+          type: number
+        portfolio_risk_score:
+          type: number
+        calculated_at:
+          type: string
+          format: date-time
+        method:
+          type: string
+    
+    PortfolioSummary:
+      type: object
+      properties:
+        total_value:
+          type: number
+        cash:
+          type: number
+        invested:
+          type: number
+        daily_change:
+          type: number
+        monthly_change:
+          type: number
+        yearly_change:
+          type: number
+        positions:
+          type: array
+          items:
+            type: object
+            properties:
+              commodity:
+                type: string
+              quantity:
+                type: number
+              avg_price:
+                type: number
+              current_price:
+                type: number
+              market_value:
+                type: number
+              unrealized_pnl:
+                type: number
+              weight:
+                type: number
+        risk_metrics:
+          type: object
+          properties:
+            var_95:
+              type: number
+            var_99:
+              type: number
+            sharpe_ratio:
+              type: number
+            beta:
+              type: number
+            alpha:
+              type: number
+    
+    MarketPrices:
+      type: object
+      properties:
+        crude_oil:
+          type: object
+          properties:
+            price:
+              type: number
+            change:
+              type: string
+            volume:
+              type: integer
+            source:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+        natural_gas:
+          type: object
+          properties:
+            price:
+              type: number
+            change:
+              type: string
+            volume:
+              type: integer
+            source:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+        electricity:
+          type: object
+          properties:
+            price:
+              type: number
+            change:
+              type: string
+            volume:
+              type: integer
+            source:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+        carbon_credits:
+          type: object
+          properties:
+            price:
+              type: number
+            change:
+              type: string
+            volume:
+              type: integer
+            source:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+    
+    ESGResponse:
+      type: object
+      properties:
+        overall_esg_score:
+          type: number
+        environmental_score:
+          type: number
+        social_score:
+          type: number
+        governance_score:
+          type: number
+        carbon_offset:
+          type: number
+        renewable_ratio:
+          type: number
+        sustainability_score:
+          type: number
+        climate_risk_score:
+          type: number
+        social_impact_score:
+          type: number
+        governance_quality:
+          type: number
+        esg_trend:
+          type: string
+        esg_rank:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    
+    WeatherData:
+      type: object
+      properties:
+        temp:
+          type: number
+        humidity:
+          type: integer
+        description:
+          type: string
+        wind_speed:
+          type: number
+        pressure:
+          type: integer
+        visibility:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        location:
+          type: object
+          properties:
+            lat:
+              type: number
+            lon:
+              type: number
+        source:
+          type: string
+    
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+        error_code:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health & Monitoring
+      summary: Health check
+      description: Check if the API is healthy and operational
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+  
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and receive JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login (v1)
+      description: Authenticate user and receive JWT token (v1 endpoint)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/v1/trade/capture:
+    post:
+      tags:
+        - Trading
+      summary: Capture energy trade
+      description: Capture a new energy trade with AI forecast validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradeCreate'
+      responses:
+        '200':
+          description: Trade captured successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeResponse'
+        '400':
+          description: Invalid trade data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Sanctions screening failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/v1/risk/var:
+    get:
+      tags:
+        - Risk Management
+      summary: Calculate Value at Risk
+      description: Calculate VaR for given positions
+      parameters:
+        - name: portfolio_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Portfolio ID for VaR calculation
+        - name: confidence
+          in: query
+          schema:
+            type: number
+            minimum: 0.5
+            maximum: 0.99
+            default: 0.95
+          description: Confidence level for VaR
+        - name: include_stress_test
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include stress test results
+      responses:
+        '200':
+          description: VaR calculation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VaRResponse'
+        '500':
+          description: VaR calculation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/v1/risk/stress-test:
+    get:
+      tags:
+        - Risk Management
+      summary: Portfolio stress testing
+      description: Perform stress testing on a portfolio
+      parameters:
+        - name: portfolio_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Portfolio ID for stress testing
+        - name: scenarios
+          in: query
+          schema:
+            type: string
+            default: "market_crash,oil_price_shock,interest_rate_spike"
+          description: Comma-separated list of stress test scenarios
+      responses:
+        '200':
+          description: Stress test completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portfolio_id:
+                    type: string
+                  scenarios_tested:
+                    type: array
+                    items:
+                      type: string
+                  stress_test_results:
+                    type: object
+                  calculated_at:
+                    type: string
+                    format: date-time
+        '500':
+          description: Stress test failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/portfolio/summary:
+    get:
+      tags:
+        - Portfolio
+      summary: Portfolio summary
+      description: Get portfolio summary and performance metrics
+      responses:
+        '200':
+          description: Portfolio summary retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioSummary'
+        '500':
+          description: Portfolio summary failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/market/prices:
+    get:
+      tags:
+        - Market Data
+      summary: Market prices
+      description: Get real-time market prices for energy commodities
+      parameters:
+        - name: region
+          in: query
+          schema:
+            type: string
+            default: "global"
+          description: Market region
+        - name: ramadan_mode
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Ramadan trading mode
+      responses:
+        '200':
+          description: Market prices retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketPrices'
+        '500':
+          description: Market prices fetch failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/esg/metrics:
+    get:
+      tags:
+        - ESG
+      summary: ESG metrics
+      description: Get comprehensive ESG metrics and scoring
+      responses:
+        '200':
+          description: ESG metrics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ESGResponse'
+        '500':
+          description: ESG metrics generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/weather/current:
+    get:
+      tags:
+        - Weather
+      summary: Current weather data
+      description: Get current weather data for energy trading analysis
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+            default: 33.44
+          description: Latitude
+        - name: lon
+          in: query
+          schema:
+            type: number
+            default: -94.04
+          description: Longitude
+      responses:
+        '200':
+          description: Weather data retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeatherData'
+        '500':
+          description: Weather data fetch failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/weather/forecast:
+    get:
+      tags:
+        - Weather
+      summary: Weather forecast
+      description: Get weather forecast for energy demand prediction
+      parameters:
+        - name: lat
+          in: query
+          schema:
+            type: number
+            default: 33.44
+          description: Latitude
+        - name: lon
+          in: query
+          schema:
+            type: number
+            default: -94.04
+          description: Longitude
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 7
+          description: Number of days to forecast
+      responses:
+        '200':
+          description: Weather forecast retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  forecasts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        time:
+                          type: string
+                        temp:
+                          type: number
+                        description:
+                          type: string
+                        humidity:
+                          type: integer
+                        wind_speed:
+                          type: number
+                        energy_impact:
+                          type: string
+                  location:
+                    type: object
+                    properties:
+                      lat:
+                        type: number
+                      lon:
+                        type: number
+                  generated_at:
+                    type: string
+                    format: date-time
+                  source:
+                    type: string
+        '500':
+          description: Weather forecast generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/analytics:
+    get:
+      tags:
+        - Market Data
+      summary: User analytics
+      description: Get comprehensive user analytics for dashboard
+      responses:
+        '200':
+          description: Analytics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  portfolio_value:
+                    type: number
+                  daily_return:
+                    type: number
+                  monthly_return:
+                    type: number
+                  yearly_return:
+                    type: number
+                  risk_score:
+                    type: number
+                  esg_score:
+                    type: number
+                  market_perf:
+                    type: string
+                  trading_volume:
+                    type: number
+                  open_positions:
+                    type: integer
+                  total_trades:
+                    type: integer
+                  win_rate:
+                    type: number
+                  sharpe_ratio:
+                    type: number
+                  max_drawdown:
+                    type: number
+                  volatility:
+                    type: number
+                  beta:
+                    type: number
+                  alpha:
+                    type: number
+                  esg_metrics:
+                    type: object
+                  risk_metrics:
+                    type: object
+                  timestamp:
+                    type: string
+                    format: date-time
+        '500':
+          description: Analytics generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/signals:
+    get:
+      tags:
+        - AI & Forecasting
+      summary: Trading signals
+      description: Get AI-powered trading signals
+      parameters:
+        - name: commodity
+          in: query
+          schema:
+            type: string
+          description: Filter by commodity
+        - name: confidence_min
+          in: query
+          schema:
+            type: number
+            default: 50.0
+          description: Minimum confidence score
+      responses:
+        '200':
+          description: Trading signals retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signals:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        signal:
+                          type: string
+                          enum: [BUY, SELL, HOLD]
+                        commodity:
+                          type: string
+                        confidence:
+                          type: number
+                        price:
+                          type: number
+                        target:
+                          type: number
+                        stop_loss:
+                          type: number
+                        timeframe:
+                          type: string
+                        source:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
+                        risk:
+                          type: string
+                        volume:
+                          type: string
+                        trend:
+                          type: string
+                        esg_impact:
+                          type: string
+                  count:
+                    type: integer
+        '500':
+          description: Trading signals generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/forecast/energy:
+    get:
+      tags:
+        - AI & Forecasting
+      summary: Energy price forecast
+      description: Get AI-powered energy price forecasts
+      parameters:
+        - name: commodity
+          in: query
+          schema:
+            type: string
+            default: "crude_oil"
+          description: Energy commodity
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+          description: Forecast period in days
+      responses:
+        '200':
+          description: Energy forecast retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commodity:
+                    type: string
+                  forecasts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        price:
+                          type: number
+                        confidence:
+                          type: number
+                        factors:
+                          type: string
+                        trend:
+                          type: string
+                        volatility:
+                          type: number
+                  summary:
+                    type: object
+                    properties:
+                      start_price:
+                        type: number
+                      end_price:
+                        type: number
+                      total_change:
+                        type: number
+                      percent_change:
+                        type: number
+                      avg_volatility:
+                        type: number
+                  generated_at:
+                    type: string
+                    format: date-time
+                  model:
+                    type: string
+        '500':
+          description: Energy forecast generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/trades/recent:
+    get:
+      tags:
+        - Trading
+      summary: Recent trades
+      description: Get recent trading history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of recent trades
+      responses:
+        '200':
+          description: Recent trades retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trades:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        commodity:
+                          type: string
+                        type:
+                          type: string
+                          enum: [BUY, SELL]
+                        quantity:
+                          type: integer
+                        price:
+                          type: number
+                        total_value:
+                          type: number
+                        timestamp:
+                          type: string
+                          format: date-time
+                        status:
+                          type: string
+                        commission:
+                          type: number
+                        strategy:
+                          type: string
+                  count:
+                    type: integer
+        '500':
+          description: Recent trades generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/renewables:
+    get:
+      tags:
+        - Market Data
+      summary: Renewable energy data
+      description: Get renewable energy production data
+      responses:
+        '200':
+          description: Renewable energy data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wind:
+                    type: integer
+                  solar:
+                    type: integer
+                  hydro:
+                    type: integer
+                  biomass:
+                    type: integer
+                  geothermal:
+                    type: integer
+                  total:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+                  efficiency:
+                    type: number
+                  carbon_savings:
+                    type: integer
+        '500':
+          description: Renewable energy data generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/status:
+    get:
+      tags:
+        - Health & Monitoring
+      summary: API status
+      description: Get comprehensive API status
+      responses:
+        '200':
+          description: API status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  version:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  endpoints:
+                    type: object
+                  features:
+                    type: object
+        '500':
+          description: API status check failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /api/test:
+    get:
+      tags:
+        - Health & Monitoring
+      summary: Test endpoint
+      description: Test endpoint for connectivity
+      responses:
+        '200':
+          description: API is working
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+        '500':
+          description: Test endpoint failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

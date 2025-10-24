@@ -1,0 +1,1261 @@
+{
+  "info": {
+    "name": "QuantaEnergi ETRM/CTRM API",
+    "description": "Comprehensive Energy Trading and Risk Management (ETRM/CTRM) API for QuantaEnergi. This collection includes all major endpoints for energy trading, risk management, AI forecasting, ESG metrics, and more.",
+    "version": "2.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "portfolio_id",
+      "value": "portfolio_001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user and receive JWT token"
+          },
+          "response": [
+            {
+              "name": "Successful Login",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"token_type\": \"bearer\",\n  \"user_id\": 1,\n  \"username\": \"admin\",\n  \"email\": \"admin@quantaenergi.com\",\n  \"role\": \"admin\",\n  \"company_name\": \"QuantaEnergi\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.access_token);",
+                  "    pm.collectionVariables.set('user_id', response.user_id);",
+                  "    console.log('Access token saved:', response.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (v1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "auth", "login"]
+            },
+            "description": "Authenticate user and receive JWT token (v1 endpoint)"
+          }
+        }
+      ],
+      "description": "User authentication and authorization endpoints"
+    },
+    {
+      "name": "Health & Monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the API is healthy and operational"
+          }
+        },
+        {
+          "name": "API Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "status"]
+            },
+            "description": "Get comprehensive API status"
+          }
+        },
+        {
+          "name": "Test Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/test",
+              "host": ["{{base_url}}"],
+              "path": ["api", "test"]
+            },
+            "description": "Test endpoint for connectivity"
+          }
+        }
+      ],
+      "description": "System health and monitoring endpoints"
+    },
+    {
+      "name": "Trading",
+      "item": [
+        {
+          "name": "Capture Trade",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset\": \"oil\",\n  \"volume\": 1000.0,\n  \"price\": 85.50,\n  \"region\": \"me\",\n  \"amendments\": [\n    {\n      \"type\": \"quality_adjustment\",\n      \"value\": 0.5\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/trade/capture",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "trade", "capture"]
+            },
+            "description": "Capture a new energy trade with AI forecast validation"
+          }
+        },
+        {
+          "name": "Recent Trades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trades/recent?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "trades", "recent"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of recent trades"
+                }
+              ]
+            },
+            "description": "Get recent trading history"
+          }
+        },
+        {
+          "name": "Create Trade (Trading Domain)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset\": \"crude_oil\",\n  \"quantity\": 500,\n  \"price\": 82.50,\n  \"trade_type\": \"BUY\",\n  \"strategy\": \"Momentum\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/trading/trades",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "trading", "trades"]
+            },
+            "description": "Create a new trade with real P&L calculations"
+          }
+        },
+        {
+          "name": "Get Position P&L",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/trading/positions/pos_001/pnl?current_price=85.50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "trading", "positions", "pos_001", "pnl"],
+              "query": [
+                {
+                  "key": "current_price",
+                  "value": "85.50",
+                  "description": "Current market price"
+                }
+              ]
+            },
+            "description": "Calculate real P&L for position"
+          }
+        },
+        {
+          "name": "Portfolio Summary (Trading)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/trading/portfolio/summary?user_id={{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "trading", "portfolio", "summary"],
+              "query": [
+                {
+                  "key": "user_id",
+                  "value": "{{user_id}}",
+                  "description": "User ID filter"
+                }
+              ]
+            },
+            "description": "Get portfolio summary with real calculations"
+          }
+        },
+        {
+          "name": "Reconcile Positions",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/trading/positions/reconcile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "trading", "positions", "reconcile"]
+            },
+            "description": "Reconcile all positions with current market data"
+          }
+        }
+      ],
+      "description": "Trade capture, execution, and lifecycle management"
+    },
+    {
+      "name": "Risk Management",
+      "item": [
+        {
+          "name": "Calculate VaR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/var?portfolio_id={{portfolio_id}}&confidence=0.95&include_stress_test=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "var"],
+              "query": [
+                {
+                  "key": "portfolio_id",
+                  "value": "{{portfolio_id}}",
+                  "description": "Portfolio ID for VaR calculation"
+                },
+                {
+                  "key": "confidence",
+                  "value": "0.95",
+                  "description": "Confidence level for VaR"
+                },
+                {
+                  "key": "include_stress_test",
+                  "value": "true",
+                  "description": "Include stress test results"
+                }
+              ]
+            },
+            "description": "Calculate Value at Risk for a portfolio"
+          }
+        },
+        {
+          "name": "Stress Test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/stress-test?portfolio_id={{portfolio_id}}&scenarios=market_crash,oil_price_shock,interest_rate_spike",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "stress-test"],
+              "query": [
+                {
+                  "key": "portfolio_id",
+                  "value": "{{portfolio_id}}",
+                  "description": "Portfolio ID for stress testing"
+                },
+                {
+                  "key": "scenarios",
+                  "value": "market_crash,oil_price_shock,interest_rate_spike",
+                  "description": "Comma-separated list of stress test scenarios"
+                }
+              ]
+            },
+            "description": "Perform stress testing on a portfolio"
+          }
+        },
+        {
+          "name": "Parametric VaR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"commodity\": \"crude_oil\",\n    \"value\": 4000000,\n    \"volatility\": 0.25,\n    \"quantity\": 1000,\n    \"price\": 80.0\n  },\n  {\n    \"commodity\": \"natural_gas\",\n    \"value\": 3000000,\n    \"volatility\": 0.35,\n    \"quantity\": 2000,\n    \"price\": 3.0\n  }\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/var/parametric?confidence_level=0.95&time_horizon=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "var", "parametric"],
+              "query": [
+                {
+                  "key": "confidence_level",
+                  "value": "0.95",
+                  "description": "Confidence level"
+                },
+                {
+                  "key": "time_horizon",
+                  "value": "1",
+                  "description": "Time horizon in days"
+                }
+              ]
+            },
+            "description": "Calculate parametric VaR using normal distribution assumption"
+          }
+        },
+        {
+          "name": "Monte Carlo VaR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"commodity\": \"crude_oil\",\n    \"value\": 4000000,\n    \"volatility\": 0.25,\n    \"quantity\": 1000,\n    \"price\": 80.0\n  },\n  {\n    \"commodity\": \"natural_gas\",\n    \"value\": 3000000,\n    \"volatility\": 0.35,\n    \"quantity\": 2000,\n    \"price\": 3.0\n  }\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/var/monte-carlo?confidence_level=0.95&time_horizon=1&num_simulations=10000",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "var", "monte-carlo"],
+              "query": [
+                {
+                  "key": "confidence_level",
+                  "value": "0.95",
+                  "description": "Confidence level"
+                },
+                {
+                  "key": "time_horizon",
+                  "value": "1",
+                  "description": "Time horizon in days"
+                },
+                {
+                  "key": "num_simulations",
+                  "value": "10000",
+                  "description": "Number of Monte Carlo simulations"
+                }
+              ]
+            },
+            "description": "Calculate VaR using Monte Carlo simulation with 10k paths"
+          }
+        },
+        {
+          "name": "Historical VaR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  0.02, -0.01, 0.03, -0.02, 0.01, 0.04, -0.01, 0.02, -0.03, 0.01,\n  0.02, -0.01, 0.03, -0.02, 0.01, 0.04, -0.01, 0.02, -0.03, 0.01\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/var/historical?confidence_level=0.95",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "var", "historical"],
+              "query": [
+                {
+                  "key": "confidence_level",
+                  "value": "0.95",
+                  "description": "Confidence level"
+                }
+              ]
+            },
+            "description": "Calculate VaR using historical simulation method"
+          }
+        },
+        {
+          "name": "Portfolio Risk Metrics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"commodity\": \"crude_oil\",\n    \"value\": 4000000,\n    \"volatility\": 0.25,\n    \"quantity\": 1000,\n    \"price\": 80.0\n  },\n  {\n    \"commodity\": \"natural_gas\",\n    \"value\": 3000000,\n    \"volatility\": 0.35,\n    \"quantity\": 2000,\n    \"price\": 3.0\n  }\n]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/risk/analytics/portfolio-metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "risk", "analytics", "portfolio-metrics"]
+            },
+            "description": "Calculate comprehensive portfolio risk metrics"
+          }
+        }
+      ],
+      "description": "Risk calculations, VaR, stress testing, and portfolio analytics"
+    },
+    {
+      "name": "Market Data",
+      "item": [
+        {
+          "name": "Market Prices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/market/prices?region=global&ramadan_mode=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "market", "prices"],
+              "query": [
+                {
+                  "key": "region",
+                  "value": "global",
+                  "description": "Market region"
+                },
+                {
+                  "key": "ramadan_mode",
+                  "value": "false",
+                  "description": "Ramadan trading mode"
+                }
+              ]
+            },
+            "description": "Get real-time market prices for energy commodities"
+          }
+        },
+        {
+          "name": "User Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics"]
+            },
+            "description": "Get comprehensive user analytics for dashboard"
+          }
+        },
+        {
+          "name": "Renewable Energy Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/renewables",
+              "host": ["{{base_url}}"],
+              "path": ["api", "renewables"]
+            },
+            "description": "Get renewable energy production data"
+          }
+        }
+      ],
+      "description": "Real-time market data, prices, and analytics"
+    },
+    {
+      "name": "AI & Forecasting",
+      "item": [
+        {
+          "name": "Trading Signals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/signals?commodity=crude_oil&confidence_min=70.0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "signals"],
+              "query": [
+                {
+                  "key": "commodity",
+                  "value": "crude_oil",
+                  "description": "Filter by commodity"
+                },
+                {
+                  "key": "confidence_min",
+                  "value": "70.0",
+                  "description": "Minimum confidence score"
+                }
+              ]
+            },
+            "description": "Get AI-powered trading signals"
+          }
+        },
+        {
+          "name": "Energy Price Forecast",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/forecast/energy?commodity=crude_oil&days=30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "forecast", "energy"],
+              "query": [
+                {
+                  "key": "commodity",
+                  "value": "crude_oil",
+                  "description": "Energy commodity"
+                },
+                {
+                  "key": "days",
+                  "value": "30",
+                  "description": "Forecast period in days"
+                }
+              ]
+            },
+            "description": "Get AI-powered energy price forecasts"
+          }
+        },
+        {
+          "name": "AI Forecast",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/forecast?commodity=crude_oil&model=ensemble&periods=30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "forecast"],
+              "query": [
+                {
+                  "key": "commodity",
+                  "value": "crude_oil",
+                  "description": "Commodity to forecast"
+                },
+                {
+                  "key": "model",
+                  "value": "ensemble",
+                  "description": "Forecasting model"
+                },
+                {
+                  "key": "periods",
+                  "value": "30",
+                  "description": "Forecast periods"
+                }
+              ]
+            },
+            "description": "Get AI-powered price forecasts"
+          }
+        },
+        {
+          "name": "Portfolio Optimization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\"crude_oil\", \"natural_gas\", \"electricity\"]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/optimize?objective=maximize_sharpe&use_quantum=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "optimize"],
+              "query": [
+                {
+                  "key": "objective",
+                  "value": "maximize_sharpe",
+                  "description": "Optimization objective"
+                },
+                {
+                  "key": "use_quantum",
+                  "value": "true",
+                  "description": "Use quantum optimization"
+                }
+              ]
+            },
+            "description": "Quantum-enhanced portfolio optimization"
+          }
+        },
+        {
+          "name": "AI Insights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/insights?commodities=crude_oil,natural_gas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "insights"],
+              "query": [
+                {
+                  "key": "commodities",
+                  "value": "crude_oil,natural_gas",
+                  "description": "Commodities to analyze"
+                }
+              ]
+            },
+            "description": "Get AI-powered trading insights and recommendations"
+          }
+        },
+        {
+          "name": "Scenario Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"crude_oil\": 0.4,\n  \"natural_gas\": 0.3,\n  \"electricity\": 0.3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ai/scenarios?scenario_type=stress_test&num_simulations=10000",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "ai", "scenarios"],
+              "query": [
+                {
+                  "key": "scenario_type",
+                  "value": "stress_test",
+                  "description": "Type of scenario analysis"
+                },
+                {
+                  "key": "num_simulations",
+                  "value": "10000",
+                  "description": "Number of Monte Carlo simulations"
+                }
+              ]
+            },
+            "description": "Run scenario analysis and stress testing"
+          }
+        }
+      ],
+      "description": "AI-powered forecasting and machine learning insights"
+    },
+    {
+      "name": "ESG",
+      "item": [
+        {
+          "name": "ESG Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/esg/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "esg", "metrics"]
+            },
+            "description": "Get comprehensive ESG metrics and scoring"
+          }
+        }
+      ],
+      "description": "Environmental, Social, and Governance metrics"
+    },
+    {
+      "name": "Weather",
+      "item": [
+        {
+          "name": "Current Weather",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/weather/current?lat=33.44&lon=-94.04",
+              "host": ["{{base_url}}"],
+              "path": ["api", "weather", "current"],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "33.44",
+                  "description": "Latitude"
+                },
+                {
+                  "key": "lon",
+                  "value": "-94.04",
+                  "description": "Longitude"
+                }
+              ]
+            },
+            "description": "Get current weather data for energy trading analysis"
+          }
+        },
+        {
+          "name": "Weather Forecast",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/weather/forecast?lat=33.44&lon=-94.04&days=7",
+              "host": ["{{base_url}}"],
+              "path": ["api", "weather", "forecast"],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "33.44",
+                  "description": "Latitude"
+                },
+                {
+                  "key": "lon",
+                  "value": "-94.04",
+                  "description": "Longitude"
+                },
+                {
+                  "key": "days",
+                  "value": "7",
+                  "description": "Number of days to forecast"
+                }
+              ]
+            },
+            "description": "Get weather forecast for energy demand prediction"
+          }
+        }
+      ],
+      "description": "Weather data integration for energy trading"
+    },
+    {
+      "name": "Portfolio",
+      "item": [
+        {
+          "name": "Portfolio Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/portfolio/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "portfolio", "summary"]
+            },
+            "description": "Get portfolio summary and performance metrics"
+          }
+        }
+      ],
+      "description": "Portfolio management and optimization"
+    },
+    {
+      "name": "Quantum Computing",
+      "item": [
+        {
+          "name": "Quantum Portfolio Optimization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\"crude_oil\", \"natural_gas\", \"electricity\"]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/quantum/optimize?use_real_hardware=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "quantum", "optimize"],
+              "query": [
+                {
+                  "key": "use_real_hardware",
+                  "value": "false",
+                  "description": "Use real quantum hardware"
+                }
+              ]
+            },
+            "description": "Quantum portfolio optimization using QAOA"
+          }
+        },
+        {
+          "name": "Quantum Risk Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"crude_oil\": 0.4,\n  \"natural_gas\": 0.3,\n  \"electricity\": 0.3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/quantum/risk?use_real_hardware=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "quantum", "risk"],
+              "query": [
+                {
+                  "key": "use_real_hardware",
+                  "value": "false",
+                  "description": "Use real quantum hardware"
+                }
+              ]
+            },
+            "description": "Quantum risk analysis using VQE"
+          }
+        },
+        {
+          "name": "Quantum Market Simulation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"volatility\": 0.25,\n  \"trend\": 0.01,\n  \"market_conditions\": \"normal\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/quantum/simulate?num_scenarios=1000&use_real_hardware=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "quantum", "simulate"],
+              "query": [
+                {
+                  "key": "num_scenarios",
+                  "value": "1000",
+                  "description": "Number of scenarios"
+                },
+                {
+                  "key": "use_real_hardware",
+                  "value": "false",
+                  "description": "Use real quantum hardware"
+                }
+              ]
+            },
+            "description": "Quantum market simulation using quantum Monte Carlo"
+          }
+        },
+        {
+          "name": "Quantum Capabilities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/quantum/capabilities",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "quantum", "capabilities"]
+            },
+            "description": "Get quantum computing capabilities"
+          }
+        }
+      ],
+      "description": "Quantum-enhanced optimization and risk analysis"
+    },
+    {
+      "name": "Billing",
+      "item": [
+        {
+          "name": "Create Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{user_id}}\",\n  \"plan_type\": \"premium\",\n  \"billing_cycle\": \"monthly\",\n  \"payment_method\": \"card\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/billing/subscribe?plan_type=premium&billing_cycle=monthly&payment_method=card",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "billing", "subscribe"],
+              "query": [
+                {
+                  "key": "plan_type",
+                  "value": "premium",
+                  "description": "Subscription plan"
+                },
+                {
+                  "key": "billing_cycle",
+                  "value": "monthly",
+                  "description": "Billing cycle"
+                },
+                {
+                  "key": "payment_method",
+                  "value": "card",
+                  "description": "Payment method"
+                }
+              ]
+            },
+            "description": "Create new subscription"
+          }
+        },
+        {
+          "name": "Get Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/billing/subscription/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "billing", "subscription", "{{user_id}}"]
+            },
+            "description": "Get user subscription"
+          }
+        },
+        {
+          "name": "Get Usage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/billing/usage/{{user_id}}?period=current_month",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "billing", "usage", "{{user_id}}"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "current_month",
+                  "description": "Usage period"
+                }
+              ]
+            },
+            "description": "Get user usage statistics"
+          }
+        },
+        {
+          "name": "Get Available Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/billing/plans",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "billing", "plans"]
+            },
+            "description": "Get available subscription plans"
+          }
+        },
+        {
+          "name": "Get Billing History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/billing/history/{{user_id}}?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "billing", "history", "{{user_id}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of records"
+                }
+              ]
+            },
+            "description": "Get billing history"
+          }
+        }
+      ],
+      "description": "Subscription and billing management"
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "System Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/overview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "overview"]
+            },
+            "description": "Get comprehensive system overview"
+          }
+        },
+        {
+          "name": "Performance Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "metrics"]
+            },
+            "description": "Get system performance metrics"
+          }
+        },
+        {
+          "name": "User Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "users"]
+            },
+            "description": "Get user analytics"
+          }
+        },
+        {
+          "name": "Revenue Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/revenue",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "revenue"]
+            },
+            "description": "Get revenue metrics"
+          }
+        },
+        {
+          "name": "System Alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/alerts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "alerts"]
+            },
+            "description": "Get system alerts"
+          }
+        },
+        {
+          "name": "Security Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/security",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "security"]
+            },
+            "description": "Get security metrics"
+          }
+        },
+        {
+          "name": "Performance History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/performance?period=24h",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "performance"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "24h",
+                  "description": "Time period"
+                }
+              ]
+            },
+            "description": "Get performance history"
+          }
+        },
+        {
+          "name": "Database Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/database",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "database"]
+            },
+            "description": "Get database metrics"
+          }
+        },
+        {
+          "name": "API Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/api",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "api"]
+            },
+            "description": "Get API metrics"
+          }
+        }
+      ],
+      "description": "Administrative functions and system monitoring"
+    },
+    {
+      "name": "Logistics",
+      "item": [
+        {
+          "name": "Track Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location\": \"Houston, TX\",\n  \"volume\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/logistics/track",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "logistics", "track"]
+            },
+            "description": "Track physical delivery for logistics management"
+          }
+        },
+        {
+          "name": "Generate Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"trade_id\": \"T20241201123456789\",\n  \"region\": \"us\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/settlement/invoice",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "settlement", "invoice"]
+            },
+            "description": "Generate invoice for trade settlement with multi-currency support"
+          }
+        }
+      ],
+      "description": "Physical delivery tracking and settlement"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set base URL based on environment",
+          "if (!pm.collectionVariables.get('base_url')) {",
+          "    pm.collectionVariables.set('base_url', 'http://localhost:8000');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script for all requests",
+          "pm.test('Response time is less than 5000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test('Response has valid JSON', function () {",
+          "    pm.response.to.be.json;",
+          "});",
+          "",
+          "// Log response for debugging",
+          "console.log('Response Status:', pm.response.status);",
+          "console.log('Response Time:', pm.response.responseTime + 'ms');"
+        ]
+      }
+    }
+  ]
+}
