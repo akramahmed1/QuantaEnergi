@@ -265,3 +265,272 @@ async def check_execution_ethics(execution_data: Dict[str, Any]):
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ethics check failed: {str(e)}")
+
+
+# Derivatives Trading Endpoints (FIS-like pricing)
+@router.post("/derivatives/futures/price")
+async def price_futures_contract(futures_data: Dict[str, Any]):
+    """Price futures contracts with sophisticated models"""
+    try:
+        from ...services.derivatives_pricing import FuturesPricingEngine
+        pricing_engine = FuturesPricingEngine()
+        result = pricing_engine.price_futures_contract(futures_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Futures pricing failed: {str(e)}")
+
+
+@router.post("/derivatives/swaps/price")
+async def price_swap_contract(swap_data: Dict[str, Any]):
+    """Price interest rate and commodity swaps"""
+    try:
+        from ...services.derivatives_pricing import SwapPricingEngine
+        pricing_engine = SwapPricingEngine()
+        result = pricing_engine.price_swap_contract(swap_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Swap pricing failed: {str(e)}")
+
+
+@router.post("/derivatives/forwards/price")
+async def price_forward_contract(forward_data: Dict[str, Any]):
+    """Price forward contracts with carry costs"""
+    try:
+        from ...services.derivatives_pricing import ForwardPricingEngine
+        pricing_engine = ForwardPricingEngine()
+        result = pricing_engine.price_forward_contract(forward_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Forward pricing failed: {str(e)}")
+
+
+@router.post("/derivatives/arbitrage/detect")
+async def detect_arbitrage_opportunities(market_data: Dict[str, Any]):
+    """Detect arbitrage opportunities across derivatives markets"""
+    try:
+        from ...services.derivatives_pricing import ArbitrageDetector
+        detector = ArbitrageDetector()
+        result = detector.detect_opportunities(market_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Arbitrage detection failed: {str(e)}")
+
+
+@router.post("/derivatives/hedging/optimize")
+async def optimize_hedging_strategy(portfolio_data: Dict[str, Any]):
+    """Optimize hedging strategies using derivatives"""
+    try:
+        from ...services.derivatives_pricing import HedgingOptimizer
+        optimizer = HedgingOptimizer()
+        result = optimizer.optimize_strategy(portfolio_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Hedging optimization failed: {str(e)}")
+
+
+# PPA (Power Purchase Agreement) Endpoints
+@router.post("/ppa/modeling/create")
+async def create_ppa_model(ppa_data: Dict[str, Any]):
+    """Create PPA financial model with arbitrage calculations"""
+    try:
+        from ...domains.ppa.ppa_modeling import PPAModelingEngine
+        modeling_engine = PPAModelingEngine()
+        result = modeling_engine.create_ppa_model(ppa_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PPA modeling failed: {str(e)}")
+
+
+@router.post("/ppa/arbitrage/calculate")
+async def calculate_ppa_arbitrage(ppa_params: Dict[str, Any]):
+    """Calculate arbitrage opportunities in PPA structures"""
+    try:
+        from ...domains.ppa.ppa_modeling import PPAArbitrageCalculator
+        calculator = PPAArbitrageCalculator()
+        result = calculator.calculate_arbitrage(ppa_params)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PPA arbitrage calculation failed: {str(e)}")
+
+
+@router.post("/ppa/risk/assess")
+async def assess_ppa_risks(ppa_data: Dict[str, Any]):
+    """Assess risks in PPA structures"""
+    try:
+        from ...domains.ppa.ppa_modeling import PPARiskAssessor
+        assessor = PPARiskAssessor()
+        result = assessor.assess_risks(ppa_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PPA risk assessment failed: {str(e)}")
+
+
+@router.post("/ppa/valuation/dcf")
+async def calculate_ppa_dcf_valuation(valuation_data: Dict[str, Any]):
+    """Calculate DCF valuation for PPA contracts"""
+    try:
+        from ...domains.ppa.ppa_modeling import PPADCFValuation
+        valuation = PPADCFValuation()
+        result = valuation.calculate_dcf(valuation_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PPA DCF valuation failed: {str(e)}")
+
+
+@router.post("/ppa/sensitivity/analysis")
+async def perform_ppa_sensitivity_analysis(sensitivity_data: Dict[str, Any]):
+    """Perform sensitivity analysis on PPA parameters"""
+    try:
+        from ...domains.ppa.ppa_modeling import PPASensitivityAnalyzer
+        analyzer = PPASensitivityAnalyzer()
+        result = analyzer.analyze_sensitivity(sensitivity_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PPA sensitivity analysis failed: {str(e)}")
+
+
+# Metals and Agricultural Commodities Trading
+@router.post("/commodities/metals/price")
+async def price_metals_derivatives(metals_data: Dict[str, Any]):
+    """Price metals derivatives (gold, silver, copper, etc.)"""
+    try:
+        from ...services.commodities_pricing import MetalsPricingEngine
+        pricing_engine = MetalsPricingEngine()
+        result = pricing_engine.price_metals_derivatives(metals_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Metals pricing failed: {str(e)}")
+
+
+@router.post("/commodities/agricultural/price")
+async def price_agricultural_derivatives(ag_data: Dict[str, Any]):
+    """Price agricultural derivatives (wheat, corn, soybeans, etc.)"""
+    try:
+        from ...services.commodities_pricing import AgriculturalPricingEngine
+        pricing_engine = AgriculturalPricingEngine()
+        result = pricing_engine.price_agricultural_derivatives(ag_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agricultural pricing failed: {str(e)}")
+
+
+@router.post("/commodities/energy/price")
+async def price_energy_derivatives(energy_data: Dict[str, Any]):
+    """Price energy derivatives (oil, gas, electricity)"""
+    try:
+        from ...services.commodities_pricing import EnergyPricingEngine
+        pricing_engine = EnergyPricingEngine()
+        result = pricing_engine.price_energy_derivatives(energy_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Energy pricing failed: {str(e)}")
+
+
+@router.post("/commodities/portfolio/optimize")
+async def optimize_commodities_portfolio(portfolio_data: Dict[str, Any]):
+    """Optimize commodities portfolio using modern portfolio theory"""
+    try:
+        from ...services.commodities_pricing import CommoditiesPortfolioOptimizer
+        optimizer = CommoditiesPortfolioOptimizer()
+        result = optimizer.optimize_portfolio(portfolio_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Portfolio optimization failed: {str(e)}")
+
+
+@router.post("/commodities/correlation/matrix")
+async def calculate_commodities_correlation(correlation_data: Dict[str, Any]):
+    """Calculate correlation matrix for commodities"""
+    try:
+        from ...services.commodities_pricing import CommoditiesCorrelationAnalyzer
+        analyzer = CommoditiesCorrelationAnalyzer()
+        result = analyzer.calculate_correlation_matrix(correlation_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Correlation calculation failed: {str(e)}")
+
+
+@router.post("/commodities/risk/var")
+async def calculate_commodities_var(var_data: Dict[str, Any]):
+    """Calculate Value at Risk for commodities portfolio"""
+    try:
+        from ...services.commodities_pricing import CommoditiesVaRCalculator
+        calculator = CommoditiesVaRCalculator()
+        result = calculator.calculate_var(var_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"VaR calculation failed: {str(e)}")
+
+
+# Cross-Asset Trading and Arbitrage
+@router.post("/cross-asset/arbitrage/detect")
+async def detect_cross_asset_arbitrage(market_data: Dict[str, Any]):
+    """Detect arbitrage opportunities across different asset classes"""
+    try:
+        from ...services.cross_asset_trading import CrossAssetArbitrageDetector
+        detector = CrossAssetArbitrageDetector()
+        result = detector.detect_arbitrage(market_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cross-asset arbitrage detection failed: {str(e)}")
+
+
+@router.post("/cross-asset/correlation/analyze")
+async def analyze_cross_asset_correlation(correlation_data: Dict[str, Any]):
+    """Analyze correlations between different asset classes"""
+    try:
+        from ...services.cross_asset_trading import CrossAssetCorrelationAnalyzer
+        analyzer = CrossAssetCorrelationAnalyzer()
+        result = analyzer.analyze_correlations(correlation_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cross-asset correlation analysis failed: {str(e)}")
+
+
+@router.post("/cross-asset/portfolio/rebalance")
+async def rebalance_cross_asset_portfolio(portfolio_data: Dict[str, Any]):
+    """Rebalance portfolio across different asset classes"""
+    try:
+        from ...services.cross_asset_trading import CrossAssetPortfolioRebalancer
+        rebalancer = CrossAssetPortfolioRebalancer()
+        result = rebalancer.rebalance_portfolio(portfolio_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Cross-asset portfolio rebalancing failed: {str(e)}")
+
+
+# Advanced Risk Management
+@router.post("/risk/stress/testing")
+async def perform_stress_testing(stress_data: Dict[str, Any]):
+    """Perform stress testing on derivatives portfolio"""
+    try:
+        from ...services.advanced_risk_management import StressTestingEngine
+        stress_engine = StressTestingEngine()
+        result = stress_engine.perform_stress_test(stress_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Stress testing failed: {str(e)}")
+
+
+@router.post("/risk/scenario/analysis")
+async def perform_scenario_analysis(scenario_data: Dict[str, Any]):
+    """Perform scenario analysis on derivatives portfolio"""
+    try:
+        from ...services.advanced_risk_management import ScenarioAnalysisEngine
+        scenario_engine = ScenarioAnalysisEngine()
+        result = scenario_engine.perform_scenario_analysis(scenario_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Scenario analysis failed: {str(e)}")
+
+
+@router.post("/risk/regulatory/capital")
+async def calculate_regulatory_capital(capital_data: Dict[str, Any]):
+    """Calculate regulatory capital requirements for derivatives"""
+    try:
+        from ...services.advanced_risk_management import RegulatoryCapitalCalculator
+        calculator = RegulatoryCapitalCalculator()
+        result = calculator.calculate_capital_requirements(capital_data)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Regulatory capital calculation failed: {str(e)}")

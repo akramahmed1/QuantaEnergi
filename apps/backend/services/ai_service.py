@@ -6,7 +6,17 @@ import re
 import logging
 from typing import Any, Dict, List, Optional, Union
 from fastapi import HTTPException
+import pandas as pd
+from datetime import datetime, timedelta
 warnings.filterwarnings('ignore')
+
+# Prophet integration for time series forecasting
+try:
+    from prophet import Prophet
+    PROPHET_AVAILABLE = True
+except ImportError:
+    PROPHET_AVAILABLE = False
+    print("Prophet not available, using RandomForest for forecasting")
 
 logger = logging.getLogger(__name__)
 
@@ -99,8 +109,11 @@ except ImportError:
     PULP_AVAILABLE = False
     print("PuLP not available, using basic optimization")
 
-def forecast_price(historical: np.ndarray, horizon: int = 1):
-    """Forecast price using RandomForest ensemble with input validation"""
+def forecast_price(historical: np.ndarray, horizon: int = 1, method: str = "prophet"):
+    """
+    Enhanced price forecasting with Prophet integration
+    Supports Prophet (preferred) and RandomForest fallback
+    """
     # Validate inputs using security validator
     validator = AISecurityValidator()
     historical = validator.validate_array_input(historical, max_size=50000)
@@ -109,10 +122,57 @@ def forecast_price(historical: np.ndarray, horizon: int = 1):
     if len(historical) <= horizon:
         raise HTTPException(status_code=400, detail="Insufficient historical data for forecasting")
     
+    # Try Prophet first if available and requested
+    if method == "prophet" and PROPHET_AVAILABLE:
+        try:
+            return _prophet_forecast(historical, horizon)
+        except Exception as e:
+            logger.warning(f"Prophet forecasting failed: {e}, falling back to RandomForest")
+            method = "randomforest"
+    
+    # RandomForest fallback
+    if method == "randomforest":
+        return _randomforest_forecast(historical, horizon)
+    
+    # Default to RandomForest
+    return _randomforest_forecast(historical, horizon)
+
+def _prophet_forecast(historical: np.ndarray, horizon: int) -> float:
+    """Prophet-based time series forecasting for energy prices"""
+    try:
+        # Create DataFrame for Prophet
+        dates = pd.date_range(start='2020-01-01', periods=len(historical), freq='D')
+        df = pd.DataFrame({
+            'ds': dates,
+            'y': historical
+        })
+        
+        # Initialize and fit Prophet model
+        model = Prophet(
+            yearly_seasonality=True,
+            weekly_seasonality=True,
+            daily_seasonality=False,
+            seasonality_mode='multiplicative'
+        )
+        model.fit(df)
+        
+        # Make future predictions
+        future = model.make_future_dataframe(periods=horizon)
+        forecast = model.predict(future)
+        
+        # Return the last predicted value
+        return float(forecast['yhat'].iloc[-1])
+        
+    except Exception as e:
+        logger.error(f"Prophet forecasting error: {e}")
+        raise HTTPException(status_code=500, detail=f"Prophet forecasting failed: {str(e)}")
+
+def _randomforest_forecast(historical: np.ndarray, horizon: int) -> float:
+    """RandomForest-based forecasting (fallback method)"""
     X = historical[:-horizon].reshape(-1, 1)
     y = historical[horizon:]
     X_train, _, y_train, _ = train_test_split(X, y)
-    model = RandomForestRegressor()
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
     return model.predict([[historical[-1]]])[0]
 

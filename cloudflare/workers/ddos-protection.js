@@ -307,6 +307,35 @@ function addSecurityHeaders(response) {
   })
 }
 
+// Uptime check function
+async function performUptimeCheck() {
+  try {
+    const startTime = Date.now()
+    
+    // Check if the origin server is responding
+    const healthCheck = await fetch('https://quantaenergi.com/health', {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Cloudflare-Worker-Uptime-Check'
+      },
+      timeout: 5000
+    })
+    
+    const responseTime = Date.now() - startTime
+    
+    if (healthCheck.ok) {
+      console.log(`Uptime check passed - Response time: ${responseTime}ms`)
+      return { status: 'healthy', responseTime }
+    } else {
+      console.log(`Uptime check failed - Status: ${healthCheck.status}`)
+      return { status: 'unhealthy', responseTime }
+    }
+  } catch (error) {
+    console.log(`Uptime check error: ${error.message}`)
+    return { status: 'error', error: error.message }
+  }
+}
+
 // Cleanup rate limit cache periodically
 setInterval(() => {
   const now = Date.now()
@@ -318,3 +347,6 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000) // Cleanup every 5 minutes
+
+// Perform uptime check every 30 seconds
+setInterval(performUptimeCheck, 30 * 1000)

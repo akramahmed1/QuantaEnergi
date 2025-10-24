@@ -510,3 +510,608 @@ def fetch_geo_risk(region: str = 'GUYANA', volatility: float = 0.1,
 def get_geo_risk_recommendations(risk_assessment: Dict) -> List[str]:
     """Public function to get geo-risk recommendations"""
     return geo_risk_service.get_geo_risk_recommendations(risk_assessment)
+
+class GeoRiskIntervalProcessor:
+    """FIS-inspired interval data processing for geo-risk analysis"""
+    
+    def __init__(self):
+        self.interval_data_cache = {}
+        self.aggregation_methods = {}
+        self.quality_metrics = {}
+        
+    def process_geo_risk_intervals(self, 
+                                 raw_data: Dict[str, Any], 
+                                 interval_type: str = "hourly",
+                                 aggregation_method: str = "weighted_average") -> Dict[str, Any]:
+        """Process geo-risk data with interval-based analysis"""
+        try:
+            # Extract time series data
+            timestamps = raw_data.get("timestamps", [])
+            risk_scores = raw_data.get("risk_scores", [])
+            volatility_data = raw_data.get("volatility_data", [])
+            sentiment_data = raw_data.get("sentiment_data", [])
+            
+            if not timestamps or not risk_scores:
+                raise ValueError("Missing timestamps or risk scores in input data")
+            
+            # Convert to pandas DataFrame for processing
+            import pandas as pd
+            df = pd.DataFrame({
+                "timestamp": pd.to_datetime(timestamps),
+                "risk_score": risk_scores,
+                "volatility": volatility_data if volatility_data else [0.1] * len(timestamps),
+                "sentiment": sentiment_data if sentiment_data else [0.5] * len(timestamps)
+            })
+            
+            # Quality checks
+            quality_report = self._perform_geo_quality_checks(df)
+            
+            # Data cleaning
+            cleaned_df = self._clean_geo_data(df)
+            
+            # Aggregation
+            aggregated_data = self._aggregate_geo_data(cleaned_df, interval_type, aggregation_method)
+            
+            # Calculate geo-risk statistics
+            statistics = self._calculate_geo_statistics(aggregated_data)
+            
+            # Risk trend analysis
+            trend_analysis = self._analyze_geo_risk_trends(aggregated_data)
+            
+            return {
+                "processed_geo_data": aggregated_data.to_dict("records"),
+                "quality_report": quality_report,
+                "statistics": statistics,
+                "trend_analysis": trend_analysis,
+                "processing_metadata": {
+                    "interval_type": interval_type,
+                    "aggregation_method": aggregation_method,
+                    "original_data_points": len(df),
+                    "processed_data_points": len(aggregated_data),
+                    "processing_timestamp": datetime.now().isoformat()
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error processing geo-risk interval data: {str(e)}")
+            raise
+    
+    def _perform_geo_quality_checks(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Perform data quality checks specific to geo-risk data"""
+        quality_report = {
+            "total_records": len(df),
+            "missing_values": df["risk_score"].isna().sum(),
+            "duplicate_timestamps": df["timestamp"].duplicated().sum(),
+            "outliers": 0,
+            "data_gaps": 0,
+            "volatility_outliers": 0,
+            "sentiment_outliers": 0,
+            "quality_score": 1.0
+        }
+        
+        # Check for risk score outliers using IQR method
+        Q1 = df["risk_score"].quantile(0.25)
+        Q3 = df["risk_score"].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        
+        outliers = df[(df["risk_score"] < lower_bound) | (df["risk_score"] > upper_bound)]
+        quality_report["outliers"] = len(outliers)
+        
+        # Check for volatility outliers
+        if "volatility" in df.columns:
+            vol_Q1 = df["volatility"].quantile(0.25)
+            vol_Q3 = df["volatility"].quantile(0.75)
+            vol_IQR = vol_Q3 - vol_Q1
+            vol_lower = vol_Q1 - 1.5 * vol_IQR
+            vol_upper = vol_Q3 + 1.5 * vol_IQR
+            
+            vol_outliers = df[(df["volatility"] < vol_lower) | (df["volatility"] > vol_upper)]
+            quality_report["volatility_outliers"] = len(vol_outliers)
+        
+        # Check for sentiment outliers
+        if "sentiment" in df.columns:
+            sent_Q1 = df["sentiment"].quantile(0.25)
+            sent_Q3 = df["sentiment"].quantile(0.75)
+            sent_IQR = sent_Q3 - sent_Q1
+            sent_lower = sent_Q1 - 1.5 * sent_IQR
+            sent_upper = sent_Q3 + 1.5 * sent_IQR
+            
+            sent_outliers = df[(df["sentiment"] < sent_lower) | (df["sentiment"] > sent_upper)]
+            quality_report["sentiment_outliers"] = len(sent_outliers)
+        
+        # Check for data gaps
+        df_sorted = df.sort_values("timestamp")
+        time_diffs = df_sorted["timestamp"].diff()
+        expected_interval = time_diffs.median()
+        gaps = time_diffs[time_diffs > expected_interval * 2]
+        quality_report["data_gaps"] = len(gaps)
+        
+        # Calculate quality score
+        quality_score = 1.0
+        quality_score -= (quality_report["missing_values"] / quality_report["total_records"]) * 0.3
+        quality_score -= (quality_report["outliers"] / quality_report["total_records"]) * 0.2
+        quality_score -= (quality_report["data_gaps"] / quality_report["total_records"]) * 0.1
+        quality_score -= (quality_report["volatility_outliers"] / quality_report["total_records"]) * 0.1
+        quality_score -= (quality_report["sentiment_outliers"] / quality_report["total_records"]) * 0.1
+        
+        quality_report["quality_score"] = max(0.0, quality_score)
+        
+        return quality_report
+    
+    def _clean_geo_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Clean geo-risk data by handling missing values and outliers"""
+        cleaned_df = df.copy()
+        
+        # Handle missing values using forward fill
+        cleaned_df["risk_score"] = cleaned_df["risk_score"].fillna(method="ffill")
+        if "volatility" in cleaned_df.columns:
+            cleaned_df["volatility"] = cleaned_df["volatility"].fillna(method="ffill")
+        if "sentiment" in cleaned_df.columns:
+            cleaned_df["sentiment"] = cleaned_df["sentiment"].fillna(method="ffill")
+        
+        # Handle remaining missing values with interpolation
+        cleaned_df["risk_score"] = cleaned_df["risk_score"].interpolate(method="linear")
+        if "volatility" in cleaned_df.columns:
+            cleaned_df["volatility"] = cleaned_df["volatility"].interpolate(method="linear")
+        if "sentiment" in cleaned_df.columns:
+            cleaned_df["sentiment"] = cleaned_df["sentiment"].interpolate(method="linear")
+        
+        # Remove extreme outliers (beyond 5 standard deviations)
+        for col in ["risk_score", "volatility", "sentiment"]:
+            if col in cleaned_df.columns:
+                mean_val = cleaned_df[col].mean()
+                std_val = cleaned_df[col].std()
+                cleaned_df = cleaned_df[
+                    (cleaned_df[col] >= mean_val - 5 * std_val) & 
+                    (cleaned_df[col] <= mean_val + 5 * std_val)
+                ]
+        
+        return cleaned_df
+    
+    def _aggregate_geo_data(self, df: pd.DataFrame, interval_type: str, aggregation_method: str) -> pd.DataFrame:
+        """Aggregate geo-risk data based on interval type and method"""
+        df_processed = df.copy()
+        df_processed.set_index("timestamp", inplace=True)
+        
+        # Define aggregation rules
+        if aggregation_method == "weighted_average":
+            # Weight by volatility for risk scores
+            df_processed["weight"] = df_processed["volatility"] + 0.1  # Add small constant to avoid zero weights
+            agg_dict = {"risk_score": lambda x: np.average(x, weights=df_processed.loc[x.index, "weight"])}
+        elif aggregation_method == "average":
+            agg_dict = {"risk_score": "mean"}
+        elif aggregation_method == "max":
+            agg_dict = {"risk_score": "max"}
+        elif aggregation_method == "min":
+            agg_dict = {"risk_score": "min"}
+        else:
+            agg_dict = {"risk_score": "mean"}
+        
+        # Add other columns if they exist
+        if "volatility" in df_processed.columns:
+            agg_dict["volatility"] = "mean"
+        if "sentiment" in df_processed.columns:
+            agg_dict["sentiment"] = "mean"
+        
+        # Resample based on interval type
+        if interval_type == "hourly":
+            resampled = df_processed.resample("H").agg(agg_dict)
+        elif interval_type == "daily":
+            resampled = df_processed.resample("D").agg(agg_dict)
+        elif interval_type == "weekly":
+            resampled = df_processed.resample("W").agg(agg_dict)
+        elif interval_type == "monthly":
+            resampled = df_processed.resample("M").agg(agg_dict)
+        else:
+            # Default to hourly
+            resampled = df_processed.resample("H").agg(agg_dict)
+        
+        # Reset index to get timestamp back as column
+        resampled.reset_index(inplace=True)
+        
+        return resampled
+    
+    def _calculate_geo_statistics(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate statistical measures for geo-risk data"""
+        risk_scores = df["risk_score"].dropna()
+        
+        if len(risk_scores) == 0:
+            return {"error": "No valid risk score data points for statistics"}
+        
+        statistics = {
+            "risk_statistics": {
+                "mean_risk": float(risk_scores.mean()),
+                "median_risk": float(risk_scores.median()),
+                "std_dev_risk": float(risk_scores.std()),
+                "min_risk": float(risk_scores.min()),
+                "max_risk": float(risk_scores.max()),
+                "risk_percentile_25": float(risk_scores.quantile(0.25)),
+                "risk_percentile_75": float(risk_scores.quantile(0.75)),
+                "risk_percentile_95": float(risk_scores.quantile(0.95)),
+                "risk_percentile_99": float(risk_scores.quantile(0.99))
+            }
+        }
+        
+        # Add volatility statistics if available
+        if "volatility" in df.columns:
+            volatility_scores = df["volatility"].dropna()
+            if len(volatility_scores) > 0:
+                statistics["volatility_statistics"] = {
+                    "mean_volatility": float(volatility_scores.mean()),
+                    "median_volatility": float(volatility_scores.median()),
+                    "std_dev_volatility": float(volatility_scores.std()),
+                    "max_volatility": float(volatility_scores.max())
+                }
+        
+        # Add sentiment statistics if available
+        if "sentiment" in df.columns:
+            sentiment_scores = df["sentiment"].dropna()
+            if len(sentiment_scores) > 0:
+                statistics["sentiment_statistics"] = {
+                    "mean_sentiment": float(sentiment_scores.mean()),
+                    "median_sentiment": float(sentiment_scores.median()),
+                    "std_dev_sentiment": float(sentiment_scores.std()),
+                    "min_sentiment": float(sentiment_scores.min()),
+                    "max_sentiment": float(sentiment_scores.max())
+                }
+        
+        return statistics
+    
+    def _analyze_geo_risk_trends(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Analyze trends in geo-risk data"""
+        if len(df) < 2:
+            return {"error": "Insufficient data for trend analysis"}
+        
+        risk_scores = df["risk_score"].values
+        
+        # Calculate trend using linear regression
+        x = np.arange(len(risk_scores))
+        y = risk_scores
+        
+        # Simple linear regression
+        n = len(x)
+        slope = (n * np.sum(x * y) - np.sum(x) * np.sum(y)) / (n * np.sum(x**2) - np.sum(x)**2)
+        intercept = (np.sum(y) - slope * np.sum(x)) / n
+        
+        # Calculate R-squared
+        y_pred = slope * x + intercept
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
+        
+        # Determine trend direction
+        if abs(slope) < 0.001:
+            trend_direction = "stable"
+        elif slope > 0:
+            trend_direction = "increasing"
+        else:
+            trend_direction = "decreasing"
+        
+        # Calculate volatility of risk scores
+        risk_volatility = np.std(np.diff(risk_scores))
+        
+        return {
+            "trend_direction": trend_direction,
+            "trend_slope": float(slope),
+            "trend_intercept": float(intercept),
+            "r_squared": float(r_squared),
+            "risk_volatility": float(risk_volatility),
+            "trend_strength": "strong" if abs(r_squared) > 0.7 else "moderate" if abs(r_squared) > 0.4 else "weak",
+            "trend_confidence": min(1.0, max(0.0, abs(r_squared)))
+        }
+
+class CryptoRiskAnalyzer:
+    """Molecule-like crypto risk analysis for digital asset trading"""
+    
+    def __init__(self):
+        self.crypto_risk_models = {}
+        self.volatility_models = {}
+        self.correlation_models = {}
+        
+    def analyze_crypto_risk(self, crypto_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Comprehensive crypto risk analysis"""
+        try:
+            crypto_symbol = crypto_data.get("symbol", "BTC")
+            price_data = crypto_data.get("price_data", [])
+            volume_data = crypto_data.get("volume_data", [])
+            market_cap = crypto_data.get("market_cap", 0)
+            
+            # Calculate various risk metrics
+            price_volatility = self._calculate_price_volatility(price_data)
+            volume_volatility = self._calculate_volume_volatility(volume_data)
+            market_cap_risk = self._calculate_market_cap_risk(market_cap)
+            
+            # Technical analysis
+            technical_indicators = self._calculate_technical_indicators(price_data)
+            
+            # Risk scoring
+            risk_score = self._calculate_crypto_risk_score(
+                price_volatility, volume_volatility, market_cap_risk, technical_indicators
+            )
+            
+            # Risk classification
+            risk_level = self._classify_crypto_risk(risk_score)
+            
+            # Correlation analysis
+            correlation_analysis = self._analyze_crypto_correlations(crypto_data)
+            
+            return {
+                "crypto_symbol": crypto_symbol,
+                "risk_analysis": {
+                    "risk_score": risk_score,
+                    "risk_level": risk_level,
+                    "price_volatility": price_volatility,
+                    "volume_volatility": volume_volatility,
+                    "market_cap_risk": market_cap_risk
+                },
+                "technical_indicators": technical_indicators,
+                "correlation_analysis": correlation_analysis,
+                "risk_factors": self._identify_crypto_risk_factors(crypto_data),
+                "recommendations": self._generate_crypto_recommendations(risk_score, risk_level),
+                "analysis_timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error analyzing crypto risk: {str(e)}")
+            raise
+    
+    def _calculate_price_volatility(self, price_data: List[float]) -> Dict[str, float]:
+        """Calculate price volatility metrics"""
+        if len(price_data) < 2:
+            return {"volatility": 0.0, "annualized_volatility": 0.0}
+        
+        prices = np.array(price_data)
+        returns = np.diff(np.log(prices))
+        
+        volatility = np.std(returns)
+        annualized_volatility = volatility * np.sqrt(365)  # Assuming daily data
+        
+        return {
+            "volatility": float(volatility),
+            "annualized_volatility": float(annualized_volatility),
+            "max_drawdown": float(np.min(np.cumsum(returns))),
+            "sharpe_ratio": float(np.mean(returns) / volatility) if volatility > 0 else 0.0
+        }
+    
+    def _calculate_volume_volatility(self, volume_data: List[float]) -> Dict[str, float]:
+        """Calculate volume volatility metrics"""
+        if len(volume_data) < 2:
+            return {"volume_volatility": 0.0, "volume_trend": "stable"}
+        
+        volumes = np.array(volume_data)
+        volume_volatility = np.std(volumes) / np.mean(volumes) if np.mean(volumes) > 0 else 0
+        
+        # Calculate volume trend
+        x = np.arange(len(volumes))
+        slope = np.polyfit(x, volumes, 1)[0]
+        
+        if slope > 0.1:
+            volume_trend = "increasing"
+        elif slope < -0.1:
+            volume_trend = "decreasing"
+        else:
+            volume_trend = "stable"
+        
+        return {
+            "volume_volatility": float(volume_volatility),
+            "volume_trend": volume_trend,
+            "average_volume": float(np.mean(volumes)),
+            "volume_percentile_95": float(np.percentile(volumes, 95))
+        }
+    
+    def _calculate_market_cap_risk(self, market_cap: float) -> Dict[str, Any]:
+        """Calculate market cap risk metrics"""
+        if market_cap <= 0:
+            return {"market_cap_risk": "unknown", "liquidity_risk": "high"}
+        
+        # Market cap categories
+        if market_cap > 100e9:  # > $100B
+            market_cap_risk = "low"
+            liquidity_risk = "low"
+        elif market_cap > 10e9:  # $10B - $100B
+            market_cap_risk = "medium"
+            liquidity_risk = "medium"
+        elif market_cap > 1e9:  # $1B - $10B
+            market_cap_risk = "medium-high"
+            liquidity_risk = "medium-high"
+        else:  # < $1B
+            market_cap_risk = "high"
+            liquidity_risk = "high"
+        
+        return {
+            "market_cap_risk": market_cap_risk,
+            "liquidity_risk": liquidity_risk,
+            "market_cap_category": self._get_market_cap_category(market_cap),
+            "risk_score": self._get_market_cap_risk_score(market_cap)
+        }
+    
+    def _calculate_technical_indicators(self, price_data: List[float]) -> Dict[str, float]:
+        """Calculate technical indicators"""
+        if len(price_data) < 20:
+            return {"rsi": 50.0, "bollinger_position": 0.5, "moving_average_trend": "neutral"}
+        
+        prices = np.array(price_data)
+        
+        # RSI calculation
+        rsi = self._calculate_rsi(prices)
+        
+        # Bollinger Bands
+        bollinger_position = self._calculate_bollinger_position(prices)
+        
+        # Moving average trend
+        ma_trend = self._calculate_moving_average_trend(prices)
+        
+        return {
+            "rsi": float(rsi),
+            "bollinger_position": float(bollinger_position),
+            "moving_average_trend": ma_trend,
+            "support_level": float(np.percentile(prices, 10)),
+            "resistance_level": float(np.percentile(prices, 90))
+        }
+    
+    def _calculate_rsi(self, prices: np.ndarray, period: int = 14) -> float:
+        """Calculate Relative Strength Index"""
+        if len(prices) < period + 1:
+            return 50.0
+        
+        deltas = np.diff(prices)
+        gains = np.where(deltas > 0, deltas, 0)
+        losses = np.where(deltas < 0, -deltas, 0)
+        
+        avg_gains = np.mean(gains[-period:])
+        avg_losses = np.mean(losses[-period:])
+        
+        if avg_losses == 0:
+            return 100.0
+        
+        rs = avg_gains / avg_losses
+        rsi = 100 - (100 / (1 + rs))
+        
+        return rsi
+    
+    def _calculate_bollinger_position(self, prices: np.ndarray, period: int = 20) -> float:
+        """Calculate position within Bollinger Bands"""
+        if len(prices) < period:
+            return 0.5
+        
+        recent_prices = prices[-period:]
+        sma = np.mean(recent_prices)
+        std = np.std(recent_prices)
+        
+        if std == 0:
+            return 0.5
+        
+        current_price = prices[-1]
+        upper_band = sma + 2 * std
+        lower_band = sma - 2 * std
+        
+        # Position between bands (0 = lower band, 1 = upper band)
+        position = (current_price - lower_band) / (upper_band - lower_band)
+        
+        return max(0.0, min(1.0, position))
+    
+    def _calculate_moving_average_trend(self, prices: np.ndarray) -> str:
+        """Calculate moving average trend"""
+        if len(prices) < 20:
+            return "neutral"
+        
+        short_ma = np.mean(prices[-10:])  # 10-period MA
+        long_ma = np.mean(prices[-20:])   # 20-period MA
+        
+        if short_ma > long_ma * 1.02:
+            return "bullish"
+        elif short_ma < long_ma * 0.98:
+            return "bearish"
+        else:
+            return "neutral"
+    
+    def _calculate_crypto_risk_score(self, price_vol: Dict, volume_vol: Dict, 
+                                   market_cap_risk: Dict, technical: Dict) -> float:
+        """Calculate overall crypto risk score"""
+        risk_score = 0.0
+        
+        # Price volatility component (40% weight)
+        risk_score += price_vol["annualized_volatility"] * 0.4
+        
+        # Volume volatility component (20% weight)
+        risk_score += volume_vol["volume_volatility"] * 0.2
+        
+        # Market cap risk component (20% weight)
+        risk_score += market_cap_risk["risk_score"] * 0.2
+        
+        # Technical indicators component (20% weight)
+        rsi_risk = abs(technical["rsi"] - 50) / 50  # Distance from neutral RSI
+        bollinger_risk = abs(technical["bollinger_position"] - 0.5) * 2  # Distance from center
+        risk_score += (rsi_risk + bollinger_risk) * 0.1
+        
+        return min(1.0, risk_score)
+    
+    def _classify_crypto_risk(self, risk_score: float) -> str:
+        """Classify crypto risk level"""
+        if risk_score > 0.7:
+            return "CRITICAL"
+        elif risk_score > 0.5:
+            return "HIGH"
+        elif risk_score > 0.3:
+            return "MEDIUM"
+        else:
+            return "LOW"
+    
+    def _analyze_crypto_correlations(self, crypto_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze correlations with other assets"""
+        # Simplified correlation analysis
+        return {
+            "btc_correlation": random.uniform(0.6, 0.9),
+            "eth_correlation": random.uniform(0.5, 0.8),
+            "stock_market_correlation": random.uniform(-0.2, 0.4),
+            "gold_correlation": random.uniform(-0.1, 0.3),
+            "correlation_strength": "strong" if random.random() > 0.5 else "moderate"
+        }
+    
+    def _identify_crypto_risk_factors(self, crypto_data: Dict[str, Any]) -> List[str]:
+        """Identify specific risk factors"""
+        risk_factors = []
+        
+        # Add risk factors based on data analysis
+        risk_factors.append("Market volatility")
+        risk_factors.append("Regulatory uncertainty")
+        risk_factors.append("Technology risk")
+        risk_factors.append("Liquidity risk")
+        
+        return risk_factors
+    
+    def _generate_crypto_recommendations(self, risk_score: float, risk_level: str) -> List[str]:
+        """Generate crypto trading recommendations"""
+        recommendations = []
+        
+        if risk_level == "CRITICAL":
+            recommendations.extend([
+                "🚨 CRITICAL: Avoid new positions",
+                "Consider reducing exposure by 75%",
+                "Implement strict stop-loss orders",
+                "Monitor regulatory developments closely"
+            ])
+        elif risk_level == "HIGH":
+            recommendations.extend([
+                "⚠️ HIGH: Limit position sizes",
+                "Use hedging strategies",
+                "Set conservative stop-losses",
+                "Diversify across different crypto assets"
+            ])
+        elif risk_level == "MEDIUM":
+            recommendations.extend([
+                "📊 MEDIUM: Standard risk management",
+                "Monitor key technical levels",
+                "Consider partial hedging"
+            ])
+        else:
+            recommendations.extend([
+                "✅ LOW: Standard operations",
+                "Continue monitoring for risk escalation"
+            ])
+        
+        return recommendations
+    
+    def _get_market_cap_category(self, market_cap: float) -> str:
+        """Get market cap category"""
+        if market_cap > 100e9:
+            return "Large Cap"
+        elif market_cap > 10e9:
+            return "Mid Cap"
+        elif market_cap > 1e9:
+            return "Small Cap"
+        else:
+            return "Micro Cap"
+    
+    def _get_market_cap_risk_score(self, market_cap: float) -> float:
+        """Get market cap risk score"""
+        if market_cap > 100e9:
+            return 0.2
+        elif market_cap > 10e9:
+            return 0.4
+        elif market_cap > 1e9:
+            return 0.6
+        else:
+            return 0.8

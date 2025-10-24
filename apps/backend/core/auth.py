@@ -12,7 +12,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from passlib.hash import bcrypt
 import structlog
-from ..core.config import settings
+from .config import settings
 
 logger = structlog.get_logger()
 
