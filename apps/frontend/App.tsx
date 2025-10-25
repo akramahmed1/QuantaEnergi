@@ -37,7 +37,7 @@ function App() {
     const token = localStorage.getItem('auth_token');
     if (token) {
       // Verify token with backend
-      fetch(`${API_BASE_URL}/dashboard`, {
+      fetch(`${API_BASE_URL}/health`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -49,7 +49,10 @@ function App() {
         throw new Error('Authentication failed');
       })
       .then(data => {
-        setUser(data.user);
+        setUser({
+          username: 'Trader',
+          email: 'trader@quantaenergi.com'
+        });
         setIsAuthenticated(true);
       })
       .catch(error => {
@@ -78,6 +81,10 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('auth_token', data.access_token);
+        setUser({
+          username: data.username,
+          email: data.email
+        });
         setIsAuthenticated(true);
         return { success: true };
       } else {

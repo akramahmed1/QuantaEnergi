@@ -1,38 +1,722 @@
-.App {
-  text-align: center;
+/* QuantaEnergi ETRM/CTRM Platform - Professional Styling */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f6fa;
+  color: #333;
+  line-height: 1.6;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+/* Login Styles */
+.login-container {
   min-height: 100vh;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.login-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-header h1 {
+  color: #1e3c72;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.login-header p {
+  color: #666;
+  font-size: 14px;
+  margin: 5px 0 0 0;
+}
+
+.login-form {
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #1e3c72;
+}
+
+.login-btn {
+  width: 100%;
+  background: #1e3c72;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: #2a5298;
+}
+
+.login-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.login-footer {
+  text-align: center;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.login-footer h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.login-footer p {
+  font-size: 14px;
+  color: #666;
+  margin: 5px 0;
+}
+
+/* App Layout */
+.app {
+  min-height: 100vh;
+  background: #f5f6fa;
+}
+
+.app-header {
+  background: white;
+  border-bottom: 1px solid #e1e5e9;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-left h1 {
+  color: #1e3c72;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.version {
+  background: #e8f2ff;
+  color: #1e3c72;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.user-role {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.logout-btn:hover {
+  background: #c82333;
+}
+
+.app-nav {
+  background: white;
+  border-bottom: 1px solid #e1e5e9;
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  color: #1e3c72;
+  background: #f8f9fa;
+}
+
+.nav-item.active {
+  color: #1e3c72;
+  border-bottom-color: #1e3c72;
+  background: #f8f9fa;
+}
+
+.app-main {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Dashboard */
+.dashboard h2 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e5e9;
+}
+
+.stat-card h3 {
+  color: #666;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+}
+
+/* Trading */
+.trading h2 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+}
+
+.trading-forms {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.trade-form h3 {
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #1e3c72;
+}
+
+.submit-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: #218838;
+}
+
+.trades-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.trades-table h3 {
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  padding: 24px 24px 0 24px;
+}
+
+.trades-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.trades-table th {
+  background: #f8f9fa;
+  color: #333;
+  font-weight: 600;
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #e1e5e9;
+  font-size: 14px;
+}
+
+.trades-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f3f4;
+  font-size: 14px;
+}
+
+.trades-table tr:hover {
+  background: #f8f9fa;
+}
+
+.trades-table .buy {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.trades-table .sell {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.trades-table .confirmed {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.trades-table .pending {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+/* Portfolio */
+.portfolio h2 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+}
+
+.portfolio-overview {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.portfolio-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.portfolio-stats .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portfolio-stats .stat label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 600;
+}
+
+.portfolio-stats .stat span {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+}
+
+.positions-table {
+  margin-top: 24px;
+}
+
+.positions-table h3 {
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+
+.positions-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.positions-table th {
+  background: #f8f9fa;
+  color: #333;
+  font-weight: 600;
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #e1e5e9;
+  font-size: 14px;
+}
+
+.positions-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f3f4;
+  font-size: 14px;
+}
+
+.positions-table tr:hover {
+  background: #f8f9fa;
+}
+
+.positive {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.negative {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+/* Risk Management */
+.risk h2 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+}
+
+.risk-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.risk-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e5e9;
+}
+
+.risk-card h3 {
+  color: #666;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.risk-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #dc3545;
+  margin-bottom: 8px;
+}
+
+.risk-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Analytics */
+.analytics h2 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+}
+
+.analytics-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-placeholder {
+  height: 300px;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  color: #666;
+  font-size: 16px;
 }
 
-.App-link {
-  color: #61dafb;
+.chart-placeholder h3 {
+  margin-bottom: 8px;
+  color: #333;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Compliance */
+.compliance h2 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+}
+
+.compliance-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.compliance-status h3 {
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+}
+
+.status-label {
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.status-value {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.status-value.compliant {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* Settings */
+.settings h2 {
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+}
+
+.settings-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.settings-section h3 {
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 20px 0;
+}
+
+.password-form {
+  max-width: 400px;
+}
+
+.password-form .form-group {
+  margin-bottom: 20px;
+}
+
+.password-form .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.password-form .form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.password-form .form-group input:focus {
+  outline: none;
+  border-color: #1e3c72;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    height: auto;
+    padding: 16px;
   }
-  to {
-    transform: rotate(360deg);
+  
+  .app-nav {
+    flex-wrap: wrap;
+    padding: 0 16px;
+  }
+  
+  .nav-item {
+    padding: 12px 16px;
+  }
+  
+  .app-main {
+    padding: 16px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .portfolio-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .risk-metrics {
+    grid-template-columns: 1fr;
+  }
+  
+  .status-grid {
+    grid-template-columns: 1fr;
   }
 }

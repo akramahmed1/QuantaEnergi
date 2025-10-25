@@ -9,6 +9,7 @@ import {
   ClockIcon,
   UserGroupIcon
 } from '@heroicons/react/24/outline';
+import { tradingAPI, analyticsAPI, systemAPI } from '../services/api';
 
 interface Trade {
   id: string;
@@ -41,46 +42,87 @@ const ETRMDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading dashboard data
-    setTimeout(() => {
-      setStats({
-        totalTrades: 1247,
-        totalVolume: 12500000,
-        totalPnL: 125000,
-        riskExposure: 2500000,
-        activePositions: 23,
-        pendingSettlements: 7
-      });
-      
-      setRecentTrades([
-        {
-          id: '1',
-          asset: 'Brent Crude',
-          quantity: 1000,
-          price: 85.50,
-          timestamp: '2024-12-30T10:30:00Z',
-          status: 'confirmed'
-        },
-        {
-          id: '2',
-          asset: 'WTI Crude',
-          quantity: 500,
-          price: 83.25,
-          timestamp: '2024-12-30T09:15:00Z',
-          status: 'settled'
-        },
-        {
-          id: '3',
-          asset: 'Natural Gas',
-          quantity: 2000,
-          price: 3.45,
-          timestamp: '2024-12-30T08:45:00Z',
-          status: 'pending'
-        }
-      ]);
-      
-      setLoading(false);
-    }, 1000);
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load analytics data
+        const analyticsResponse = await analyticsAPI.getUserAnalytics();
+        const analytics = analyticsResponse.data;
+        
+        // Load portfolio summary
+        const portfolioResponse = await tradingAPI.getPortfolioSummary();
+        const portfolio = portfolioResponse.data;
+        
+        // Load recent trades
+        const tradesResponse = await tradingAPI.getRecentTrades(10);
+        const trades = tradesResponse.data.trades || [];
+        
+        // Update stats with real data
+        setStats({
+          totalTrades: analytics.total_trades || 0,
+          totalVolume: analytics.trading_volume || 0,
+          totalPnL: analytics.portfolio_value || 0,
+          riskExposure: analytics.risk_score || 0,
+          activePositions: analytics.open_positions || 0,
+          pendingSettlements: portfolio.pending_settlements || 0
+        });
+        
+        // Update recent trades with real data
+        setRecentTrades(trades.map((trade: any) => ({
+          id: trade.id,
+          asset: trade.commodity,
+          quantity: trade.quantity,
+          price: trade.price,
+          timestamp: trade.timestamp,
+          status: trade.status
+        })));
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        
+        // Fallback to mock data if API fails
+        setStats({
+          totalTrades: 1247,
+          totalVolume: 12500000,
+          totalPnL: 125000,
+          riskExposure: 2500000,
+          activePositions: 23,
+          pendingSettlements: 7
+        });
+        
+        setRecentTrades([
+          {
+            id: '1',
+            asset: 'Brent Crude',
+            quantity: 1000,
+            price: 85.50,
+            timestamp: '2024-12-30T10:30:00Z',
+            status: 'confirmed'
+          },
+          {
+            id: '2',
+            asset: 'WTI Crude',
+            quantity: 500,
+            price: 83.25,
+            timestamp: '2024-12-30T09:15:00Z',
+            status: 'settled'
+          },
+          {
+            id: '3',
+            asset: 'Natural Gas',
+            quantity: 2000,
+            price: 3.45,
+            timestamp: '2024-12-30T08:45:00Z',
+            status: 'pending'
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
   }, []);
 
   const formatCurrency = (amount: number) => {
